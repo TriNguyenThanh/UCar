@@ -1,0 +1,32 @@
+---
+config:
+  layout: elk
+---
+flowchart LR
+  ADM[Quản trị viên]:::ext
+  DP[Điều phối xe]:::ext
+  TECH[Kỹ thuật/Bảo dưỡng]:::ext
+
+  F1([2.1 Quản lý Hồ sơ phương tiện]):::proc
+  F2([2.2 Trạng thái & Lịch xe]):::proc
+  F3([2.3 Bảo dưỡng & Giấy tờ xe]):::proc
+
+  D3[(D3 Hồ sơ xe)]:::store
+  D4[(D4 Bảo dưỡng & Giấy tờ xe)]:::store
+  D11[(D11 Chi phí xe)]:::store
+
+  ADM -->|Thông tin phương tiện| F1
+  F1 -->|Hồ sơ xe| D3
+
+  DP -->|Trạng thái xe, lịch xe| F2
+  F2 -->|Trạng thái xe| D3
+
+  TECH -->|Lịch bảo dưỡng, giấy tờ xe| F3
+  F3 -->|Hồ sơ bảo dưỡng, giấy tờ| D4
+
+  TECH -->|Thông tin chi phí| F3
+  F3 -->|Chứng từ chi phí| D11
+
+  classDef ext fill:#fff,stroke:#333,stroke-width:1px;
+  classDef proc fill:#eef,stroke:#333,stroke-width:1px;
+  classDef store fill:#efe,stroke:#333,stroke-width:1px;

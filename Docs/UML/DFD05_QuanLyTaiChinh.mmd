@@ -1,0 +1,23 @@
+flowchart LR
+  KT[Kế toán]:::ext
+  NH[Ngân hàng/Kênh thanh toán]:::ext
+
+  M1([5.1 Thu/Chi Hợp đồng]):::proc
+  M2([5.2 Chi phí xe]):::proc
+  M3([5.3 Sổ quỹ]):::proc
+
+  D10[(D10 Thu/Chi & Sổ quỹ)]:::store
+  D11[(D11 Chi phí xe)]:::store
+
+  KT -->|Thông tin thu/hoàn| M1
+  M1 -->|Chứng từ thu/chi| D10
+
+  KT -->|Thông tin chi phí| M2
+  M2 -->|Chứng từ chi phí| D11
+
+  NH -->|Giao dịch ngân hàng| M3
+  M3 -->|Dòng tiền| D10
+
+  classDef ext fill:#fff,stroke:#333,stroke-width:1px;
+  classDef proc fill:#eef,stroke:#333,stroke-width:1px;
+  classDef store fill:#efe,stroke:#333,stroke-width:1px;

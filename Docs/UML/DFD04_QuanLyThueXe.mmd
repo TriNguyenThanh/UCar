@@ -1,0 +1,36 @@
+flowchart BT
+    KH["Khách hàng"] -- Nhu cầu thuê xe --> R1(["4.1 Đặt xe"])
+    SALE["Nhân viên kinh doanh"] -- Thông tin booking --> R1
+    D1[("D1 Cấu hình & Danh mục")] -- Bảng giá --> R1 & R2(["4.2 Hợp đồng thuê"])
+    D3[("D3 Hồ sơ xe")] -- Danh sách xe, trạng thái xe --> R1
+    D5[("D5 Hồ sơ khách hàng")] -- Hồ sơ khách hàng --> R1
+    R1 -- Thông tin booking --> D7[("D7 Booking/Phiếu giữ chỗ")]
+    DP["Điều phối xe"] -- Thông tin giao xe --> R3(["4.3 Giao xe"])
+    SALE -- Thông tin hợp đồng --> R2
+    D7 -- Thông tin booking --> R2
+    D1 -- Template, mapping --> R2
+    R2 -- Thông tin hợp đồng --> D8[("D8 Hợp đồng thuê")]
+    D8 -- Thông tin hợp đồng --> R3 & R4(["4.4 Nhận xe & Thanh lý"])
+    R3 -- Biên bản giao xe --> D9[("D9 Biên bản giao/nhận")]
+    R3 -- Trạng thái xe --> D3
+    DP -- Thông tin nhận xe --> R4
+    D9 -- Biên bản giao xe --> R4
+    R4 -- Biên bản nhận xe --> D9
+    R4 -- Trạng thái xe --> D3
+
+     KH:::ext
+     R1:::proc
+     SALE:::ext
+     D1:::store
+     R2:::proc
+     D3:::store
+     D5:::store
+     D7:::store
+     D8:::store
+     DP:::ext
+     R3:::proc
+     R4:::proc
+     D9:::store
+    classDef ext fill:#fff,stroke:#333,stroke-width:1px
+    classDef proc fill:#eef,stroke:#333,stroke-width:1px
+    classDef store fill:#efe,stroke:#333,stroke-width:1px
