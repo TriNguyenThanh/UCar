@@ -8,23 +8,23 @@
     "net9.0": []
   },
   "packageFolders": {
-    "C:\\Users\\tring\\.nuget\\packages\\": {},
+    "C:\\Users\\MSII\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\Workspace\\Code\\CSharp\\UCar\\UCar.csproj",
+      "projectUniqueName": "D:\\CSharp\\Projects\\UCar\\UCar.csproj",
       "projectName": "UCar",
-      "projectPath": "E:\\Workspace\\Code\\CSharp\\UCar\\UCar.csproj",
-      "packagesPath": "C:\\Users\\tring\\.nuget\\packages\\",
-      "outputPath": "E:\\Workspace\\Code\\CSharp\\UCar\\obj\\",
+      "projectPath": "D:\\CSharp\\Projects\\UCar\\UCar.csproj",
+      "packagesPath": "C:\\Users\\MSII\\.nuget\\packages\\",
+      "outputPath": "D:\\CSharp\\Projects\\UCar\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\tring\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\MSII\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -33,6 +33,7 @@
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -75,7 +76,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.308/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

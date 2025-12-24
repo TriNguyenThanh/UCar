@@ -1,0 +1,8 @@
+flowchart LR
+    KHACH["Khách hàng"] -- CCCD / GPLX --> P2_1(("2.1 Đăng ký<br>Thông tin khách"))
+    P2_1 -- Hồ sơ định danh --> DB_KHACH["DB_KHACH"]
+    NV["Nhân viên"] -- Yêu cầu kiểm tra --> P2_2(("2.2 Tra cứu<br>Lịch sử khách"))
+    DB_KHACH -- Lịch sử thuê/Nợ xấu --> P2_2
+    P2_2 -- Kết quả tín nhiệm --> NV
+
+    DB_KHACH@{ shape: cyl}

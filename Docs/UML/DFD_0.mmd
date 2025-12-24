@@ -1,0 +1,25 @@
+flowchart LR
+    %% --- TÁC NHÂN BÊN NGOÀI (EXTERNAL ENTITIES) ---
+    KHACH["Khách hàng"]
+    BEN3["Bên thứ 3"]
+
+    %% --- HỆ THỐNG TRUNG TÂM (SYSTEM) ---
+    %% Bao gồm cả Nhân viên & Quản lý bên trong
+    SYS(("0. HỆ THỐNG<br/>QUẢN LÝ THUÊ XE"))
+
+    %% --- LUỒNG DỮ LIỆU (DATA FLOWS) ---
+    
+    %% 1. Giao tiếp với Khách hàng
+    KHACH -->|"1. Yêu cầu thuê xe"| SYS
+    KHACH -->|"2. Giấy tờ tùy thân (CCCD/GPLX)"| SYS
+    KHACH -->|"3. Tài sản thế chấp & Tiền cọc"| SYS
+    KHACH -->|"4. Xe trả về"| SYS
+    
+    SYS -->|"5. Thông tin xe & Báo giá"| KHACH
+    SYS -->|"6. Hợp đồng & Biên bản bàn giao"| KHACH
+    SYS -->|"7. Hóa đơn & Tài sản hoàn trả"| KHACH
+
+    
+    %% 3. Giao tiếp với Bên thứ 3 (Tự động hóa)
+    BEN3 -->|"8. Dữ liệu phí cầu đường/Phạt nguội"| SYS
+    SYS -->|"9. Lệnh thanh toán/Tra soát"| BEN3
