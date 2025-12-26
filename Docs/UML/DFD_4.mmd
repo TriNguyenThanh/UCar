@@ -1,0 +1,41 @@
+flowchart LR
+  classDef ext fill:#fff,stroke:#111,stroke-width:1px;
+  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px;
+  classDef store fill:#f3fff3,stroke:#1f7a1f,stroke-width:1.2px;
+  classDef internal fill:#fff,stroke:#555,stroke-width:1px,stroke-dasharray: 4 3;
+
+  KH[Khách hàng]:::ext
+
+  P1i[[1.0 Quản lý khách hàng]]:::internal
+  P2i[[2.0 Quản lý xe]]:::internal
+  P3i[[3.0 Quản lý bảng giá và chính sách]]:::internal
+  P5i[[5.0 Quản lý hợp đồng thuê]]:::internal
+  P7i[[7.0 Quản lý thanh toán và hóa đơn]]:::internal
+  P9i[[9.0 Lập báo cáo và phân tích]]:::internal
+
+  D5[(D5 Hồ sơ đặt xe)]:::store
+
+  P41((4.1 Tiếp nhận yêu cầu đặt xe)):::proc
+  P42((4.2 Kiểm tra khả dụng và giữ chỗ)):::proc
+  P43((4.3 Xác nhận điều chỉnh và hủy đặt xe)):::proc
+  P44((4.4 Cập nhật lịch đặt theo xe)):::proc
+
+  KH -->|Yêu cầu đặt xe| P41
+  P1i -->|Thông tin khách hàng hợp lệ| P41
+  P41 -->|Thông tin yêu cầu đặt xe| P42
+  P41 <--> |Hồ sơ đặt xe| D5
+
+  P2i -->|Thông tin xe khả dụng| P42
+  P3i -->|Bảng giá áp dụng| P42
+  P42 -->|Báo giá thuê xe| KH
+  P42 -->|Thông tin giữ chỗ| P43
+
+  P7i -->|Trạng thái đặt cọc| P43
+  KH -->|Yêu cầu điều chỉnh đặt xe| P43
+  P43 -->|Xác nhận đặt xe| KH
+  P43 -->|Yêu cầu đặt cọc| P7i
+  P43 -->|Thông tin đặt xe| P5i
+  P43 -->|Dữ liệu đặt xe| P9i
+
+  P43 -->|Dữ liệu lịch đặt| P44
+  P44 <--> |Hồ sơ đặt xe| D5

@@ -1,0 +1,24 @@
+flowchart LR
+  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px;
+  classDef store fill:#f3fff3,stroke:#1f7a1f,stroke-width:1.2px;
+  classDef internal fill:#fff,stroke:#555,stroke-width:1px,stroke-dasharray: 4 3;
+
+  P10i[[10.0 Quản trị hệ thống và tuân thủ]]:::internal
+  P4i[[4.0 Quản lý đặt xe]]:::internal
+  P5i[[5.0 Quản lý hợp đồng thuê]]:::internal
+  P9i[[9.0 Lập báo cáo và phân tích]]:::internal
+
+  D4[(D4 Bảng giá và chính sách)]:::store
+
+  P31((3.1 Thiết lập giá thuê)):::proc
+  P32((3.2 Thiết lập chính sách đặt cọc và hoàn cọc)):::proc
+  P33((3.3 Thiết lập chính sách phụ phí)):::proc
+
+  P10i -->|Yêu cầu cập nhật chính sách| P31
+  P31 <--> |Bảng giá và chính sách| D4
+  P32 <--> |Bảng giá và chính sách| D4
+  P33 <--> |Bảng giá và chính sách| D4
+
+  D4 -->|Bảng giá áp dụng| P4i
+  D4 -->|Điều khoản và chính sách thuê| P5i
+  P33 -->|Dữ liệu chính sách| P9i
