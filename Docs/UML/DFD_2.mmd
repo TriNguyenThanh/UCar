@@ -1,0 +1,37 @@
+flowchart LR
+  classDef ext fill:#fff,stroke:#111,stroke-width:1px;
+  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px;
+  classDef store fill:#f3fff3,stroke:#1f7a1f,stroke-width:1.2px;
+  classDef internal fill:#fff,stroke:#555,stroke-width:1px,stroke-dasharray: 4 3;
+
+  GPS[Hệ thống GPS / Telematics]:::ext
+
+  P4i[[4.0 Quản lý đặt xe]]:::internal
+  P6i[[6.0 Quản lý giao nhận xe]]:::internal
+  P8i[[8.0 Quản lý vận hành và nhân sự]]:::internal
+  P9i[[9.0 Lập báo cáo và phân tích]]:::internal
+
+  D2[(D2 Danh mục xe)]:::store
+  D3[(D3 Tình trạng xe)]:::store
+
+  P21((2.1 Quản lý danh mục xe)):::proc
+  P22((2.2 Quản lý thông tin xe)):::proc
+  P23((2.3 Quản lý tình trạng xe)):::proc
+
+  P21 <--> |Danh mục xe| D2
+  P22 <--> |Danh mục xe| D2
+
+  GPS -->|Dữ liệu hành trình| P23
+  P23 -->|Yêu cầu định vị| GPS
+  P23 <--> |Tình trạng xe| D3
+
+  P4i -->|Yêu cầu tra cứu xe| P23
+  P23 -->|Thông tin xe khả dụng| P4i
+
+  P6i -->|Cập nhật tình trạng xe| P23
+  P23 -->|Thông tin xe bàn giao| P6i
+
+  P8i -->|Kế hoạch bảo dưỡng| P23
+  P23 -->|Tình trạng bảo dưỡng| P8i
+
+  P23 -->|Dữ liệu xe| P9i
