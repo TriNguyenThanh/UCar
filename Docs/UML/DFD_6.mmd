@@ -1,0 +1,47 @@
+flowchart LR
+  classDef ext fill:#fff,stroke:#111,stroke-width:1px;
+  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px;
+  classDef store fill:#f3fff3,stroke:#1f7a1f,stroke-width:1.2px;
+  classDef internal fill:#fff,stroke:#555,stroke-width:1px,stroke-dasharray: 4 3;
+
+  KH[Khách hàng]:::ext
+  CA[Cơ quan công an / CSGT]:::ext
+
+  P5i[[5.0 Quản lý hợp đồng thuê]]:::internal
+  P2i[[2.0 Quản lý xe]]:::internal
+  P7i[[7.0 Quản lý thanh toán và hóa đơn]]:::internal
+  P8i[[8.0 Quản lý vận hành và nhân sự]]:::internal
+  P9i[[9.0 Lập báo cáo và phân tích]]:::internal
+
+  D7[(D7 Biên bản giao nhận)]:::store
+  D13[(D13 Hồ sơ sự cố và vi phạm)]:::store
+
+  P61((6.1 Bàn giao xe cho khách)):::proc
+  P62((6.2 Ghi nhận tình trạng trước khi thuê)):::proc
+  P63((6.3 Nhận xe từ khách)):::proc
+  P64((6.4 Đối soát tình trạng sau thuê)):::proc
+
+  P8i -->|Kế hoạch phân công giao nhận| P61
+  P5i -->|Thông tin hợp đồng| P61
+  P2i -->|Thông tin xe bàn giao| P61
+  KH -->|Yêu cầu nhận xe| P61
+
+  P61 -->|Thông tin bàn giao| P62
+  P62 <--> |Biên bản giao nhận| D7
+  P62 -->|Biên bản giao nhận| KH
+  P62 -->|Biên bản giao nhận| CA
+
+  KH -->|Yêu cầu trả xe| P63
+  KH -->|Thông báo sự cố| P64
+  CA -->|Biên bản tạm giữ phương tiện| P64
+
+  P63 -->|Thông tin nhận xe| P64
+  P64 <--> |Biên bản giao nhận| D7
+
+  P7i -->|Xác nhận thu bổ sung| P64
+  P64 -->|Cập nhật tình trạng xe| P2i
+  P64 -->|Thông tin phát sinh sau thuê| P7i
+  P64 -->|Kết quả giao nhận| P8i
+  P64 -->|Dữ liệu giao nhận| P9i
+
+  P64 <--> |Hồ sơ sự cố và vi phạm| D13
