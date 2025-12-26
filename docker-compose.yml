@@ -6,7 +6,7 @@ services:
     container_name: ucar-sqlserver
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=YourStrong@Password123
+      - SA_PASSWORD=Mk123456@Abc
       - MSSQL_PID=Developer
     ports:
       - "1439:1433"
@@ -15,7 +15,7 @@ services:
     networks:
       - ucar-network
     healthcheck:
-      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrong@Password123 -Q "SELECT 1" || exit 1
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P Mk123456@Abc -Q "SELECT 1" || exit 1
       interval: 10s
       timeout: 3s
       retries: 10
@@ -29,7 +29,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Server=sqlserver,1439;Database=UCarDB;User Id=sa;Password=YourStrong@Password123;TrustServerCertificate=True;
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1439;Database=UCarDB;User Id=sa;Password=Mk123456@Abc;TrustServerCertificate=True;
     ports:
       - "5000:8080"
     depends_on:
