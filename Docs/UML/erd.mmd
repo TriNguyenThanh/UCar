@@ -1,0 +1,308 @@
+---
+config:
+  layout: elk
+---
+erDiagram
+    ROLE ||--o{ USER_ACCOUNT : assigns
+    USER_ACCOUNT ||--o| CUSTOMER : has_profile
+    USER_ACCOUNT ||--o| STAFF_PROFILE : has_profile
+    BRANCH ||--o{ STAFF_PROFILE : employs
+    BRANCH ||--o{ VEHICLE : owns
+    VEHICLE_TYPE ||--o{ VEHICLE_MODEL : groups
+    VEHICLE_MODEL ||--o{ VEHICLE : defines
+    VEHICLE ||--o{ VEHICLE_STATUS_HISTORY : logs
+    VEHICLE ||--o{ MAINTENANCE_ORDER : undergoes
+    VEHICLE_TYPE ||--o{ PRICE : has_price_list
+    CUSTOMER ||--o{ BOOKING : requests
+    USER_ACCOUNT ||--o{ BOOKING : creates_log
+    VEHICLE_TYPE ||--o{ BOOKING : requests_type
+    VEHICLE ||--o{ BOOKING : assigned_to
+    BOOKING ||--|| RENTAL_CONTRACT : converts_to
+    USER_ACCOUNT ||--o{ RENTAL_CONTRACT : managed_by
+    RENTAL_CONTRACT ||--|| HANDOVER_RECORD : starts_with
+    RENTAL_CONTRACT ||--|| RETURN_RECORD : ends_with
+    RENTAL_CONTRACT ||--o{ CONTRACT_VIOLATION : Breached_by
+    RENTAL_CONTRACT ||--o{ INCIDENT : related_to
+    VEHICLE ||--o{ INCIDENT : involved_in
+    CUSTOMER ||--o{ INCIDENT : responsible_for
+    RENTAL_CONTRACT ||--o{ CONTRACT_CHARGE : incurs
+    CONTRACT_VIOLATION ||--o{ CONTRACT_CHARGE : generates
+    RENTAL_CONTRACT ||--o{ PAYMENT_TRANSACTION : paid_for
+    CUSTOMER ||--o{ PAYMENT_TRANSACTION : pays
+    RENTAL_CONTRACT ||--o{ COLLATERAL_ITEM : secures
+    CUSTOMER ||--o{ CUSTOMER_DOCUMENT : provides
+    INCIDENT ||--o{ INCIDENT_DOCUMENT : evidences
+    INCIDENT ||--o{ INCIDENT_COST : incurs_cost
+    INCIDENT ||--o| INCIDENT_FINE_DETAIL : details
+    INCIDENT ||--o| INCIDENT_IMPOUND_DETAIL : details
+
+    ROLE {
+        uniqueidentifier role_id PK
+        nvarchar code UK "CUSTOMER/STAFF/ADMIN"
+        nvarchar name
+        bit is_active
+    }
+
+    USER_ACCOUNT {
+        uniqueidentifier user_id PK
+        uniqueidentifier role_id FK
+        nvarchar username UK
+        nvarchar email
+        nvarchar phone
+        nvarchar password_hash
+        bit is_active
+        datetime2 created_at
+        datetime2 last_login_at
+    }
+
+    CUSTOMER {
+        uniqueidentifier customer_id PK
+        uniqueidentifier user_id FK "UNIQUE"
+        nvarchar full_name
+        date dob
+        nvarchar address_text
+        nvarchar risk_level
+        bit is_blacklisted
+        datetime2 created_at
+    }
+
+    STAFF_PROFILE {
+        uniqueidentifier staff_id PK
+        uniqueidentifier user_id FK "UNIQUE"
+        uniqueidentifier branch_id FK
+        nvarchar staff_code UK
+        nvarchar full_name
+        nvarchar position
+        bit is_active
+    }
+
+    BRANCH {
+        uniqueidentifier branch_id PK
+        nvarchar name
+        nvarchar address
+        nvarchar phone_contact
+    }
+
+    VEHICLE_TYPE {
+        uniqueidentifier vehicle_type_id PK
+        nvarchar type_name "Sedan/SUV/Hatchback/Motorbike"
+    }
+
+    VEHICLE_MODEL {
+        uniqueidentifier model_id PK
+        uniqueidentifier vehicle_type_id FK
+        nvarchar make "Toyota/Honda"
+        nvarchar model_name "Vios/City"
+        int seats
+        nvarchar transmission "Manual/Auto"
+        nvarchar fuel_type
+    }
+
+    VEHICLE {
+        uniqueidentifier vehicle_id PK
+        uniqueidentifier branch_id FK
+        uniqueidentifier model_id FK
+        nvarchar plate_no UK
+        nvarchar color
+        int manufacture_year
+        nvarchar current_status "AVAILABLE/RENTING/MAINTENANCE/IMPOUNDED"
+        decimal current_odo_km
+    }
+
+    PRICE {
+        uniqueidentifier price_id PK
+        uniqueidentifier vehicle_type_id FK
+        nvarchar name
+        nvarchar unit "HOUR/DAY/MONTH"
+        decimal unit_price
+        decimal overtime_hourly_price
+        decimal deposit_suggest
+        date valid_from
+        date valid_to "NULL if current"
+        bit is_active
+    }
+    BOOKING {
+        uniqueidentifier booking_id PK
+        uniqueidentifier customer_id FK
+        uniqueidentifier vehicle_type_id FK "Requested Type"
+        uniqueidentifier assigned_vehicle_id FK "Nullable: Filled when confirmed"
+        datetime2 start_at
+        datetime2 end_at
+        nvarchar status "PENDING/CONFIRMED/DEPOSITED/COMPLETED/CANCELLED"
+        decimal estimated_total
+        uniqueidentifier created_by FK
+        datetime2 created_at
+    }
+    RENTAL_CONTRACT {
+        uniqueidentifier contract_id PK
+        uniqueidentifier booking_id FK "Unique"
+        uniqueidentifier customer_id FK
+        uniqueidentifier vehicle_id FK
+        uniqueidentifier price_id FK "Reference only"
+        
+        decimal snapshot_unit_price "FIX: Store price at signing"
+        decimal snapshot_deposit_amount "FIX: Store deposit at signing"
+        
+        datetime2 planned_start
+        datetime2 planned_end
+        datetime2 actual_start
+        datetime2 actual_end
+        
+        decimal total_amount_final
+        nvarchar status "ACTIVE/COMPLETED/VIOLATION/CANCELLED"
+        uniqueidentifier handled_by FK
+        datetime2 created_at
+    }
+
+    HANDOVER_RECORD {
+        uniqueidentifier handover_id PK
+        uniqueidentifier contract_id FK
+        decimal odo_km_out
+        decimal fuel_level_out
+        datetime2 handed_at
+        nvarchar vehicle_condition_img_ref
+        nvarchar note
+    }
+
+    RETURN_RECORD {
+        uniqueidentifier return_id PK
+        uniqueidentifier contract_id FK
+        decimal odo_km_in
+        decimal fuel_level_in
+        datetime2 returned_at
+        nvarchar vehicle_condition_img_ref
+        decimal overtime_hours
+        nvarchar note
+    }
+
+    CONTRACT_VIOLATION {
+        uniqueidentifier violation_id PK
+        uniqueidentifier contract_id FK
+        nvarchar violation_type "LATE/DAMAGE/SMOKING/LOST_KEY"
+        datetime2 detected_at
+        nvarchar description
+        nvarchar status "OPEN/RESOLVED"
+        decimal penalty_amount
+        uniqueidentifier created_by FK
+    }
+    PAYMENT_TRANSACTION {
+        uniqueidentifier txn_id PK
+        uniqueidentifier contract_id FK "Nullable"
+        uniqueidentifier customer_id FK
+        nvarchar txn_type "DEPOSIT/RENTAL_FEE/PENALTY/REFUND"
+        decimal amount
+        nvarchar payment_method "CASH/TRANSFER/CARD"
+        nvarchar bank_ref_code
+        datetime2 paid_at
+        nvarchar status "SUCCESS/FAILED"
+        
+        nvarchar ref_type "CONTRACT/INCIDENT"
+        uniqueidentifier ref_id
+        nvarchar note
+    }
+
+    INCIDENT {
+        uniqueidentifier incident_id PK
+        nvarchar incident_type "ACCIDENT/THEFT/FINE/IMPOUND"
+        uniqueidentifier vehicle_id FK
+        uniqueidentifier contract_id FK "Nullable: Can happen outside contract"
+        uniqueidentifier customer_id FK "Nullable"
+        
+        datetime2 occurred_at
+        nvarchar location
+        nvarchar description
+        nvarchar status "NEW/PROCESSING/RESOLVED"
+        decimal estimated_cost
+        uniqueidentifier created_by FK
+    }
+    
+    INCIDENT_FINE_DETAIL {
+        uniqueidentifier incident_id PK,FK
+        nvarchar ticket_number
+        nvarchar agency_name
+        date due_date
+        decimal fine_amount
+    }
+
+    INCIDENT_IMPOUND_DETAIL {
+        uniqueidentifier incident_id PK,FK
+        nvarchar impound_lot_address
+        datetime2 impounded_at
+        datetime2 released_at
+    }
+
+    INCIDENT_COST {
+        uniqueidentifier cost_id PK
+        uniqueidentifier incident_id FK
+        nvarchar cost_type "REPAIR/TOWING/LEGAL"
+        decimal amount
+        datetime2 incurred_at
+        nvarchar note
+    }
+
+    VEHICLE_STATUS_HISTORY {
+        uniqueidentifier vsh_id PK
+        uniqueidentifier vehicle_id FK
+        nvarchar from_status
+        nvarchar to_status
+        datetime2 changed_at
+        uniqueidentifier changed_by FK
+        nvarchar note
+    }
+
+    MAINTENANCE_ORDER {
+        uniqueidentifier mo_id PK
+        uniqueidentifier vehicle_id FK
+        datetime2 start_at
+        datetime2 end_at
+        nvarchar description
+        decimal total_cost
+        nvarchar provider_name "Gara ABC..."
+        nvarchar status "SCHEDULED/IN_PROGRESS/COMPLETED"
+        uniqueidentifier created_by FK
+    }
+
+    CUSTOMER_DOCUMENT {
+        uniqueidentifier doc_id PK
+        uniqueidentifier customer_id FK
+        nvarchar doc_type "LICENSE/ID_CARD/PASSPORT"
+        nvarchar doc_number
+        date issued_date
+        nvarchar issued_place
+        nvarchar image_front_url
+        nvarchar image_back_url
+        bit is_verified
+    }
+
+    COLLATERAL_ITEM {
+        uniqueidentifier collateral_id PK
+        uniqueidentifier contract_id FK
+        nvarchar item_type "MOTORBIKE/CASH/ID_ORIGINAL"
+        nvarchar description
+        decimal estimated_value
+        nvarchar condition_at_received
+        datetime2 received_at
+        datetime2 returned_at
+        nvarchar status "HELD/RETURNED/LIQUIDATED"
+    }
+
+    CONTRACT_CHARGE {
+        uniqueidentifier charge_id PK
+        uniqueidentifier contract_id FK
+        uniqueidentifier violation_id FK "Nullable: Có thể là phí phát sinh không do vi phạm"
+        nvarchar charge_type "LATE_FEE/CLEANING_FEE/DAMAGE_FEE"
+        decimal amount
+        nvarchar description
+        bit is_paid
+        datetime2 created_at
+    }
+
+    INCIDENT_DOCUMENT {
+        uniqueidentifier doc_id PK
+        uniqueidentifier incident_id FK
+        nvarchar doc_type "PHOTO/POLICE_REPORT/INVOICE"
+        nvarchar file_url
+        datetime2 uploaded_at
+        uniqueidentifier uploaded_by FK
+        nvarchar description
+    }
