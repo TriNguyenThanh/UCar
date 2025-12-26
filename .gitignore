@@ -419,3 +419,5 @@ FodyWeavers.xsd
 *.msp
 package-lock.json
 .agent/*
+appsettings.json
+appsettings.Development.json
