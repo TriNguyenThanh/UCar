@@ -1,50 +1,269 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - UCar</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/UCar.styles.css" asp-append-version="true" />
+    <meta name="description" content="@(ViewData["Description"] ?? "Hệ thống quản lý thuê xe UCar")" />
+    
+    <!-- Google Fonts: Be Vietnam Pro + Material Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- Materialize CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+    
+    <!-- iziToast - Toast Notifications (giống react-toastify) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css" rel="stylesheet">
+    
+    <!-- UCar Custom Theme (override Materialize) -->
+    <link rel="stylesheet" href="~/css/ucar-theme.css" asp-append-version="true" />
+    
+    <!-- Page specific styles -->
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">UCar</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
+    <!-- Navigation -->
+    <nav class="ucar-navbar">
+        <div class="nav-wrapper container">
+            <!-- Brand -->
+            <a asp-controller="Home" asp-action="Index" class="brand-logo">
+                <i class="material-icons left">directions_car</i>UCar
+            </a>
+            
+            <!-- Mobile Toggle -->
+            <a href="#" data-target="mobile-nav" class="sidenav-trigger">
+                <i class="material-icons">menu</i>
+            </a>
+            
+            <!-- Desktop Nav Links -->
+            <ul class="right hide-on-med-and-down">
+                <li><a asp-controller="Home" asp-action="Index"><i class="material-icons left">home</i>Trang chủ</a></li>
+                <li><a asp-controller="Cars" asp-action="Index"><i class="material-icons left">directions_car</i>Xe</a></li>
+                <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons left">event</i>Đặt xe</a></li>
+                <li><a asp-controller="Reports" asp-action="Index"><i class="material-icons left">bar_chart</i>Báo cáo</a></li>
+                
+                <!-- User Dropdown -->
+                <li>
+                    <a class="dropdown-trigger" href="#!" data-target="user-dropdown">
+                        admin@ucar.com<i class="material-icons right">arrow_drop_down</i>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    
+    <!-- User Dropdown Structure -->
+    <ul id="user-dropdown" class="dropdown-content">
+        <li><a href="#!"><i class="material-icons">person</i>Hồ sơ</a></li>
+        <li><a href="#!"><i class="material-icons">settings</i>Cài đặt</a></li>
+        <li class="divider"></li>
+        <li><a href="#!" class="red-text"><i class="material-icons">exit_to_app</i>Đăng xuất</a></li>
+    </ul>
+    
+    <!-- Mobile Sidenav -->
+    <ul class="sidenav" id="mobile-nav">
+        <li>
+            <div class="user-view">
+                <div class="background" style="background: linear-gradient(135deg, #00275e 0%, #667eea 100%);"></div>
+                <a href="#!"><span class="white-text name">Admin User</span></a>
+                <a href="#!"><span class="white-text email">admin@ucar.com</span></a>
+            </div>
+        </li>
+        <li><a asp-controller="Home" asp-action="Index"><i class="material-icons">home</i>Trang chủ</a></li>
+        <li><a asp-controller="Cars" asp-action="Index"><i class="material-icons">directions_car</i>Xe</a></li>
+        <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons">event</i>Đặt xe</a></li>
+        <li><a asp-controller="Reports" asp-action="Index"><i class="material-icons">bar_chart</i>Báo cáo</a></li>
+        <li class="divider"></li>
+        <li><a href="#!"><i class="material-icons">person</i>Hồ sơ</a></li>
+        <li><a href="#!"><i class="material-icons">settings</i>Cài đặt</a></li>
+        <li><a href="#!" class="red-text"><i class="material-icons">exit_to_app</i>Đăng xuất</a></li>
+    </ul>
+
+    <!-- Main Content -->
+    <main>
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer class="page-footer ucar-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col s12 center-align">
+                    <p class="grey-text text-lighten-4">
+                        &copy; @DateTime.Now.Year UCar - Hệ thống quản lý thuê xe thông minh
+                    </p>
                 </div>
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2025 - UCar - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- Materialize JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    
+    <!-- Initialize Materialize Components -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize sidenav
+            var sidenavElems = document.querySelectorAll('.sidenav');
+            M.Sidenav.init(sidenavElems);
+            
+            // Initialize dropdowns
+            var dropdownElems = document.querySelectorAll('.dropdown-trigger');
+            M.Dropdown.init(dropdownElems, {
+                coverTrigger: false,
+                constrainWidth: false
+            });
+            
+            // Initialize select
+            var selectElems = document.querySelectorAll('select');
+            M.FormSelect.init(selectElems);
+            
+            // Initialize datepickers
+            var dateElems = document.querySelectorAll('.datepicker');
+            M.Datepicker.init(dateElems, {
+                format: 'dd/mm/yyyy',
+                i18n: {
+                    cancel: 'Hủy',
+                    clear: 'Xóa',
+                    done: 'Chọn',
+                    months: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+                    monthsShort: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'],
+                    weekdays: ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'],
+                    weekdaysShort: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+                    weekdaysAbbrev: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+                }
+            });
+            
+            // Initialize timepickers
+            var timeElems = document.querySelectorAll('.timepicker');
+            M.Timepicker.init(timeElems, {
+                twelveHour: false,
+                i18n: {
+                    cancel: 'Hủy',
+                    clear: 'Xóa',
+                    done: 'Chọn'
+                }
+            });
+            
+            // Initialize tooltips
+            var tooltipElems = document.querySelectorAll('.tooltipped');
+            M.Tooltip.init(tooltipElems);
+            
+            // Initialize modals
+            var modalElems = document.querySelectorAll('.modal');
+            M.Modal.init(modalElems);
+            
+            // Initialize floating action buttons
+            var fabElems = document.querySelectorAll('.fixed-action-btn');
+            M.FloatingActionButton.init(fabElems);
+            
+            // Initialize tabs
+            var tabElems = document.querySelectorAll('.tabs');
+            M.Tabs.init(tabElems);
+            
+            // Initialize textareas
+            M.textareaAutoResize(document.querySelectorAll('textarea'));
+        });
+    </script>
+    
+    <!-- iziToast JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+    
+    <!-- UCar Toast Wrapper - sử dụng giống react-toastify -->
+    <script>
+        // UCar Toast - wrapper cho iziToast
+        const UCarToast = {
+            // Default settings
+            defaults: {
+                position: 'topRight',
+                timeout: 3000,
+                progressBar: true,
+                progressBarColor: 'rgba(255,255,255,0.7)',
+                close: true,
+                closeOnClick: true,
+                pauseOnHover: true,
+                transitionIn: 'flipInX',
+                transitionOut: 'flipOutX'
+            },
+            
+            // Success toast
+            success: function(message, title = 'Thành công!') {
+                iziToast.success({
+                    ...this.defaults,
+                    title: title,
+                    message: message,
+                    icon: 'material-icons',
+                    iconText: 'check_circle',
+                    color: '#4CAF50'
+                });
+            },
+            
+            // Error toast
+            error: function(message, title = 'Lỗi!') {
+                iziToast.error({
+                    ...this.defaults,
+                    title: title,
+                    message: message,
+                    icon: 'material-icons',
+                    iconText: 'error',
+                    color: '#f44336'
+                });
+            },
+            
+            // Warning toast
+            warning: function(message, title = 'Cảnh báo!') {
+                iziToast.warning({
+                    ...this.defaults,
+                    title: title,
+                    message: message,
+                    icon: 'material-icons',
+                    iconText: 'warning',
+                    color: '#ff9800'
+                });
+            },
+            
+            // Info toast
+            info: function(message, title = 'Thông tin') {
+                iziToast.info({
+                    ...this.defaults,
+                    title: title,
+                    message: message,
+                    icon: 'material-icons',
+                    iconText: 'info',
+                    color: '#2196F3'
+                });
+            },
+            
+            // Custom toast with options
+            show: function(options) {
+                iziToast.show({
+                    ...this.defaults,
+                    ...options
+                });
+            }
+        };
+        
+        // Expose globally
+        window.UCarToast = UCarToast;
+        
+        // Legacy support - showToast function
+        function showToast(type, message, duration = 3000) {
+            UCarToast.defaults.timeout = duration;
+            switch(type) {
+                case 'success': UCarToast.success(message); break;
+                case 'error': UCarToast.error(message); break;
+                case 'warning': UCarToast.warning(message); break;
+                case 'info': UCarToast.info(message); break;
+                default: UCarToast.info(message);
+            }
+        }
+        window.showToast = showToast;
+    </script>
+    
+    <!-- Page specific scripts -->
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
