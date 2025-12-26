@@ -1,5 +1,5 @@
 is_global = true
-build_property.TargetFramework = net9.0
+build_property.TargetFramework = net8.0
 build_property.TargetPlatformMinVersion = 
 build_property.UsingMicrosoftNETSdkWeb = true
 build_property.ProjectTypeGuids = 
@@ -12,12 +12,12 @@ build_property.RootNamespace = UCar
 build_property.ProjectDir = E:\Workspace\Code\CSharp\UCar\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
-build_property.RazorLangVersion = 9.0
+build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
 build_property.MSBuildProjectDirectory = E:\Workspace\Code\CSharp\UCar
 build_property._RazorSourceGeneratorDebug = 
-build_property.EffectiveAnalysisLevelStyle = 9.0
+build_property.EffectiveAnalysisLevelStyle = 8.0
 build_property.EnableCodeStyleSeverity = 
 
 [E:/Workspace/Code/CSharp/UCar/Views/Home/Index.cshtml]
