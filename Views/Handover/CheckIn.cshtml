@@ -1,0 +1,194 @@
+@model UCar.Models.DTOs.Handover.CheckInFormDto
+@{
+    ViewData["Title"] = "Nhận xe từ khách";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header -->
+    <div style="margin-bottom: 1.5rem;">
+        <a href="@Url.Action("Return")" class="btn-flat">
+            <i class="material-icons left">arrow_back</i>Quay lại
+        </a>
+        <h4 style="font-weight: 700; margin-top: 0.5rem;">
+            <i class="material-icons orange-text" style="vertical-align: middle;">login</i>
+            Nhận xe từ khách - @Model.ContractCode
+        </h4>
+    </div>
+
+    <form asp-action="CheckIn" method="post">
+        <input type="hidden" name="ContractId" value="@Model.ContractId" />
+        
+        <div class="row">
+            <!-- Left Column: Contract Info -->
+            <div class="col s12 m4">
+                <div class="card">
+                    <div class="card-content">
+                        <span class="card-title">Thông tin giao xe</span>
+                        <table>
+                            <tr><td><strong>Mã HĐ:</strong></td><td>@Model.ContractCode</td></tr>
+                            <tr><td><strong>Khách:</strong></td><td>@Model.CustomerName</td></tr>
+                            <tr><td><strong>SĐT:</strong></td><td>@Model.CustomerPhone</td></tr>
+                        </table>
+                        <hr/>
+                        <table>
+                            <tr><td><strong>Xe:</strong></td><td>@Model.PlateNo</td></tr>
+                            <tr><td><strong>Loại:</strong></td><td>@Model.VehicleName</td></tr>
+                        </table>
+                        <hr/>
+                        <table>
+                            <tr><td><strong>Giao ngày:</strong></td><td>@Model.HandedAt.ToString("dd/MM/yyyy HH:mm")</td></tr>
+                            <tr><td><strong>Trả DK:</strong></td><td class="@(Model.IsOverdue ? "red-text" : "")">@Model.PlannedEnd.ToString("dd/MM/yyyy HH:mm")</td></tr>
+                            @if (Model.IsOverdue)
+                            {
+                                <tr><td><strong>Quá hạn:</strong></td><td class="red-text">@Model.OvertimeHours.ToString("N1") giờ</td></tr>
+                            }
+                        </table>
+                        <hr/>
+                        <p><strong>Khi giao:</strong></p>
+                        <table>
+                            <tr><td>ODO:</td><td>@Model.OdoKmOut.ToString("N0") km</td></tr>
+                            <tr><td>Nhiên liệu:</td><td>@Model.FuelLevelOut.ToString("N0")%</td></tr>
+                        </table>
+                        @if (!string.IsNullOrEmpty(Model.PreExistingDamages))
+                        {
+                            <p><strong>Hư hỏng có sẵn:</strong><br/>@Model.PreExistingDamages</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Check-in Form -->
+            <div class="col s12 m8">
+                <!-- Vehicle Condition -->
+                <div class="card">
+                    <div class="card-content">
+                        <span class="card-title">Tình trạng xe khi nhận</span>
+                        
+                        <div class="row">
+                            <div class="input-field col s6">
+                                <i class="material-icons prefix">speed</i>
+                                <input type="number" id="odoKmIn" name="OdoKmIn" value="@Model.OdoKmOut" required step="0.01" min="@Model.OdoKmOut" />
+                                <label for="odoKmIn" class="active">Số km (ODO) * (min: @Model.OdoKmOut.ToString("N0"))</label>
+                            </div>
+                            <div class="input-field col s6">
+                                <i class="material-icons prefix">local_gas_station</i>
+                                <input type="number" id="fuelLevelIn" name="FuelLevelIn" value="@Model.FuelLevelOut" required min="0" max="100" />
+                                <label for="fuelLevelIn" class="active">Mức nhiên liệu (%) * (giao: @Model.FuelLevelOut%)</label>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <textarea id="exteriorCondition" name="ExteriorCondition" class="materialize-textarea"></textarea>
+                                <label for="exteriorCondition">Tình trạng ngoại thất</label>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <textarea id="interiorCondition" name="InteriorCondition" class="materialize-textarea"></textarea>
+                                <label for="interiorCondition">Tình trạng nội thất</label>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <textarea id="damagesFound" name="DamagesFound" class="materialize-textarea"></textarea>
+                                <label for="damagesFound">Hư hỏng phát hiện (nếu có)</label>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col s6">
+                                <label>
+                                    <input type="checkbox" name="NeedsCleaning" value="true" />
+                                    <span>Cần vệ sinh</span>
+                                </label>
+                            </div>
+                            <div class="col s6">
+                                <label>
+                                    <input type="checkbox" name="NeedsMaintenance" value="true" />
+                                    <span>Cần bảo dưỡng/sửa chữa</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accessories Return -->
+                <div class="card">
+                    <div class="card-content">
+                        <span class="card-title">Phụ kiện trả lại</span>
+                        <table class="striped">
+                            <thead>
+                                <tr>
+                                    <th>Tên phụ kiện</th>
+                                    <th>Đã giao</th>
+                                    <th>Trả lại</th>
+                                    <th>OK</th>
+                                    <th>Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.HandedAccessories.Count; i++)
+                                {
+                                    var acc = Model.HandedAccessories[i];
+                                    <tr>
+                                        <td>
+                                            @acc.AccessoryName
+                                            <input type="hidden" name="AccessoriesReturned[@i].AccessoryName" value="@acc.AccessoryName" />
+                                            <input type="hidden" name="AccessoriesReturned[@i].EstimatedValue" value="@acc.EstimatedValue" />
+                                        </td>
+                                        <td>
+                                            @acc.QuantityOut
+                                            <input type="hidden" name="AccessoriesReturned[@i].QuantityOut" value="@acc.QuantityOut" />
+                                        </td>
+                                        <td>
+                                            <input type="number" name="AccessoriesReturned[@i].QuantityIn" value="@acc.QuantityIn" style="width: 50px;" min="0" max="@acc.QuantityOut" />
+                                        </td>
+                                        <td>
+                                            <label>
+                                                <input type="checkbox" name="AccessoriesReturned[@i].IsReturnedOk" value="true" checked />
+                                                <span></span>
+                                            </label>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="AccessoriesReturned[@i].DamageNote" placeholder="Ghi chú..." style="width: 100px;" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Notes & Submit -->
+                <div class="card">
+                    <div class="card-content">
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <textarea id="note" name="Note" class="materialize-textarea"></textarea>
+                                <label for="note">Ghi chú</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-action">
+                        <button type="submit" class="btn waves-effect waves-light orange">
+                            <i class="material-icons left">check</i>Xác nhận nhận xe
+                        </button>
+                        <a href="@Url.Action("Return")" class="btn-flat">Hủy</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            M.updateTextFields();
+            M.textareaAutoResize(document.querySelectorAll('textarea'));
+        });
+    </script>
+}

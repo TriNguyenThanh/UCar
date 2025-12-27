@@ -419,3 +419,4 @@ FodyWeavers.xsd
 *.msp
 package-lock.json
 .agent/*
+.vscode/*

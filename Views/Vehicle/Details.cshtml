@@ -1,0 +1,344 @@
+@model UCar.Models.DTOs.Vehicle.VehicleDetailDto
+@using UCar.Models.DTOs.Vehicle
+@using UCar.Models.Enums
+@{
+    ViewData["Title"] = $"Chi tiết xe - {Model.PlateNo}";
+    ViewData["Description"] = $"Thông tin chi tiết xe {Model.Make} {Model.ModelName} - {Model.PlateNo}";
+    var allowedTransitions = ViewBag.AllowedTransitions as List<SelectListItem> ?? new List<SelectListItem>();
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header Section -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+            <a asp-action="Index" class="btn-flat waves-effect" style="margin-bottom: 0.5rem;">
+                <i class="material-icons left">arrow_back</i>Quay lại danh sách
+            </a>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">directions_car</i>
+                @Model.Make @Model.ModelName
+            </h4>
+            <p class="grey-text text-darken-1" style="margin: 0;">
+                <strong>@Model.PlateNo</strong> • @Model.VehicleTypeName
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <a asp-action="Edit" asp-route-id="@Model.VehicleId" class="btn waves-effect waves-light">
+                <i class="material-icons left">edit</i>Chỉnh sửa
+            </a>
+            @if (allowedTransitions.Any())
+            {
+                <a href="#statusModal" class="btn btn-secondary waves-effect waves-light modal-trigger">
+                    <i class="material-icons left">swap_horiz</i>Đổi trạng thái
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Status Badge -->
+    <div class="card-panel" style="margin-bottom: 1.5rem;">
+        <div class="row valign-wrapper" style="margin-bottom: 0;">
+            <div class="col s12 m4">
+                <span class="grey-text text-darken-1" style="font-weight: 500;">Trạng thái hiện tại</span>
+                <div style="margin-top: 0.5rem;">
+                    <span class="chip @VehicleStatusHelper.GetChipClass(Model.CurrentStatus)" style="font-size: 1rem; padding: 8px 16px; height: auto;">
+                        <i class="material-icons" style="margin-right: 4px;">@VehicleStatusHelper.GetIcon(Model.CurrentStatus)</i>
+                        @VehicleStatusHelper.GetDisplayName(Model.CurrentStatus)
+                    </span>
+                </div>
+            </div>
+            <div class="col s12 m4">
+                <span class="grey-text text-darken-1" style="font-weight: 500;">Số km hiện tại</span>
+                <h5 style="margin: 0.5rem 0 0; font-weight: 700;">@Model.CurrentOdoKm.ToString("N0") km</h5>
+            </div>
+            <div class="col s12 m4">
+                <span class="grey-text text-darken-1" style="font-weight: 500;">Chi nhánh</span>
+                <h5 style="margin: 0.5rem 0 0; font-weight: 700;">@Model.BranchName</h5>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="card">
+        <div class="card-content" style="padding: 0;">
+            <ul class="tabs">
+                <li class="tab"><a class="active" href="#tab-info">Thông tin xe</a></li>
+                <li class="tab"><a href="#tab-history">Lịch sử trạng thái</a></li>
+            </ul>
+        </div>
+
+        <!-- Tab: Vehicle Info -->
+        <div id="tab-info" class="card-content">
+            <div class="row">
+                <div class="col s12 m6">
+                    <h6 style="font-weight: 600; margin-bottom: 1rem;">
+                        <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">info</i>
+                        Thông tin cơ bản
+                    </h6>
+                    <table class="striped">
+                        <tbody>
+                            <tr>
+                                <td class="grey-text">Biển số xe</td>
+                                <td><strong>@Model.PlateNo</strong></td>
+                            </tr>
+                            <tr>
+                                <td class="grey-text">Hãng xe</td>
+                                <td>@Model.Make</td>
+                            </tr>
+                            <tr>
+                                <td class="grey-text">Dòng xe</td>
+                                <td>@Model.ModelName</td>
+                            </tr>
+                            <tr>
+                                <td class="grey-text">Loại xe</td>
+                                <td>@Model.VehicleTypeName</td>
+                            </tr>
+                            <tr>
+                                <td class="grey-text">Màu sắc</td>
+                                <td>@(Model.Color ?? "Chưa cập nhật")</td>
+                            </tr>
+                            <tr>
+                                <td class="grey-text">Năm sản xuất</td>
+                                <td>@Model.ManufactureYear</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col s12 m6">
+                    <h6 style="font-weight: 600; margin-bottom: 1rem;">
+                        <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">settings</i>
+                        Thông số kỹ thuật
+                    </h6>
+                    <table class="striped">
+                        <tbody>
+                            <tr>
+                                <td class="grey-text">Số chỗ ngồi</td>
+                                <td>@Model.Seats chỗ</td>
+                            </tr>
+                            <tr>
+                                <td class="grey-text">Hộp số</td>
+                                <td>@(Model.Transmission == TransmissionType.Auto ? "Tự động" : Model.Transmission == TransmissionType.Manual ? "Số sàn" : "Chưa cập nhật")</td>
+                            </tr>
+                            <tr>
+                                <td class="grey-text">Nhiên liệu</td>
+                                <td>@(Model.FuelType ?? "Chưa cập nhật")</td>
+                            </tr>
+                            <tr>
+                                <td class="grey-text">Số km</td>
+                                <td>@Model.CurrentOdoKm.ToString("N0") km</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h6 style="font-weight: 600; margin: 1.5rem 0 1rem;">
+                        <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">location_on</i>
+                        Chi nhánh quản lý
+                    </h6>
+                    <table class="striped">
+                        <tbody>
+                            <tr>
+                                <td class="grey-text">Tên chi nhánh</td>
+                                <td>@Model.BranchName</td>
+                            </tr>
+                            <tr>
+                                <td class="grey-text">Địa chỉ</td>
+                                <td>@(Model.BranchAddress ?? "Chưa cập nhật")</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Status History -->
+        <div id="tab-history" class="card-content">
+            <h6 style="font-weight: 600; margin-bottom: 1rem;">
+                <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">history</i>
+                Lịch sử thay đổi trạng thái
+            </h6>
+            @if (Model.RecentStatusHistory?.Any() == true)
+            {
+                <table class="striped highlight">
+                    <thead>
+                        <tr>
+                            <th>Thời gian</th>
+                            <th>Từ trạng thái</th>
+                            <th>Sang trạng thái</th>
+                            <th>Ghi chú</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var history in Model.RecentStatusHistory)
+                        {
+                            <tr>
+                                <td>@history.ChangedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(history.FromStatus))
+                                    {
+                                        @if (Enum.TryParse<VehicleStatus>(history.FromStatus, out var fromStatus))
+                                        {
+                                            <span class="chip @VehicleStatusHelper.GetChipClass(fromStatus)">
+                                                @VehicleStatusHelper.GetDisplayName(fromStatus)
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span>@history.FromStatus</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="grey-text">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (Enum.TryParse<VehicleStatus>(history.ToStatus, out var toStatus))
+                                    {
+                                        <span class="chip @VehicleStatusHelper.GetChipClass(toStatus)">
+                                            @VehicleStatusHelper.GetDisplayName(toStatus)
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span>@history.ToStatus</span>
+                                    }
+                                </td>
+                                <td>@(history.Note ?? "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state" style="padding: 2rem;">
+                    <i class="material-icons" style="font-size: 3rem;">history</i>
+                    <p>Chưa có lịch sử thay đổi trạng thái</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Delete Section -->
+    <div class="card">
+        <div class="card-content">
+            <span class="card-title red-text" style="font-weight: 600;">
+                <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">warning</i>
+                Xóa xe
+            </span>
+            <p class="grey-text">Hành động này không thể hoàn tác. Xe chỉ có thể xóa khi chưa có booking hoặc hợp đồng thuê.</p>
+            <form asp-action="Delete" asp-route-id="@Model.VehicleId" method="post" 
+                  onsubmit="return confirm('Bạn có chắc chắn muốn xóa xe này?');">
+                <button type="submit" class="btn red waves-effect waves-light">
+                    <i class="material-icons left">delete</i>Xóa xe
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Status Change Modal -->
+<div id="statusModal" class="modal">
+    <div class="modal-content">
+        <h4>
+            <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">swap_horiz</i>
+            Thay đổi trạng thái xe
+        </h4>
+        <p>Chọn trạng thái mới cho xe <strong>@Model.PlateNo</strong>:</p>
+        
+        <div class="input-field">
+            <select id="newStatus">
+                <option value="" disabled selected>Chọn trạng thái mới</option>
+                @foreach (var item in allowedTransitions)
+                {
+                    <option value="@item.Value">@item.Text</option>
+                }
+            </select>
+            <label for="newStatus">Trạng thái mới</label>
+        </div>
+        
+        <div class="input-field">
+            <i class="material-icons prefix">mode_edit</i>
+            <textarea id="statusNote" class="materialize-textarea" maxlength="500"></textarea>
+            <label for="statusNote">Ghi chú</label>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <a href="#!" class="modal-close waves-effect btn-flat">Hủy</a>
+        <button type="button" id="btnChangeStatus" class="waves-effect btn">
+            <i class="material-icons left">check</i>Xác nhận
+        </button>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tabs
+        var tabElems = document.querySelectorAll('.tabs');
+        M.Tabs.init(tabElems);
+        
+        // Initialize modal
+        var modalElems = document.querySelectorAll('.modal');
+        M.Modal.init(modalElems);
+        
+        // Initialize select in modal
+        var selectElems = document.querySelectorAll('select');
+        M.FormSelect.init(selectElems);
+        
+        // Initialize textarea
+        M.textareaAutoResize(document.querySelectorAll('textarea'));
+
+        // Handle status change
+        var btnChangeStatus = document.getElementById('btnChangeStatus');
+        if (btnChangeStatus) {
+            btnChangeStatus.addEventListener('click', function() {
+                var newStatus = document.getElementById('newStatus').value;
+                var note = document.getElementById('statusNote').value;
+                
+                if (!newStatus) {
+                    UCarToast.warning('Vui lòng chọn trạng thái mới');
+                    return;
+                }
+                
+                fetch('@Url.Action("ChangeStatus")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        vehicleId: '@Model.VehicleId',
+                        newStatus: parseInt(newStatus),
+                        note: note
+                    })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        UCarToast.success(result.message);
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        UCarToast.error(result.message);
+                    }
+                })
+                .catch(error => {
+                    UCarToast.error('Có lỗi xảy ra');
+                    console.error(error);
+                });
+            });
+        }
+
+        // Show toast messages from TempData
+        @if (TempData["Success"] != null)
+        {
+            <text>UCarToast.success('@TempData["Success"]');</text>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <text>UCarToast.error('@TempData["Error"]');</text>
+        }
+    });
+</script>
+}
