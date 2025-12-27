@@ -1,0 +1,249 @@
+@model CustomerCreateViewModel
+@using UCar.ViewModels
+@using UCar.Models.Enums
+
+@{
+    ViewData["Title"] = "Thêm khách hàng mới";
+    ViewData["Description"] = "Đăng ký thông tin khách hàng mới";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Page Header -->
+    <div style="margin-bottom: 2rem;">
+        <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+            <i class="material-icons green-text" style="vertical-align: middle; margin-right: 8px;">person_add</i>
+            Thêm khách hàng mới
+        </h4>
+        <p class="grey-text text-darken-1" style="font-size: 1.125rem; margin: 0;">
+            Đăng ký thông tin khách hàng và giấy tờ tùy thân (DFD 2.1)
+        </p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card">
+        <div class="card-content">
+            <form asp-action="Create" method="post" enctype="multipart/form-data">
+                <div asp-validation-summary="ModelOnly" class="red-text" style="margin-bottom: 1rem;"></div>
+
+                <!-- Account Information Section -->
+                <h5 style="font-weight: 600; margin-bottom: 1.5rem; color: #00275e;">
+                    <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">account_circle</i>
+                    Thông tin tài khoản
+                </h5>
+                
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">account_circle</i>
+                        <input asp-for="Username" type="text" class="validate" required>
+                        <label asp-for="Username"></label>
+                        <span asp-validation-for="Username" class="red-text"></span>
+                    </div>
+
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">lock</i>
+                        <input asp-for="Password" type="password" class="validate" required>
+                        <label asp-for="Password"></label>
+                        <span asp-validation-for="Password" class="red-text"></span>
+                        <span class="helper-text">Tối thiểu 6 ký tự</span>
+                    </div>
+                </div>
+
+                <div class="divider" style="margin: 2rem 0;"></div>
+
+                <!-- Personal Information Section -->
+                <h5 style="font-weight: 600; margin-bottom: 1.5rem; color: #00275e;">
+                    <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">person</i>
+                    Thông tin cá nhân
+                </h5>
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        <i class="material-icons prefix">badge</i>
+                        <input asp-for="FullName" type="text" class="validate" required>
+                        <label asp-for="FullName"></label>
+                        <span asp-validation-for="FullName" class="red-text"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">email</i>
+                        <input asp-for="Email" type="email" class="validate" required>
+                        <label asp-for="Email"></label>
+                        <span asp-validation-for="Email" class="red-text"></span>
+                    </div>
+
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">phone</i>
+                        <input asp-for="Phone" type="tel" class="validate" required>
+                        <label asp-for="Phone"></label>
+                        <span asp-validation-for="Phone" class="red-text"></span>
+                        <span class="helper-text">VD: 0912345678 hoặc +84912345678</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">cake</i>
+                        <input asp-for="Dob" type="date" class="validate">
+                        <label asp-for="Dob"></label>
+                        <span asp-validation-for="Dob" class="red-text"></span>
+                    </div>
+
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">location_on</i>
+                        <input asp-for="AddressText" type="text" class="validate">
+                        <label asp-for="AddressText"></label>
+                        <span asp-validation-for="AddressText" class="red-text"></span>
+                    </div>
+                </div>
+
+                <div class="divider" style="margin: 2rem 0;"></div>
+
+                <!-- Document Information Section (DFD 2.1: CCCD/GPLX) -->
+                <h5 style="font-weight: 600; margin-bottom: 1.5rem; color: #00275e;">
+                    <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">credit_card</i>
+                    Giấy tờ tùy thân
+                </h5>
+
+                <div class="row">
+                    <div class="input-field col s12 m4">
+                        <select asp-for="DocumentType" class="validate" required>
+                            <option value="" disabled selected>Chọn loại giấy tờ</option>
+                            <option value="@CustomerDocumentType.IdCard">CCCD/CMND</option>
+                            <option value="@CustomerDocumentType.License">Giấy phép lái xe</option>
+                            <option value="@CustomerDocumentType.Passport">Hộ chiếu</option>
+                        </select>
+                        <label asp-for="DocumentType"></label>
+                        <span asp-validation-for="DocumentType" class="red-text"></span>
+                    </div>
+
+                    <div class="input-field col s12 m8">
+                        <i class="material-icons prefix">confirmation_number</i>
+                        <input asp-for="DocumentNumber" type="text" class="validate" required>
+                        <label asp-for="DocumentNumber"></label>
+                        <span asp-validation-for="DocumentNumber" class="red-text"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">date_range</i>
+                        <input asp-for="DocumentIssuedDate" type="date" class="validate">
+                        <label asp-for="DocumentIssuedDate"></label>
+                        <span asp-validation-for="DocumentIssuedDate" class="red-text"></span>
+                    </div>
+
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">place</i>
+                        <input asp-for="DocumentIssuedPlace" type="text" class="validate">
+                        <label asp-for="DocumentIssuedPlace"></label>
+                        <span asp-validation-for="DocumentIssuedPlace" class="red-text"></span>
+                    </div>
+                </div>
+
+                <!-- Document Images Upload -->
+                <div class="row">
+                    <div class="col s12 m6">
+                        <div class="file-field input-field">
+                            <div class="btn blue">
+                                <span><i class="material-icons left">image</i>Ảnh mặt trước</span>
+                                <input asp-for="DocumentImageFront" type="file" accept="image/*">
+                            </div>
+                            <div class="file-path-wrapper">
+                                <input class="file-path validate" type="text" placeholder="Chọn ảnh mặt trước">
+                            </div>
+                        </div>
+                        <span asp-validation-for="DocumentImageFront" class="red-text"></span>
+                    </div>
+
+                    <div class="col s12 m6">
+                        <div class="file-field input-field">
+                            <div class="btn blue">
+                                <span><i class="material-icons left">image</i>Ảnh mặt sau</span>
+                                <input asp-for="DocumentImageBack" type="file" accept="image/*">
+                            </div>
+                            <div class="file-path-wrapper">
+                                <input class="file-path validate" type="text" placeholder="Chọn ảnh mặt sau">
+                            </div>
+                        </div>
+                        <span asp-validation-for="DocumentImageBack" class="red-text"></span>
+                    </div>
+                </div>
+
+                <div class="divider" style="margin: 2rem 0;"></div>
+
+                <!-- Action Buttons -->
+                <div class="row">
+                    <div class="col s12 center-align">
+                        <button type="submit" class="btn waves-effect waves-light green" style="margin-right: 1rem;">
+                            <i class="material-icons left">check</i>Lưu thông tin
+                        </button>
+                        <a asp-action="Index" class="btn-flat waves-effect">
+                            <i class="material-icons left">close</i>Hủy
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Materialize components
+            var selects = document.querySelectorAll('select');
+            M.FormSelect.init(selects);
+
+            // Update labels for pre-filled inputs
+            M.updateTextFields();
+
+            // Client-side validation for username
+            var usernameInput = document.querySelector('input[name="Username"]');
+            if (usernameInput) {
+                usernameInput.addEventListener('blur', async function() {
+                    var username = this.value;
+                    if (username) {
+                        var response = await fetch(`/Customer/CheckUsername?username=${encodeURIComponent(username)}`);
+                        var data = await response.json();
+                        if (data.exists) {
+                            UCarToast.warning('Tên đăng nhập đã tồn tại');
+                        }
+                    }
+                });
+            }
+
+            // Client-side validation for email
+            var emailInput = document.querySelector('input[name="Email"]');
+            if (emailInput) {
+                emailInput.addEventListener('blur', async function() {
+                    var email = this.value;
+                    if (email) {
+                        var response = await fetch(`/Customer/CheckEmail?email=${encodeURIComponent(email)}`);
+                        var data = await response.json();
+                        if (data.exists) {
+                            UCarToast.warning('Email đã được sử dụng');
+                        }
+                    }
+                });
+            }
+
+            // Client-side validation for phone
+            var phoneInput = document.querySelector('input[name="Phone"]');
+            if (phoneInput) {
+                phoneInput.addEventListener('blur', async function() {
+                    var phone = this.value;
+                    if (phone) {
+                        var response = await fetch(`/Customer/CheckPhone?phone=${encodeURIComponent(phone)}`);
+                        var data = await response.json();
+                        if (data.exists) {
+                            UCarToast.warning('Số điện thoại đã được sử dụng');
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+}

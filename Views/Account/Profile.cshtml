@@ -1,0 +1,375 @@
+@model UCar.ViewModels.UserProfileViewModel
+@{
+    ViewData["Title"] = "Thông tin tài khoản";
+}
+
+<!-- Page Header -->
+<div class="section ucar-header-section">
+    <div class="container">
+        <div class="row">
+            <div class="col s12">
+                <h4 class="white-text">
+                    <i class="material-icons left">account_circle</i>
+                    Thông tin tài khoản
+                </h4>
+                <p class="white-text text-lighten-2">Xem và quản lý thông tin cá nhân của bạn</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="section">
+    <div class="container">
+        <div class="row">
+            <!-- Left Column - Account Info -->
+            <div class="col s12 m6 l4">
+                <div class="card">
+                    <div class="card-content center-align">
+                        <div class="ucar-avatar-large">
+                            <i class="material-icons">person</i>
+                        </div>
+                        <h5 class="mt-4">
+                            @if (!string.IsNullOrEmpty(Model.CustomerFullName))
+                            {
+                                @Model.CustomerFullName
+                            }
+                            else if (!string.IsNullOrEmpty(Model.StaffFullName))
+                            {
+                                @Model.StaffFullName
+                            }
+                            else
+                            {
+                                @Model.Username
+                            }
+                        </h5>
+                        <p class="grey-text">@@@Model.Username</p>
+                        
+                        @if (Model.RoleCode == "Admin")
+                        {
+                            <span class="chip red white-text">
+                                <i class="material-icons tiny">verified_user</i> Administrator
+                            </span>
+                        }
+                        else if (Model.RoleCode == "Staff")
+                        {
+                            <span class="chip blue white-text">
+                                <i class="material-icons tiny">badge</i> @Model.RoleName
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="chip green white-text">
+                                <i class="material-icons tiny">person</i> @Model.RoleName
+                            </span>
+                        }
+
+                        @if (Model.IsActive)
+                        {
+                            <div class="mt-3">
+                                <span class="chip green lighten-4 green-text">
+                                    <i class="material-icons tiny">check_circle</i> Đang hoạt động
+                                </span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mt-3">
+                                <span class="chip red lighten-4 red-text">
+                                    <i class="material-icons tiny">block</i> Không hoạt động
+                                </span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-content">
+                        <span class="card-title">Hành động</span>
+                        <ul class="collection">
+                            <li class="collection-item">
+                                <a href="#!" class="black-text">
+                                    <i class="material-icons left">edit</i>Chỉnh sửa thông tin
+                                </a>
+                            </li>
+                            <li class="collection-item">
+                                <a href="#!" class="black-text">
+                                    <i class="material-icons left">lock</i>Đổi mật khẩu
+                                </a>
+                            </li>
+                            <li class="collection-item">
+                                <a href="#!" class="black-text">
+                                    <i class="material-icons left">notifications</i>Cài đặt thông báo
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Detailed Info -->
+            <div class="col s12 m6 l8">
+                <!-- Account Information -->
+                <div class="card">
+                    <div class="card-content">
+                        <span class="card-title">
+                            <i class="material-icons left">info</i>
+                            Thông tin tài khoản
+                        </span>
+                        <table class="striped">
+                            <tbody>
+                                <tr>
+                                    <td><strong>User ID:</strong></td>
+                                    <td><code>@Model.UserId</code></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Tên đăng nhập:</strong></td>
+                                    <td>@Model.Username</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Email:</strong></td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(Model.Email))
+                                        {
+                                            <a href="mailto:@Model.Email">@Model.Email</a>
+                                        }
+                                        else
+                                        {
+                                            <span class="grey-text">Chưa cập nhật</span>
+                                        }
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Số điện thoại:</strong></td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(Model.Phone))
+                                        {
+                                            <span>@Model.Phone</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="grey-text">Chưa cập nhật</span>
+                                        }
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Vai trò:</strong></td>
+                                    <td>@Model.RoleName (@Model.RoleCode)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Ngày tạo:</strong></td>
+                                    <td>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Đăng nhập gần nhất:</strong></td>
+                                    <td>
+                                        @if (Model.LastLoginAt.HasValue)
+                                        {
+                                            <span>@Model.LastLoginAt.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="grey-text">Chưa đăng nhập</span>
+                                        }
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                @if (Model.CustomerId.HasValue)
+                {
+                    <!-- Customer Information -->
+                    <div class="card">
+                        <div class="card-content">
+                            <span class="card-title">
+                                <i class="material-icons left">person</i>
+                                Thông tin khách hàng
+                            </span>
+                            <table class="striped">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Mã khách hàng:</strong></td>
+                                        <td><code>@Model.CustomerId</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Họ và tên:</strong></td>
+                                        <td>@Model.CustomerFullName</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Ngày sinh:</strong></td>
+                                        <td>
+                                            @if (Model.CustomerDob.HasValue)
+                                            {
+                                                <span>@Model.CustomerDob.Value.ToString("dd/MM/yyyy")</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="grey-text">Chưa cập nhật</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Địa chỉ:</strong></td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(Model.CustomerAddress))
+                                            {
+                                                <span>@Model.CustomerAddress</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="grey-text">Chưa cập nhật</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Mức độ rủi ro:</strong></td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(Model.RiskLevel))
+                                            {
+                                                @if (Model.RiskLevel == "Low")
+                                                {
+                                                    <span class="chip green lighten-4 green-text">Thấp</span>
+                                                }
+                                                else if (Model.RiskLevel == "Medium")
+                                                {
+                                                    <span class="chip yellow lighten-4 yellow-text text-darken-3">Trung bình</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="chip red lighten-4 red-text">Cao</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="grey-text">Chưa đánh giá</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Trạng thái:</strong></td>
+                                        <td>
+                                            @if (Model.IsBlacklisted == true)
+                                            {
+                                                <span class="chip red white-text">
+                                                    <i class="material-icons tiny">block</i> Đã chặn
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="chip green white-text">
+                                                    <i class="material-icons tiny">check_circle</i> Bình thường
+                                                </span>
+                                            }
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+                else if (Model.StaffId.HasValue)
+                {
+                    <!-- Staff Information -->
+                    <div class="card">
+                        <div class="card-content">
+                            <span class="card-title">
+                                <i class="material-icons left">badge</i>
+                                Thông tin nhân viên
+                            </span>
+                            <table class="striped">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Mã nhân viên:</strong></td>
+                                        <td><code>@Model.StaffCode</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>ID nhân viên:</strong></td>
+                                        <td><code>@Model.StaffId</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Họ và tên:</strong></td>
+                                        <td>@Model.StaffFullName</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Chức vụ:</strong></td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(Model.Position))
+                                            {
+                                                <span>@Model.Position</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="grey-text">Chưa xác định</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Chi nhánh:</strong></td>
+                                        <td>
+                                            @if (!string.IsNullOrEmpty(Model.BranchName))
+                                            {
+                                                <span class="chip blue lighten-4 blue-text">
+                                                    <i class="material-icons tiny">location_on</i> @Model.BranchName
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="grey-text">Chưa phân công</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .ucar-avatar-large {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+    }
+
+    .ucar-avatar-large i {
+        font-size: 64px;
+        color: white;
+    }
+
+    .mt-3 {
+        margin-top: 1rem;
+    }
+
+    .mt-4 {
+        margin-top: 1.5rem;
+    }
+
+    .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .chip i.tiny {
+        font-size: 16px;
+    }
+
+    code {
+        background-color: #f5f5f5;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+    }
+</style>

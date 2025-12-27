@@ -423,3 +423,4 @@ package-lock.json
 appsettings.Development.json
 appsettings.json
 *.env
+**Migrations

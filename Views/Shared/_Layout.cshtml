@@ -40,46 +40,104 @@
             
             <!-- Desktop Nav Links -->
             <ul class="right hide-on-med-and-down">
-                <li><a asp-controller="Home" asp-action="Index"><i class="material-icons left">home</i>Trang chủ</a></li>
-                <li><a asp-controller="Cars" asp-action="Index"><i class="material-icons left">directions_car</i>Xe</a></li>
-                <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons left">event</i>Đặt xe</a></li>
-                <li><a asp-controller="Reports" asp-action="Index"><i class="material-icons left">bar_chart</i>Báo cáo</a></li>
-                
-                <!-- User Dropdown -->
-                <li>
-                    <a class="dropdown-trigger" href="#!" data-target="user-dropdown">
-                        admin@ucar.com<i class="material-icons right">arrow_drop_down</i>
-                    </a>
-                </li>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <li><a asp-controller="Home" asp-action="Index"><i class="material-icons left">home</i>Trang chủ</a></li>
+                    
+                    @if (User.IsInRole("Admin") || User.IsInRole("Staff"))
+                    {
+                        <li><a asp-controller="Customer" asp-action="Index"><i class="material-icons left">people</i>Khách hàng</a></li>
+                        <li><a asp-controller="Cars" asp-action="Index"><i class="material-icons left">directions_car</i>Xe</a></li>
+                        <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons left">event</i>Đặt xe</a></li>
+                    }
+                    
+                    @if (User.IsInRole("Admin"))
+                    {
+                        <li><a asp-controller="Reports" asp-action="Index"><i class="material-icons left">bar_chart</i>Báo cáo</a></li>
+                    }
+                    
+                    @if (User.IsInRole("Customer"))
+                    {
+                        <li><a asp-controller="Booking" asp-action="MyBookings"><i class="material-icons left">event</i>Đặt xe của tôi</a></li>
+                        <li><a asp-controller="Rental" asp-action="MyRentals"><i class="material-icons left">directions_car</i>Hợp đồng của tôi</a></li>
+                    }
+                    
+                    <!-- User Dropdown -->
+                    <li>
+                        <a class="dropdown-trigger" href="#!" data-target="user-dropdown">
+                            @(User.Claims.FirstOrDefault(c => c.Type == "FullName")?.Value ?? User.Identity.Name)<i class="material-icons right">arrow_drop_down</i>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li><a asp-controller="Account" asp-action="Login"><i class="material-icons left">login</i>Đăng nhập</a></li>
+                }
             </ul>
         </div>
     </nav>
     
     <!-- User Dropdown Structure -->
     <ul id="user-dropdown" class="dropdown-content">
-        <li><a href="#!"><i class="material-icons">person</i>Hồ sơ</a></li>
+        <li><a asp-controller="Account" asp-action="Profile"><i class="material-icons">person</i>Hồ sơ</a></li>
         <li><a href="#!"><i class="material-icons">settings</i>Cài đặt</a></li>
         <li class="divider"></li>
-        <li><a href="#!" class="red-text"><i class="material-icons">exit_to_app</i>Đăng xuất</a></li>
+        <li>
+            <a href="#" onclick="document.getElementById('logoutForm').submit(); return false;" class="red-text">
+                <i class="material-icons">exit_to_app</i>Đăng xuất
+            </a>
+        </li>
     </ul>
+
+    <form id="logoutForm" asp-controller="Account" asp-action="Logout" method="post" style="display: none;">
+        @Html.AntiForgeryToken()
+    </form>
     
     <!-- Mobile Sidenav -->
     <ul class="sidenav" id="mobile-nav">
-        <li>
-            <div class="user-view">
-                <div class="background" style="background: linear-gradient(135deg, #00275e 0%, #667eea 100%);"></div>
-                <a href="#!"><span class="white-text name">Admin User</span></a>
-                <a href="#!"><span class="white-text email">admin@ucar.com</span></a>
-            </div>
-        </li>
-        <li><a asp-controller="Home" asp-action="Index"><i class="material-icons">home</i>Trang chủ</a></li>
-        <li><a asp-controller="Cars" asp-action="Index"><i class="material-icons">directions_car</i>Xe</a></li>
-        <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons">event</i>Đặt xe</a></li>
-        <li><a asp-controller="Reports" asp-action="Index"><i class="material-icons">bar_chart</i>Báo cáo</a></li>
-        <li class="divider"></li>
-        <li><a href="#!"><i class="material-icons">person</i>Hồ sơ</a></li>
-        <li><a href="#!"><i class="material-icons">settings</i>Cài đặt</a></li>
-        <li><a href="#!" class="red-text"><i class="material-icons">exit_to_app</i>Đăng xuất</a></li>
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <li>
+                <div class="user-view">
+                    <div class="background" style="background: linear-gradient(135deg, #00275e 0%, #667eea 100%);"></div>
+                    <a href="#!"><span class="white-text name">@(User.Claims.FirstOrDefault(c => c.Type == "FullName")?.Value ?? "User")</span></a>
+                    <a href="#!"><span class="white-text email">@(User.Identity.Name)</span></a>
+                    <a href="#!"><span class="white-text role">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span></a>
+                </div>
+            </li>
+            <li><a asp-controller="Home" asp-action="Index"><i class="material-icons">home</i>Trang chủ</a></li>
+            
+            @if (User.IsInRole("Admin") || User.IsInRole("Staff"))
+            {
+                <li><a asp-controller="Customer" asp-action="Index"><i class="material-icons">people</i>Khách hàng</a></li>
+                <li><a asp-controller="Cars" asp-action="Index"><i class="material-icons">directions_car</i>Xe</a></li>
+                <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons">event</i>Đặt xe</a></li>
+            }
+            
+            @if (User.IsInRole("Admin"))
+            {
+                <li><a asp-controller="Reports" asp-action="Index"><i class="material-icons">bar_chart</i>Báo cáo</a></li>
+            }
+            
+            @if (User.IsInRole("Customer"))
+            {
+                <li><a asp-controller="Booking" asp-action="MyBookings"><i class="material-icons">event</i>Đặt xe của tôi</a></li>
+                <li><a asp-controller="Rental" asp-action="MyRentals"><i class="material-icons">directions_car</i>Hợp đồng của tôi</a></li>
+            }
+            <li><a asp-controller="Reports" asp-action="Index"><i class="material-icons">bar_chart</i>Báo cáo</a></li>
+            <li class="divider"></li>
+            <li><a asp-controller="Account" asp-action="Profile"><i class="material-icons">person</i>Hồ sơ</a></li>
+            <li><a href="#!"><i class="material-icons">settings</i>Cài đặt</a></li>
+            <li>
+                <a href="#" onclick="document.getElementById('logoutForm').submit(); return false;" class="red-text">
+                    <i class="material-icons">exit_to_app</i>Đăng xuất
+                </a>
+            </li>
+        }
+        else
+        {
+            <li><a asp-controller="Account" asp-action="Login"><i class="material-icons">login</i>Đăng nhập</a></li>
+        }
     </ul>
 
     <!-- Main Content -->
