@@ -1,9 +1,0 @@
-flowchart LR
-    QL["Quản lý"] -- Chọn kỳ báo cáo --> P7_1(("7.1 Báo cáo<br>Doanh thu"))
-    DB_TC["DB_TC"] -- Dữ liệu thu chi --> P7_1
-    P7_1 -- Bảng kê doanh thu --> QL
-    QL -- Chọn đội xe --> P7_2(("7.2 Báo cáo<br>Hiệu suất xe"))
-    DB_XE[("KHO XE")] -- Lịch sử vận hành --> P7_2
-    P7_2 -- Tỷ lệ lấp đầy --> QL
-
-    DB_TC@{ shape: cyl}

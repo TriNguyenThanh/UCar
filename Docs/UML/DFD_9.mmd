@@ -1,0 +1,39 @@
+flowchart LR
+  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px;
+  classDef store fill:#f3fff3,stroke:#1f7a1f,stroke-width:1.2px;
+  classDef internal fill:#fff,stroke:#555,stroke-width:1px,stroke-dasharray: 4 3;
+
+  P1i[[1.0 Quản lý khách hàng]]:::internal
+  P2i[[2.0 Quản lý xe]]:::internal
+  P3i[[3.0 Quản lý bảng giá và chính sách]]:::internal
+  P4i[[4.0 Quản lý đặt xe]]:::internal
+  P5i[[5.0 Quản lý hợp đồng thuê]]:::internal
+  P6i[[6.0 Quản lý giao nhận xe]]:::internal
+  P7i[[7.0 Quản lý thanh toán và hóa đơn]]:::internal
+  P8i[[8.0 Quản lý vận hành và nhân sự]]:::internal
+  P10i[[10.0 Quản trị hệ thống và tuân thủ]]:::internal
+
+  D10[(D10 Dữ liệu báo cáo)]:::store
+
+  P91((9.1 Lập báo cáo doanh thu lợi nhuận và chi phí)):::proc
+  P92((9.2 Lập báo cáo tỷ lệ sử dụng xe)):::proc
+  P93((9.3 Lập báo cáo khách hàng)):::proc
+
+  P1i -->|Dữ liệu khách hàng| P93
+  P2i -->|Dữ liệu xe| P92
+  P3i -->|Dữ liệu chính sách| P91
+  P4i -->|Dữ liệu đặt xe| P92
+  P5i -->|Dữ liệu hợp đồng| P91
+  P6i -->|Dữ liệu giao nhận| P92
+  P7i -->|Dữ liệu doanh thu| P91
+  P8i -->|Dữ liệu nhân sự| P91
+
+  P91 <--> |Dữ liệu báo cáo| D10
+  P92 <--> |Dữ liệu báo cáo| D10
+  P93 <--> |Dữ liệu báo cáo| D10
+
+  P91 -->|Báo cáo quản trị| P8i
+  P92 -->|Báo cáo quản trị| P8i
+  P93 -->|Báo cáo quản trị| P8i
+
+  P91 -->|Báo cáo tuân thủ| P10i

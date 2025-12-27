@@ -1,0 +1,15 @@
+Trí:
+    1. Quản lý khách hàng
+    4. Quản lý đặt xe (booking)
+    5. Quản lý hợp đồng thuê
+
+Hiếu:
+    2. Quản lý xe (tài sản cho thuê)
+    6. Quản lý giao nhận xe
+    8. Quản lý vận hành & nhân sự
+
+Tài: 
+    3. Quản lý bảng giá & chính sách
+    7. Quản lý thanh toán & hóa đơn
+    9. Báo cáo & phân tích
+    10. Quản trị hệ thống & tuân thủ

@@ -1,0 +1,46 @@
+@startwbs
+* HỆ THỐNG QUẢN LÝ CHO THUÊ XE
+** 1 Quản lý khách hàng
+*** 1.1 Quản lý hồ sơ khách hàng
+*** 1.2 Xác minh danh tính & điều kiện thuê
+*** 1.3 Lịch sử thuê & đánh giá khách
+** 2 Quản lý xe (tài sản cho thuê)
+*** 2.1 Quản lý danh mục xe
+*** 2.2 Quản lý thông tin xe
+*** 2.3 Quản lý tình trạng xe
+** 3 Quản lý bảng giá & chính sách
+*** 3.1 Thiết lập giá thuê
+*** 3.2 Chính sách đặt cọc & hoàn cọc
+*** 3.3 Chính sách phụ phí
+** 4 Quản lý đặt xe (booking)
+*** 4.1 Tiếp nhận yêu cầu đặt xe
+*** 4.2 Kiểm tra khả dụng & giữ chỗ
+*** 4.3 Xác nhận/điều chỉnh/hủy đặt xe
+*** 4.4 Quản lý lịch đặt theo xe
+** 5 Quản lý hợp đồng thuê
+*** 5.1 Tạo & quản lý hợp đồng thuê
+*** 5.2 Quản lý điều khoản & phụ lục
+*** 5.3 Gia hạn/đổi xe/nâng cấp gói thuê
+*** 5.4 Quản lý vi phạm hợp đồng
+** 6 Quản lý giao nhận xe
+*** 6.1 Bàn giao xe cho khách (check-out)
+*** 6.2 Ghi nhận tình trạng trước khi thuê (ảnh, nhiên liệu, km, phụ kiện)
+*** 6.3 Nhận xe từ khách (check-in)
+*** 6.4 Đối soát tình trạng sau thuê (hư hỏng, thiếu phụ kiện, trễ hạn)
+** 7 Quản lý thanh toán & hóa đơn
+*** 7.1 Thu tiền thuê
+*** 7.2 Quản lý đặt cọc & hoàn cọc
+*** 7.3 Xuất hóa đơn/biên nhận
+*** 7.4 Đối soát công nợ & hoàn/thu bổ sung
+** 8 Quản lý vận hành & nhân sự
+*** 8.1 Quản lý chi nhánh/kho bãi/điểm giao nhận
+*** 8.2 Phân công nhân viên (tư vấn, giao xe, kỹ thuật)
+*** 8.3 Quản lý nhân sự
+** 9 Báo cáo & phân tích
+*** 9.1 Báo cáo doanh thu – lợi nhuận – chi phí
+*** 9.2 Báo cáo tỷ lệ sử dụng xe
+*** 9.3 Báo cáo khách hàng
+** 10 Quản trị hệ thống & tuân thủ
+*** 10.1 Quản lý người dùng & phân quyền
+*** 10.2 Quản lý mẫu biểu, điều khoản, chính sách pháp lý
+@endwbs
