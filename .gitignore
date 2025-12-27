@@ -424,3 +424,4 @@ appsettings.Development.json
 appsettings.json
 *.env
 **Migrations
+.vscode/*

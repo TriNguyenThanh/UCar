@@ -29,6 +29,13 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 
+// Register Vehicle Management services
+builder.Services.AddScoped<IVehicleStatusService, VehicleStatusService>();
+builder.Services.AddScoped<IVehicleCatalogService, VehicleCatalogService>();
+builder.Services.AddScoped<IVehicleService, VehicleService>();
+
+// Register Handover services
+builder.Services.AddScoped<IHandoverService, HandoverService>();
 var app = builder.Build();
 
 // Seed database
@@ -46,6 +53,20 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "An error occurred seeding the database.");
     }
 }
+
+
+
+// var app = builder.Build();
+
+// Seed data - force=false to avoid FK conflicts with existing data
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<UCarDbContext>();
+    await VehicleDataSeeder.SeedVehicleDataAsync(context, force: false);
+    await HandoverDataSeeder.SeedHandoverDataAsync(context, force: false);
+}
+
+
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
