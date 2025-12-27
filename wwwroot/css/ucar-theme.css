@@ -9,6 +9,13 @@
 /* =========================================
    CSS Variables (Design Tokens)
    ========================================= */
+
+.container {
+    max-width: 1600px;
+    /* hoặc 95% nếu muốn responsive */
+    width: 85%;
+}
+
 :root {
     /* Primary Colors */
     --ucar-primary: #FACB01;
@@ -290,6 +297,11 @@ main {
 /* Input with prefix icon */
 .input-field .prefix.active {
     color: var(--ucar-primary);
+}
+
+/* FIX: Label should not block clicks on input */
+.input-field label {
+    pointer-events: none;
 }
 
 /* Outlined input variant */

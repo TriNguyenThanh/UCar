@@ -41,9 +41,24 @@
             <!-- Desktop Nav Links -->
             <ul class="right hide-on-med-and-down">
                 <li><a asp-controller="Home" asp-action="Index"><i class="material-icons left">home</i>Trang chủ</a></li>
-                <li><a asp-controller="Cars" asp-action="Index"><i class="material-icons left">directions_car</i>Xe</a></li>
+                
+                <!-- 2.0 Quản lý xe Dropdown -->
+                <li>
+                    <a class="dropdown-trigger" href="#!" data-target="vehicle-dropdown">
+                        <i class="material-icons left">directions_car</i>Quản lý xe<i class="material-icons right">arrow_drop_down</i>
+                    </a>
+                </li>
+                
+                <!-- 6.0 Giao nhận xe Dropdown -->
+                <li>
+                    <a class="dropdown-trigger" href="#!" data-target="handover-dropdown">
+                        <i class="material-icons left">swap_horiz</i>Giao nhận<i class="material-icons right">arrow_drop_down</i>
+                    </a>
+                </li>
+                
                 <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons left">event</i>Đặt xe</a></li>
                 <li><a asp-controller="Reports" asp-action="Index"><i class="material-icons left">bar_chart</i>Báo cáo</a></li>
+
                 
                 <!-- User Dropdown -->
                 <li>
@@ -55,6 +70,24 @@
         </div>
     </nav>
     
+    <!-- Vehicle Management Dropdown Structure -->
+    <ul id="vehicle-dropdown" class="dropdown-content">
+        <li><a asp-controller="Vehicle" asp-action="Index"><i class="material-icons">list</i>Danh sách xe</a></li>
+        <li><a asp-controller="Vehicle" asp-action="Create"><i class="material-icons">add</i>Thêm xe mới</a></li>
+        <li class="divider"></li>
+        <li><a asp-controller="VehicleCatalog" asp-action="VehicleTypes"><i class="material-icons">category</i>Loại xe</a></li>
+        <li><a asp-controller="VehicleCatalog" asp-action="VehicleModels"><i class="material-icons">directions_car</i>Dòng xe</a></li>
+    </ul>
+    
+    <!-- Handover Management Dropdown Structure -->
+    <ul id="handover-dropdown" class="dropdown-content">
+        <li><a asp-controller="Handover" asp-action="Index"><i class="material-icons">exit_to_app</i>Chờ giao xe</a></li>
+        <li><a asp-controller="Handover" asp-action="Return"><i class="material-icons">login</i>Chờ nhận xe</a></li>
+        <li class="divider"></li>
+        <li><a asp-controller="Handover" asp-action="Overdue"><i class="material-icons">warning</i>Quá hạn</a></li>
+        <li><a asp-controller="Handover" asp-action="Documents"><i class="material-icons">description</i>Biên bản</a></li>
+    </ul>
+    
     <!-- User Dropdown Structure -->
     <ul id="user-dropdown" class="dropdown-content">
         <li><a href="#!"><i class="material-icons">person</i>Hồ sơ</a></li>
@@ -62,6 +95,7 @@
         <li class="divider"></li>
         <li><a href="#!" class="red-text"><i class="material-icons">exit_to_app</i>Đăng xuất</a></li>
     </ul>
+
     
     <!-- Mobile Sidenav -->
     <ul class="sidenav" id="mobile-nav">
@@ -73,7 +107,22 @@
             </div>
         </li>
         <li><a asp-controller="Home" asp-action="Index"><i class="material-icons">home</i>Trang chủ</a></li>
-        <li><a asp-controller="Cars" asp-action="Index"><i class="material-icons">directions_car</i>Xe</a></li>
+        <li class="divider"></li>
+        <li class="no-padding">
+            <ul class="collapsible collapsible-accordion">
+                <li>
+                    <a class="collapsible-header"><i class="material-icons">directions_car</i>Quản lý xe<i class="material-icons right">arrow_drop_down</i></a>
+                    <div class="collapsible-body">
+                        <ul>
+                            <li><a asp-controller="Vehicle" asp-action="Index">Danh sách xe</a></li>
+                            <li><a asp-controller="Vehicle" asp-action="Create">Thêm xe mới</a></li>
+                            <li><a asp-controller="VehicleCatalog" asp-action="VehicleTypes">Loại xe</a></li>
+                            <li><a asp-controller="VehicleCatalog" asp-action="VehicleModels">Dòng xe</a></li>
+                        </ul>
+                    </div>
+                </li>
+            </ul>
+        </li>
         <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons">event</i>Đặt xe</a></li>
         <li><a asp-controller="Reports" asp-action="Index"><i class="material-icons">bar_chart</i>Báo cáo</a></li>
         <li class="divider"></li>
@@ -116,6 +165,10 @@
                 coverTrigger: false,
                 constrainWidth: false
             });
+            
+            // Initialize collapsible (for mobile sidenav)
+            var collapsibleElems = document.querySelectorAll('.collapsible');
+            M.Collapsible.init(collapsibleElems);
             
             // Initialize select
             var selectElems = document.querySelectorAll('select');

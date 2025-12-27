@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using UCar.Data;
+using UCar.Interfaces;
+using UCar.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,7 +10,26 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<UCarDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Register Vehicle Management services
+builder.Services.AddScoped<IVehicleStatusService, VehicleStatusService>();
+builder.Services.AddScoped<IVehicleCatalogService, VehicleCatalogService>();
+builder.Services.AddScoped<IVehicleService, VehicleService>();
+
+// Register Handover services
+builder.Services.AddScoped<IHandoverService, HandoverService>();
+
+
 var app = builder.Build();
+
+// Seed data - force=false to avoid FK conflicts with existing data
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<UCarDbContext>();
+    await VehicleDataSeeder.SeedVehicleDataAsync(context, force: false);
+    await HandoverDataSeeder.SeedHandoverDataAsync(context, force: false);
+}
+
+
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

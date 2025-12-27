@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UCar.Data;
 
@@ -11,9 +12,11 @@ using UCar.Data;
 namespace UCar.Migrations
 {
     [DbContext(typeof(UCarDbContext))]
-    partial class UCarDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251227104154_AddHandoverModuleColumns")]
+    partial class AddHandoverModuleColumns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
