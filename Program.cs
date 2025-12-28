@@ -38,14 +38,14 @@ builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<IHandoverService, HandoverService>();
 var app = builder.Build();
 
-// Seed database
+// Seed database with unified seeder
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     try
     {
         var context = services.GetRequiredService<UCarDbContext>();
-        await Tri_seed.SeedDataAsync(context);
+        await UCarDataSeeder.SeedAllDataAsync(context, force: true);
     }
     catch (Exception ex)
     {
@@ -54,17 +54,6 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-
-
-// var app = builder.Build();
-
-// Seed data - force=false to avoid FK conflicts with existing data
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<UCarDbContext>();
-    await VehicleDataSeeder.SeedVehicleDataAsync(context, force: false);
-    await HandoverDataSeeder.SeedHandoverDataAsync(context, force: false);
-}
 
 
 
