@@ -42,8 +42,8 @@ public static class Tri_seed
             IsActive = true
         };
 
-        await context.Roles.AddRangeAsync(adminRole, staffRole, customerRole);
-        await context.SaveChangesAsync();
+        // await context.Roles.AddRangeAsync(adminRole, staffRole, customerRole);
+        // await context.SaveChangesAsync();
 
         // Seed UserAccounts
         var adminUser = new UserAccount
