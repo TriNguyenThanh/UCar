@@ -1,0 +1,10 @@
+flowchart TB
+    NV["Nhân viên"] -- Kiểm tra thực tế --> P5_1(("5.1 Ghi nhận<br>Hiện trạng xuất"))
+    P5_1 -- Km, Xăng, Vết xước --> DB_HD[("HỢP ĐỒNG")]
+    P5_1 -- Cập nhật: ĐANG THUÊ --> DB_XE[("KHO XE")]
+    KHACH["Khách hàng"] -- "Giấy tờ,..." --> P5_2(("5.2 Ghi nhận<br>Tài sản thế chấp"))
+    P5_2 -- Biên bản giữ tài sản --> DB_TS["DB_TS"]
+    P5_1 -- Thông tin xe giao --> P5_2
+    P5_2 -- Biên bản Bàn giao --> KHACH
+
+    DB_TS@{ shape: cyl}

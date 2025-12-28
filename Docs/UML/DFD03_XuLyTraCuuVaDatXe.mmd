@@ -1,0 +1,15 @@
+flowchart TB
+    KHACH[Khách hàng]
+    DB_XE[(KHO XE)]
+    DB_HD[(HỢP ĐỒNG)]
+
+    P3_1((3.1 Kiểm tra<br/>Tình trạng xe))
+    P3_2((3.2 Lập phiếu<br/>Giữ chỗ))
+
+    KHACH -->|Ngày đi/Về, Loại xe| P3_1
+    DB_XE -->|Lịch xe trống| P3_1
+    P3_1 -->|Danh sách xe| KHACH
+    
+    KHACH -->|Chọn xe| P3_2
+    P3_2 -->|"Phiếu Booking (Chờ cọc)"| DB_HD
+    P3_2 -->|Thông báo giữ chỗ| KHACH

@@ -1,0 +1,12 @@
+flowchart LR
+    NV[Nhân viên]
+    DB_XE[(KHO XE)]
+
+    P1_1((1.1 Cập nhật<br/>Thông tin Xe))
+    P1_2((1.2 Cập nhật<br/>Bảng giá thuê))
+
+    NV -->|Thông tin xe/Bảo dưỡng| P1_1
+    P1_1 -->|Dữ liệu xe| DB_XE
+    
+    NV -->|Đơn giá ngày/giờ| P1_2
+    P1_2 -->|Chính sách giá| DB_XE
