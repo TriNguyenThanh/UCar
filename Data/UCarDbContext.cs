@@ -33,6 +33,8 @@ public class UCarDbContext : DbContext
     public DbSet<ContractViolation> ContractViolations { get; set; }
     public DbSet<ContractCharge> ContractCharges { get; set; }
     public DbSet<CollateralItem> CollateralItems { get; set; }
+    public DbSet<HandoverAccessory> HandoverAccessories { get; set; }
+
 
     // Payments & Incidents
     public DbSet<PaymentTransaction> PaymentTransactions { get; set; }

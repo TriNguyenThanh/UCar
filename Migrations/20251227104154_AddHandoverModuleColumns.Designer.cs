@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UCar.Data;
 
@@ -11,9 +12,11 @@ using UCar.Data;
 namespace UCar.Migrations
 {
     [DbContext(typeof(UCarDbContext))]
-    partial class UCarDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251227104154_AddHandoverModuleColumns")]
+    partial class AddHandoverModuleColumns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -302,6 +305,45 @@ namespace UCar.Migrations
                     b.ToTable("CustomerDocuments");
                 });
 
+            modelBuilder.Entity("UCar.Models.HandoverAccessory", b =>
+                {
+                    b.Property<Guid>("AccessoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AccessoryName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("DamageNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("EstimatedValue")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid?>("HandoverId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsReturnedOk")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("ReturnId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("AccessoryId");
+
+                    b.HasIndex("HandoverId");
+
+                    b.HasIndex("ReturnId");
+
+                    b.ToTable("HandoverAccessories");
+                });
+
             modelBuilder.Entity("UCar.Models.HandoverRecord", b =>
                 {
                     b.Property<Guid>("HandoverId")
@@ -311,11 +353,28 @@ namespace UCar.Migrations
                     b.Property<Guid>("ContractId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("CustomerConfirmed")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("CustomerConfirmedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ExteriorCondition")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<decimal>("FuelLevelOut")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("HandedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid>("HandedOverBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("InteriorCondition")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("Note")
                         .HasMaxLength(1000)
@@ -323,6 +382,10 @@ namespace UCar.Migrations
 
                     b.Property<decimal>("OdoKmOut")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("PreExistingDamages")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<string>("VehicleConditionImgRef")
                         .HasMaxLength(500)
@@ -332,6 +395,8 @@ namespace UCar.Migrations
 
                     b.HasIndex("ContractId")
                         .IsUnique();
+
+                    b.HasIndex("HandedOverBy");
 
                     b.ToTable("HandoverRecords");
                 });
@@ -709,8 +774,29 @@ namespace UCar.Migrations
                     b.Property<Guid>("ContractId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("DamagesFound")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ExteriorCondition")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<decimal>("FuelLevelIn")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("FuelShortage")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("InteriorCondition")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("NeedsCleaning")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NeedsMaintenance")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Note")
                         .HasMaxLength(1000)
@@ -721,6 +807,9 @@ namespace UCar.Migrations
 
                     b.Property<decimal>("OvertimeHours")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("ReceivedBy")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("ReturnedAt")
                         .HasColumnType("datetime2");
@@ -733,6 +822,8 @@ namespace UCar.Migrations
 
                     b.HasIndex("ContractId")
                         .IsUnique();
+
+                    b.HasIndex("ReceivedBy");
 
                     b.ToTable("ReturnRecords");
                 });
@@ -1086,6 +1177,21 @@ namespace UCar.Migrations
                     b.Navigation("Customer");
                 });
 
+            modelBuilder.Entity("UCar.Models.HandoverAccessory", b =>
+                {
+                    b.HasOne("UCar.Models.HandoverRecord", "HandoverRecord")
+                        .WithMany("Accessories")
+                        .HasForeignKey("HandoverId");
+
+                    b.HasOne("UCar.Models.ReturnRecord", "ReturnRecord")
+                        .WithMany("AccessoriesReturned")
+                        .HasForeignKey("ReturnId");
+
+                    b.Navigation("HandoverRecord");
+
+                    b.Navigation("ReturnRecord");
+                });
+
             modelBuilder.Entity("UCar.Models.HandoverRecord", b =>
                 {
                     b.HasOne("UCar.Models.RentalContract", "RentalContract")
@@ -1093,6 +1199,14 @@ namespace UCar.Migrations
                         .HasForeignKey("UCar.Models.HandoverRecord", "ContractId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("UCar.Models.UserAccount", "HandedOverByUser")
+                        .WithMany()
+                        .HasForeignKey("HandedOverBy")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("HandedOverByUser");
 
                     b.Navigation("RentalContract");
                 });
@@ -1257,6 +1371,14 @@ namespace UCar.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("UCar.Models.UserAccount", "ReceivedByUser")
+                        .WithMany()
+                        .HasForeignKey("ReceivedBy")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ReceivedByUser");
+
                     b.Navigation("RentalContract");
                 });
 
@@ -1361,6 +1483,11 @@ namespace UCar.Migrations
                     b.Navigation("RentalContracts");
                 });
 
+            modelBuilder.Entity("UCar.Models.HandoverRecord", b =>
+                {
+                    b.Navigation("Accessories");
+                });
+
             modelBuilder.Entity("UCar.Models.Incident", b =>
                 {
                     b.Navigation("Costs");
@@ -1392,6 +1519,11 @@ namespace UCar.Migrations
                     b.Navigation("ReturnRecord");
 
                     b.Navigation("Violations");
+                });
+
+            modelBuilder.Entity("UCar.Models.ReturnRecord", b =>
+                {
+                    b.Navigation("AccessoriesReturned");
                 });
 
             modelBuilder.Entity("UCar.Models.Role", b =>

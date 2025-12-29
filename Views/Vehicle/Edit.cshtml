@@ -1,0 +1,154 @@
+@model UCar.Models.DTOs.Vehicle.VehicleUpdateDto
+@{
+    ViewData["Title"] = "Chỉnh sửa xe";
+    ViewData["Description"] = "Chỉnh sửa thông tin xe trong hệ thống UCar";
+    var vehicleId = ViewBag.VehicleId as Guid?;
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header Section -->
+    <div style="margin-bottom: 1.5rem;">
+        <a asp-action="Index" class="btn-flat waves-effect" style="margin-bottom: 0.5rem;">
+            <i class="material-icons left">arrow_back</i>Quay lại danh sách
+        </a>
+        <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+            <i class="material-icons orange-text" style="vertical-align: middle; margin-right: 8px;">edit</i>
+            Chỉnh sửa xe
+        </h4>
+        <p class="grey-text text-darken-1" style="margin: 0;">Cập nhật thông tin xe <strong>@Model.PlateNo</strong></p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card">
+        <form asp-action="Edit" asp-route-id="@vehicleId" method="post">
+            <div class="card-content">
+                <span class="card-title" style="font-weight: 600;">
+                    <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">info</i>
+                    Thông tin xe
+                </span>
+
+                <!-- Validation Summary -->
+                <div asp-validation-summary="ModelOnly" class="card-panel red lighten-5 red-text text-darken-4" style="display: none;"></div>
+
+                <div class="row">
+                    <div class="col s12 m6">
+                        <div class="input-field">
+                            <i class="material-icons prefix">confirmation_number</i>
+                            <input asp-for="PlateNo" type="text" id="plateNo" class="validate" 
+                                   style="text-transform: uppercase;" maxlength="20">
+                            <label asp-for="PlateNo" class="active">Biển số xe *</label>
+                            <span asp-validation-for="PlateNo" class="helper-text red-text"></span>
+                        </div>
+                    </div>
+                    <div class="col s12 m6">
+                        <div class="input-field">
+                            <select asp-for="ModelId" id="modelId">
+                                <option value="" disabled>Chọn dòng xe</option>
+                                @foreach (SelectListItem item in ViewBag.VehicleModels)
+                                {
+                                    <option value="@item.Value" selected="@(item.Value == Model.ModelId.ToString())">@item.Text</option>
+                                }
+                            </select>
+                            <label asp-for="ModelId">Dòng xe *</label>
+                            <span asp-validation-for="ModelId" class="helper-text red-text"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col s12 m6">
+                        <div class="input-field">
+                            <select asp-for="BranchId" id="branchId">
+                                <option value="" disabled>Chọn chi nhánh</option>
+                                @foreach (SelectListItem item in ViewBag.Branches)
+                                {
+                                    <option value="@item.Value" selected="@(item.Value == Model.BranchId.ToString())">@item.Text</option>
+                                }
+                            </select>
+                            <label asp-for="BranchId">Chi nhánh *</label>
+                            <span asp-validation-for="BranchId" class="helper-text red-text"></span>
+                        </div>
+                    </div>
+                    <div class="col s12 m6">
+                        <div class="input-field">
+                            <i class="material-icons prefix">palette</i>
+                            <input asp-for="Color" type="text" id="color" maxlength="50">
+                            <label asp-for="Color" class="active">Màu sắc</label>
+                            <span asp-validation-for="Color" class="helper-text red-text"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col s12 m6">
+                        <div class="input-field">
+                            <i class="material-icons prefix">date_range</i>
+                            <input asp-for="ManufactureYear" type="number" id="manufactureYear" 
+                                   min="1900" max="2100" class="validate">
+                            <label asp-for="ManufactureYear" class="active">Năm sản xuất *</label>
+                            <span asp-validation-for="ManufactureYear" class="helper-text red-text"></span>
+                        </div>
+                    </div>
+                    <div class="col s12 m6">
+                        <div class="input-field">
+                            <i class="material-icons prefix">speed</i>
+                            <input asp-for="CurrentOdoKm" type="number" id="currentOdoKm" 
+                                   min="0" step="0.01" class="validate">
+                            <label asp-for="CurrentOdoKm" class="active">Số km hiện tại</label>
+                            <span asp-validation-for="CurrentOdoKm" class="helper-text red-text"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-action">
+                <button type="submit" class="btn waves-effect waves-light">
+                    <i class="material-icons left">save</i>Lưu thay đổi
+                </button>
+                <a asp-action="Details" asp-route-id="@vehicleId" class="btn-flat waves-effect">
+                    <i class="material-icons left">close</i>Hủy
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize select elements
+        var selectElems = document.querySelectorAll('select');
+        M.FormSelect.init(selectElems);
+
+        // Show validation errors
+        var validationSummary = document.querySelector('[data-valmsg-summary="true"]');
+        if (validationSummary && validationSummary.querySelector('li')) {
+            validationSummary.style.display = 'block';
+        }
+
+        // Remote validation for plate number
+        var plateNoInput = document.getElementById('plateNo');
+        if (plateNoInput) {
+            var originalPlateNo = plateNoInput.value;
+            plateNoInput.addEventListener('blur', function() {
+                var plateNo = this.value.trim();
+                if (plateNo && plateNo !== originalPlateNo) {
+                    fetch('@Url.Action("CheckPlateNo")' + '?plateNo=' + encodeURIComponent(plateNo) + '&excludeId=@vehicleId')
+                        .then(response => response.json())
+                        .then(isValid => {
+                            var helper = plateNoInput.nextElementSibling.nextElementSibling;
+                            if (!isValid) {
+                                helper.textContent = 'Biển số xe đã tồn tại';
+                                plateNoInput.classList.add('invalid');
+                            } else {
+                                helper.textContent = '';
+                                plateNoInput.classList.remove('invalid');
+                            }
+                        });
+                }
+            });
+        }
+    });
+</script>
+}

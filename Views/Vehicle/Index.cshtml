@@ -1,0 +1,258 @@
+@model UCar.Models.DTOs.Vehicle.PagedResult<UCar.Models.DTOs.Vehicle.VehicleListDto>
+@using UCar.Models.DTOs.Vehicle
+@using UCar.Models.Enums
+@{
+    ViewData["Title"] = "Quản lý xe";
+    ViewData["Description"] = "Danh sách và quản lý thông tin xe trong hệ thống UCar";
+    var filter = ViewBag.Filter as VehicleFilterDto ?? new VehicleFilterDto();
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header Section -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">directions_car</i>
+                Quản lý xe
+            </h4>
+            <p class="grey-text text-darken-1" style="margin: 0;">Danh sách và quản lý thông tin xe trong hệ thống</p>
+        </div>
+        <div>
+            <a asp-action="Create" class="btn waves-effect waves-light">
+                <i class="material-icons left">add</i>Thêm xe mới
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row">
+        <div class="col s12 m3">
+            <div class="card stats-card">
+                <i class="material-icons stats-icon blue-text">directions_car</i>
+                <div class="stats-value">@Model.TotalCount</div>
+                <div class="stats-label">Tổng số xe</div>
+            </div>
+        </div>
+        <div class="col s12 m3">
+            <div class="card stats-card">
+                <i class="material-icons stats-icon green-text">check_circle</i>
+                <div class="stats-value">@Model.Items.Count(v => v.CurrentStatus == VehicleStatus.Available)</div>
+                <div class="stats-label">Sẵn sàng</div>
+            </div>
+        </div>
+        <div class="col s12 m3">
+            <div class="card stats-card">
+                <i class="material-icons stats-icon orange-text">event</i>
+                <div class="stats-value">@Model.Items.Count(v => v.CurrentStatus == VehicleStatus.Renting)</div>
+                <div class="stats-label">Đang thuê</div>
+            </div>
+        </div>
+        <div class="col s12 m3">
+            <div class="card stats-card">
+                <i class="material-icons stats-icon red-text">build</i>
+                <div class="stats-value">@Model.Items.Count(v => v.CurrentStatus == VehicleStatus.Maintenance)</div>
+                <div class="stats-label">Bảo dưỡng</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card">
+        <div class="card-content">
+            <span class="card-title" style="font-size: 1.1rem; font-weight: 600;">
+                <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">filter_list</i>
+                Bộ lọc
+            </span>
+            <form asp-action="Index" method="get">
+                <div class="row" style="margin-bottom: 0;">
+                    <div class="col s12 m3">
+                        <div class="input-field">
+                            <i class="material-icons prefix">search</i>
+                            <input type="text" id="searchTerm" name="SearchTerm" value="@filter.SearchTerm">
+                            <label for="searchTerm">Tìm kiếm biển số, hãng xe...</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m2">
+                        <div class="input-field">
+                            <select id="vehicleTypeId" name="VehicleTypeId">
+                                <option value="">Tất cả loại xe</option>
+                                @foreach (SelectListItem item in ViewBag.VehicleTypes)
+                                {
+                                    <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                                }
+                            </select>
+                            <label for="vehicleTypeId">Loại xe</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m2">
+                        <div class="input-field">
+                            <select id="status" name="Status">
+                                <option value="">Tất cả trạng thái</option>
+                                @foreach (SelectListItem item in ViewBag.Statuses)
+                                {
+                                    <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                                }
+                            </select>
+                            <label for="status">Trạng thái</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m2">
+                        <div class="input-field">
+                            <select id="branchId" name="BranchId">
+                                <option value="">Tất cả chi nhánh</option>
+                                @foreach (SelectListItem item in ViewBag.Branches)
+                                {
+                                    <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                                }
+                            </select>
+                            <label for="branchId">Chi nhánh</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m3" style="display: flex; align-items: center; gap: 0.5rem; padding-top: 1rem;">
+                        <button type="submit" class="btn waves-effect waves-light">
+                            <i class="material-icons left">search</i>Tìm kiếm
+                        </button>
+                        <a asp-action="Index" class="btn-flat waves-effect">
+                            <i class="material-icons left">refresh</i>Đặt lại
+                        </a>
+                    </div>
+                </div>
+                <input type="hidden" name="PageSize" value="@filter.PageSize" />
+            </form>
+        </div>
+    </div>
+
+    <!-- Vehicle List Table -->
+    <div class="card">
+        <div class="card-content" style="padding: 0;">
+            @if (Model.Items.Any())
+            {
+                <table class="striped highlight responsive-table">
+                    <thead>
+                        <tr>
+                            <th>Biển số</th>
+                            <th>Xe</th>
+                            <th>Loại</th>
+                            <th>Năm SX</th>
+                            <th>Trạng thái</th>
+                            <th>Chi nhánh</th>
+                            <th style="text-align: center;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var vehicle in Model.Items)
+                        {
+                            <tr>
+                                <td><strong>@vehicle.PlateNo</strong></td>
+                                <td>
+                                    <div>
+                                        <strong>@vehicle.Make @vehicle.ModelName</strong>
+                                        <br>
+                                        <small class="grey-text">
+                                            @vehicle.Seats chỗ • 
+                                            @(vehicle.Transmission == TransmissionType.Auto ? "Tự động" : "Số sàn") •
+                                            @(vehicle.FuelType ?? "N/A")
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>@vehicle.VehicleTypeName</td>
+                                <td>@vehicle.ManufactureYear</td>
+                                <td>
+                                    <span class="chip @VehicleStatusHelper.GetChipClass(vehicle.CurrentStatus)">
+                                        <i class="material-icons tiny">@VehicleStatusHelper.GetIcon(vehicle.CurrentStatus)</i>
+                                        @VehicleStatusHelper.GetDisplayName(vehicle.CurrentStatus)
+                                    </span>
+                                </td>
+                                <td>@vehicle.BranchName</td>
+                                <td style="text-align: center;">
+                                    <a asp-action="Details" asp-route-id="@vehicle.VehicleId" 
+                                       class="btn-flat waves-effect tooltipped" data-position="top" data-tooltip="Chi tiết">
+                                        <i class="material-icons">visibility</i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@vehicle.VehicleId" 
+                                       class="btn-flat waves-effect tooltipped" data-position="top" data-tooltip="Sửa">
+                                        <i class="material-icons">edit</i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <!-- Pagination -->
+                @if (Model.TotalPages > 1)
+                {
+                    <div class="card-content">
+                        <ul class="pagination center-align">
+                            <li class="@(Model.HasPreviousPage ? "waves-effect" : "disabled")">
+                                <a href="@Url.Action("Index", new { 
+                                    Page = Model.Page - 1, 
+                                    PageSize = Model.PageSize,
+                                    SearchTerm = filter.SearchTerm,
+                                    VehicleTypeId = filter.VehicleTypeId,
+                                    Status = filter.Status,
+                                    BranchId = filter.BranchId
+                                })">
+                                    <i class="material-icons">chevron_left</i>
+                                </a>
+                            </li>
+                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            {
+                                var pageNum = i;
+                                <li class="@(pageNum == Model.Page ? "active" : "waves-effect")">
+                                    <a href="@Url.Action("Index", new { 
+                                        Page = pageNum, 
+                                        PageSize = Model.PageSize,
+                                        SearchTerm = filter.SearchTerm,
+                                        VehicleTypeId = filter.VehicleTypeId,
+                                        Status = filter.Status,
+                                        BranchId = filter.BranchId
+                                    })">@pageNum</a>
+                                </li>
+                            }
+                            <li class="@(Model.HasNextPage ? "waves-effect" : "disabled")">
+                                <a href="@Url.Action("Index", new { 
+                                    Page = Model.Page + 1, 
+                                    PageSize = Model.PageSize,
+                                    SearchTerm = filter.SearchTerm,
+                                    VehicleTypeId = filter.VehicleTypeId,
+                                    Status = filter.Status,
+                                    BranchId = filter.BranchId
+                                })">
+                                    <i class="material-icons">chevron_right</i>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="material-icons">directions_car</i>
+                    <h5>Không có xe nào</h5>
+                    <p>Chưa có xe nào trong hệ thống hoặc không tìm thấy kết quả phù hợp.</p>
+                    <a asp-action="Create" class="btn waves-effect waves-light" style="margin-top: 1rem;">
+                        <i class="material-icons left">add</i>Thêm xe mới
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show toast messages from TempData
+        @if (TempData["Success"] != null)
+        {
+            <text>UCarToast.success('@TempData["Success"]');</text>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <text>UCarToast.error('@TempData["Error"]');</text>
+        }
+    });
+</script>
+}

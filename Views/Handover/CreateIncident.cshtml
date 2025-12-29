@@ -1,0 +1,162 @@
+@model UCar.Models.DTOs.Handover.IncidentCreateDto
+@using UCar.Models.Enums
+@{
+    ViewData["Title"] = "Ghi nhận sự cố";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons red-text" style="vertical-align: middle; margin-right: 8px;">add_alert</i>
+                Ghi nhận sự cố
+            </h4>
+            <p class="grey-text text-darken-1" style="margin: 0;">Thêm thông tin sự cố xảy ra trong quá trình thuê xe</p>
+        </div>
+        <a asp-action="Incidents" asp-route-contractId="@Model.ContractId" class="btn-flat">
+            <i class="material-icons left">arrow_back</i>Quay lại
+        </a>
+    </div>
+
+    <!-- Form -->
+    <div class="card">
+        <div class="card-content">
+            <form asp-action="CreateIncident" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ContractId" />
+
+                <div class="row">
+                    <!-- Select - Materialize style -->
+                    <div class="input-field col s12 m6">
+                        <select asp-for="IncidentType" id="IncidentType">
+                            <option value="" disabled selected>Chọn loại sự cố</option>
+                            <option value="@IncidentType.Accident">Tai nạn giao thông</option>
+                            <option value="@IncidentType.Theft">Mất cắp / Trộm cướp</option>
+                            <option value="@IncidentType.Fine">Phạt nguội (CSGT)</option>
+                            <option value="@IncidentType.Impound">Tạm giữ xe (CSGT)</option>
+                        </select>
+                        <label for="IncidentType">Loại sự cố *</label>
+                        <span asp-validation-for="IncidentType" class="red-text"></span>
+                    </div>
+                    
+                    <!-- Date Picker - Materialize style -->
+                    <div class="col s12 m3">
+                        <div class="input-field">
+                            <i class="material-icons prefix">date_range</i>
+                            <input type="text" id="OccurredDate" class="datepicker" />
+                            <label for="OccurredDate">Ngày xảy ra *</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Time Picker - Materialize style -->
+                    <div class="col s12 m3">
+                        <div class="input-field">
+                            <i class="material-icons prefix">access_time</i>
+                            <input type="text" id="OccurredTime" class="timepicker" />
+                            <label for="OccurredTime">Giờ xảy ra *</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Hidden combined field -->
+                    <input type="hidden" asp-for="OccurredAt" id="OccurredAt" />
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        <i class="material-icons prefix">location_on</i>
+                        <input type="text" asp-for="Location" id="Location" class="validate" />
+                        <label for="Location">Địa điểm xảy ra</label>
+                        <span class="helper-text">VD: Ngã tư Hàng Xanh, Q. Bình Thạnh</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        <i class="material-icons prefix">description</i>
+                        <textarea asp-for="Description" id="Description" class="materialize-textarea"></textarea>
+                        <label for="Description">Mô tả sự cố *</label>
+                        <span asp-validation-for="Description" class="red-text"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">attach_money</i>
+                        <input type="number" asp-for="EstimatedCost" id="EstimatedCost" class="validate" min="0" step="1000" />
+                        <label for="EstimatedCost">Chi phí ước tính (VNĐ)</label>
+                        <span asp-validation-for="EstimatedCost" class="red-text"></span>
+                    </div>
+                </div>
+
+                <div class="row" style="margin-top: 2rem;">
+                    <div class="col s12">
+                        <button type="submit" class="btn waves-effect waves-light red">
+                            <i class="material-icons left">save</i>Ghi nhận sự cố
+                        </button>
+                        <a asp-action="Incidents" asp-route-contractId="@Model.ContractId" class="btn-flat">Hủy</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Materialize components
+            M.updateTextFields();
+            
+            var selectElems = document.querySelectorAll('select');
+            M.FormSelect.init(selectElems);
+            
+            var dateElems = document.querySelectorAll('.datepicker');
+            M.Datepicker.init(dateElems, {
+                format: 'dd/mm/yyyy',
+                i18n: {
+                    months: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+                    monthsShort: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'],
+                    weekdays: ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'],
+                    weekdaysShort: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+                    weekdaysAbbrev: ['C', '2', '3', '4', '5', '6', '7'],
+                    cancel: 'Hủy',
+                    done: 'Chọn',
+                    clear: 'Xóa'
+                },
+                autoClose: true,
+                defaultDate: new Date(),
+                setDefaultDate: true
+            });
+            
+            var timeElems = document.querySelectorAll('.timepicker');
+            M.Timepicker.init(timeElems, {
+                twelveHour: false,
+                i18n: {
+                    cancel: 'Hủy',
+                    done: 'Chọn',
+                    clear: 'Xóa'
+                },
+                autoClose: true,
+                defaultTime: 'now'
+            });
+            
+            // Combine date and time before submit
+            document.querySelector('form').addEventListener('submit', function(e) {
+                var dateStr = document.getElementById('OccurredDate').value;
+                var timeStr = document.getElementById('OccurredTime').value || '12:00';
+                
+                if (dateStr) {
+                    var parts = dateStr.split('/');
+                    var isoDate = parts[2] + '-' + parts[1] + '-' + parts[0] + 'T' + timeStr + ':00';
+                    document.getElementById('OccurredAt').value = isoDate;
+                }
+            });
+            
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>UCarToast.error('@TempData["ErrorMessage"]');</text>
+            }
+        });
+    </script>
+}

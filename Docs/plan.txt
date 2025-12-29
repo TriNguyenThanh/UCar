@@ -4,7 +4,7 @@ Trí:
     5. Quản lý hợp đồng thuê
 
 Hiếu:
-    2. Quản lý xe (tài sản cho thuê)
+    2. Quản lý xe
     6. Quản lý giao nhận xe
     8. Quản lý vận hành & nhân sự
 
