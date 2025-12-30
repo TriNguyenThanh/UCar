@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using UCar.Interfaces;
 using UCar.ViewModels;
+using UCar.Models;
 
 namespace UCar.Controllers;
 
@@ -43,7 +44,7 @@ public class AccountController : Controller
         try
         {
             var user = await _authService.AuthenticateAsync(model.Username, model.Password);
-
+            var fullName = await _authService.GetName(user!);
             if (user == null)
             {
                 ModelState.AddModelError(string.Empty, "Invalid username or password.");
@@ -54,7 +55,7 @@ public class AccountController : Controller
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Name, fullName),
                 new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
                 new Claim(ClaimTypes.Role, user.Role.Code.ToString())
             };
@@ -62,12 +63,12 @@ public class AccountController : Controller
             if (user.Customer != null)
             {
                 claims.Add(new Claim("CustomerId", user.Customer.CustomerId.ToString()));
-                claims.Add(new Claim("FullName", user.Customer.FullName));
+                claims.Add(new Claim("FullName", fullName));
             }
             else if (user.StaffProfile != null)
             {
                 claims.Add(new Claim("StaffId", user.StaffProfile.StaffId.ToString()));
-                claims.Add(new Claim("FullName", user.StaffProfile.FullName));
+                claims.Add(new Claim("FullName", fullName));
             }
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -97,7 +98,7 @@ public class AccountController : Controller
             {
                 Models.Enums.RoleCode.Admin => RedirectToAction("Index", "Home"),
                 Models.Enums.RoleCode.Staff => RedirectToAction("Index", "Home"),
-                Models.Enums.RoleCode.Customer => RedirectToAction("Index", "Customer"),
+                Models.Enums.RoleCode.Customer => RedirectToAction("Index", "Home"),
                 _ => RedirectToAction("Index", "Home")
             };
         }

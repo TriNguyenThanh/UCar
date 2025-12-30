@@ -36,6 +36,7 @@ builder.Services.AddScoped<IVehicleService, VehicleService>();
 
 // Register Handover services
 builder.Services.AddScoped<IHandoverService, HandoverService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
 var app = builder.Build();
 
 // Seed database with unified seeder
@@ -54,9 +55,6 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-
-
-
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -66,14 +64,15 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseStaticFiles();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Account}/{action=Login}/{id?}");
+    pattern: "{controller=Home}/{action=Index}");
 
 app.Run();

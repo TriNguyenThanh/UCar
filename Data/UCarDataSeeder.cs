@@ -144,7 +144,7 @@ public static class UCarDataSeeder
         {
             UserId = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             RoleId = roles.staff.RoleId,
-            Username = "staff1",
+            Username = "staff01",
             Email = "staff1@ucar.com",
             Phone = "0902345678",
             PasswordHash = HashPassword("staff123"),
@@ -166,8 +166,8 @@ public static class UCarDataSeeder
             {
                 UserId = Guid.NewGuid(),
                 RoleId = roles.customer.RoleId,
-                Username = $"customer{i + 1}",
-                Email = $"customer{i + 1}@gmail.com",
+                Username = $"customer{(i < 8 ? "0" : "")}{i + 1}",
+                Email = $"customer{(i < 8 ? "0" : "")}{i + 1}@gmail.com",
                 Phone = $"09{i + 1:D8}",
                 PasswordHash = HashPassword("customer123"),
                 IsActive = true,
@@ -411,9 +411,13 @@ public static class UCarDataSeeder
         var sedanType = vehicleTypes.First(t => t.TypeName == "Sedan");
         var suvType = vehicleTypes.First(t => t.TypeName == "SUV");
         var hatchbackType = vehicleTypes.First(t => t.TypeName == "Hatchback");
+        var mpvType = vehicleTypes.First(t => t.TypeName == "MPV");
+        var pickupType = vehicleTypes.First(t => t.TypeName == "Pickup");
+        var crossoverType = vehicleTypes.First(t => t.TypeName == "Crossover");
 
         var prices = new List<Price>
         {
+            // Sedan
             new()
             {
                 PriceId = Guid.NewGuid(),
@@ -438,6 +442,7 @@ public static class UCarDataSeeder
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
+            // SUV
             new()
             {
                 PriceId = Guid.NewGuid(),
@@ -453,12 +458,112 @@ public static class UCarDataSeeder
             new()
             {
                 PriceId = Guid.NewGuid(),
+                VehicleTypeId = suvType.VehicleTypeId,
+                Name = "SUV - Thuê tháng",
+                Unit = PriceUnit.Month,
+                UnitPrice = 25000000,
+                OvertimeHourlyPrice = 80000,
+                DepositSuggest = 10000000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            // Hatchback
+            new()
+            {
+                PriceId = Guid.NewGuid(),
                 VehicleTypeId = hatchbackType.VehicleTypeId,
                 Name = "Hatchback - Thuê ngày",
                 Unit = PriceUnit.Day,
                 UnitPrice = 600000,
                 OvertimeHourlyPrice = 40000,
                 DepositSuggest = 3000000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleTypeId = hatchbackType.VehicleTypeId,
+                Name = "Hatchback - Thuê tháng",
+                Unit = PriceUnit.Month,
+                UnitPrice = 12000000,
+                OvertimeHourlyPrice = 40000,
+                DepositSuggest = 3000000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            // MPV
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleTypeId = mpvType.VehicleTypeId,
+                Name = "MPV - Thuê ngày",
+                Unit = PriceUnit.Day,
+                UnitPrice = 1000000,
+                OvertimeHourlyPrice = 65000,
+                DepositSuggest = 8000000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleTypeId = mpvType.VehicleTypeId,
+                Name = "MPV - Thuê tháng",
+                Unit = PriceUnit.Month,
+                UnitPrice = 20000000,
+                OvertimeHourlyPrice = 65000,
+                DepositSuggest = 8000000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            // Pickup
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleTypeId = pickupType.VehicleTypeId,
+                Name = "Pickup - Thuê ngày",
+                Unit = PriceUnit.Day,
+                UnitPrice = 1100000,
+                OvertimeHourlyPrice = 70000,
+                DepositSuggest = 10000000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleTypeId = pickupType.VehicleTypeId,
+                Name = "Pickup - Thuê tháng",
+                Unit = PriceUnit.Month,
+                UnitPrice = 22000000,
+                OvertimeHourlyPrice = 70000,
+                DepositSuggest = 10000000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            // Crossover
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleTypeId = crossoverType.VehicleTypeId,
+                Name = "Crossover - Thuê ngày",
+                Unit = PriceUnit.Day,
+                UnitPrice = 900000,
+                OvertimeHourlyPrice = 60000,
+                DepositSuggest = 7000000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleTypeId = crossoverType.VehicleTypeId,
+                Name = "Crossover - Thuê tháng",
+                Unit = PriceUnit.Month,
+                UnitPrice = 18000000,
+                OvertimeHourlyPrice = 60000,
+                DepositSuggest = 7000000,
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             }

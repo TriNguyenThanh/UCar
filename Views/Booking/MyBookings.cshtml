@@ -1,0 +1,88 @@
+@model List<UCar.ViewModels.Booking.BookingListVM>
+@{
+    ViewData["Title"] = "Lịch sử đặt xe";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+        <h5 style="font-weight: 600; flex-grow: 1;">
+            <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">history</i>
+            Đơn đặt xe của tôi
+        </h5>
+        <a asp-action="Search" class="btn waves-effect waves-light blue">
+            <i class="material-icons left">add</i>Đặt xe mới
+        </a>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="card">
+            <div class="card-content" style="padding: 0;">
+                <table class="striped highlight responsive-table">
+                    <thead class="grey lighten-4">
+                        <tr>
+                            <th>Ngày đặt</th>
+                            <th>Xe</th>
+                            <th>Thời gian thuê</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th class="center-align">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.CreatedAt.ToString("dd/MM/yyyy")</td>
+                                <td style="font-weight: 500;">@item.VehicleName</td>
+                                <td>
+                                    <div>@item.StartAt.ToString("dd/MM HH:mm")</div>
+                                    <div class="grey-text tiny">đến @item.EndAt.ToString("dd/MM HH:mm")</div>
+                                </td>
+                                <td class="orange-text"><strong>@item.TotalAmount.ToString("N0")đ</strong></td>
+                                <td>
+                                    @switch (item.Status)
+                                    {
+                                        case UCar.Models.Enums.BookingStatus.Pending:
+                                            <span class="chip chip-info white-text orange lighten-2">Chờ duyệt</span>
+                                            break;
+                                        case UCar.Models.Enums.BookingStatus.Confirmed:
+                                            <span class="chip chip-success white-text green">Đã chốt</span>
+                                            break;
+                                        case UCar.Models.Enums.BookingStatus.Completed:
+                                            <span class="chip white-text blue">Hoàn thành</span>
+                                            break;
+                                        case UCar.Models.Enums.BookingStatus.Cancelled:
+                                            <span class="chip white-text grey">Đã hủy</span>
+                                            break;
+                                        default:
+                                            <span class="chip">@item.Status</span>
+                                            break;
+                                    }
+                                </td>
+                                <td class="center-align">
+                                    <a asp-action="Details" asp-route-id="@item.BookingId" class="btn-small btn-flat waves-effect" title="Chi tiết">
+                                        <i class="material-icons grey-text text-darken-2">visibility</i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-content empty-state center-align">
+                <i class="material-icons grey-text" style="font-size: 4rem;">event_busy</i>
+                <h5>Bạn chưa có đơn đặt xe nào</h5>
+                <p>Hãy tìm và đặt chiếc xe ưng ý ngay hôm nay!</p>
+                <a asp-action="Search" class="btn waves-effect waves-light orange" style="margin-top: 1rem;">
+                    <i class="material-icons left">search</i>Tìm xe ngay
+                </a>
+            </div>
+        </div>
+    }
+</div>
