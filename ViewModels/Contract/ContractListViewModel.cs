@@ -1,0 +1,129 @@
+using UCar.Models.Enums;
+
+namespace UCar.ViewModels.Contract;
+
+/// <summary>
+/// ViewModel cho danh sách hợp đồng
+/// </summary>
+public class ContractListViewModel
+{
+    public Guid ContractId { get; set; }
+    public string ContractCode { get; set; } = string.Empty;
+    
+    // Khách hàng
+    public string CustomerName { get; set; } = string.Empty;
+    public string CustomerPhone { get; set; } = string.Empty;
+    
+    // Xe
+    public string VehiclePlateNo { get; set; } = string.Empty;
+    public string VehicleModel { get; set; } = string.Empty;
+    
+    // Thời gian
+    public DateTime PlannedStart { get; set; }
+    public DateTime PlannedEnd { get; set; }
+    public int RentalDays { get; set; }
+    
+    // Tài chính
+    public decimal TotalAmount { get; set; }
+    public decimal DepositAmount { get; set; }
+    
+    // Trạng thái
+    public RentalContractStatus Status { get; set; }
+    public string StatusDisplay => GetStatusDisplay();
+    public string StatusClass => GetStatusClass();
+    
+    // Booking liên quan
+    public Guid? BookingId { get; set; }
+    public string? BookingCode { get; set; }
+    
+    // Audit
+    public DateTime CreatedAt { get; set; }
+    public string CreatedByName { get; set; } = string.Empty;
+    
+    private string GetStatusDisplay() => Status switch
+    {
+        RentalContractStatus.Draft => "Bản nháp",
+        RentalContractStatus.Pending => "Chờ ký",
+        RentalContractStatus.Signed => "Đã ký",
+        RentalContractStatus.Active => "Đang hoạt động",
+        RentalContractStatus.AwaitingDelivery => "Chờ giao xe",
+        RentalContractStatus.InProgress => "Đang thuê",
+        RentalContractStatus.AwaitingReturn => "Chờ trả xe",
+        RentalContractStatus.PendingSettlement => "Chờ quyết toán",
+        RentalContractStatus.Completed => "Hoàn tất",
+        RentalContractStatus.Violation => "Vi phạm",
+        RentalContractStatus.Cancelled => "Đã hủy",
+        _ => "Không xác định"
+    };
+    
+    private string GetStatusClass() => Status switch
+    {
+        RentalContractStatus.Draft => "chip",
+        RentalContractStatus.Pending => "chip chip-warning",
+        RentalContractStatus.Signed => "chip chip-info",
+        RentalContractStatus.Active => "chip chip-primary",
+        RentalContractStatus.AwaitingDelivery => "chip chip-info",
+        RentalContractStatus.InProgress => "chip chip-success",
+        RentalContractStatus.AwaitingReturn => "chip chip-warning",
+        RentalContractStatus.PendingSettlement => "chip chip-warning",
+        RentalContractStatus.Completed => "chip chip-success",
+        RentalContractStatus.Violation => "chip chip-error",
+        RentalContractStatus.Cancelled => "chip chip-error",
+        _ => "chip"
+    };
+}
+
+/// <summary>
+/// Filter và phân trang cho danh sách hợp đồng
+/// </summary>
+public class ContractSearchViewModel
+{
+    public string? Keyword { get; set; }
+    public RentalContractStatus? Status { get; set; }
+    public DateTime? FromDate { get; set; }
+    public DateTime? ToDate { get; set; }
+    public Guid? BranchId { get; set; }
+    public Guid? VehicleId { get; set; }
+    public Guid? CustomerId { get; set; }
+    
+    // Sorting
+    public string SortBy { get; set; } = "CreatedAt";
+    public bool SortDesc { get; set; } = true;
+    
+    // Pagination
+    public int PageNumber { get; set; } = 1;
+    public int PageSize { get; set; } = 10;
+}
+
+/// <summary>
+/// Kết quả phân trang
+/// </summary>
+public class ContractListResultViewModel
+{
+    public List<ContractListViewModel> Items { get; set; } = new();
+    public int TotalCount { get; set; }
+    public int PageNumber { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages => (int)Math.Ceiling(TotalCount / (double)PageSize);
+    public bool HasPrevious => PageNumber > 1;
+    public bool HasNext => PageNumber < TotalPages;
+    
+    // Filter state
+    public ContractSearchViewModel Filter { get; set; } = new();
+    
+    // Dropdown data
+    public List<StatusOption> StatusOptions { get; set; } = new();
+    public List<BranchOption> BranchOptions { get; set; } = new();
+}
+
+public class StatusOption
+{
+    public RentalContractStatus Value { get; set; }
+    public string Display { get; set; } = string.Empty;
+}
+
+public class BranchOption
+{
+    public Guid BranchId { get; set; }
+    public string Name { get; set; } = string.Empty;
+}

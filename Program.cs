@@ -37,6 +37,10 @@ builder.Services.AddScoped<IVehicleService, VehicleService>();
 // Register Handover services
 builder.Services.AddScoped<IHandoverService, HandoverService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
+
+// Register Contract services
+builder.Services.AddScoped<IContractService, ContractService>();
+
 var app = builder.Build();
 
 // Seed database with unified seeder
@@ -46,7 +50,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<UCarDbContext>();
-        await UCarDataSeeder.SeedAllDataAsync(context, force: true);
+        await UCarDataSeeder.SeedAllDataAsync(context, force: false);
     }
     catch (Exception ex)
     {

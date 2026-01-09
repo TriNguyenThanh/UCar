@@ -1,0 +1,357 @@
+@model UCar.ViewModels.Contract.ContractPrintViewModel
+@{
+    ViewData["Title"] = "Hợp đồng " + Model.ContractCode;
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 20mm;
+            background: white;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 20px;
+        }
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #1565c0;
+        }
+        .company-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .contract-title {
+            font-size: 22px;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-align: center;
+            margin: 30px 0;
+        }
+        .contract-code {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+        }
+        .info-row {
+            display: flex;
+            margin-bottom: 8px;
+        }
+        .info-label {
+            width: 200px;
+            font-weight: bold;
+        }
+        .info-value {
+            flex: 1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        table th, table td {
+            border: 1px solid #333;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        table th {
+            background: #f0f0f0;
+            font-weight: bold;
+        }
+        .amount-row td:last-child {
+            text-align: right;
+            font-weight: bold;
+        }
+        .total-row {
+            background: #e3f2fd;
+        }
+        .total-row td {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .terms-section {
+            background: #fafafa;
+            padding: 15px;
+            border: 1px solid #ddd;
+            margin: 20px 0;
+        }
+        .terms-section pre {
+            white-space: pre-wrap;
+            font-family: inherit;
+            font-size: 13px;
+        }
+        .signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 50px;
+        }
+        .signature-box {
+            width: 45%;
+            text-align: center;
+        }
+        .signature-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .signature-date {
+            font-style: italic;
+            font-size: 12px;
+            margin-bottom: 60px;
+        }
+        .signature-name {
+            border-top: 1px solid #000;
+            padding-top: 5px;
+            margin-top: 80px;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #ccc;
+            padding-top: 15px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .status-active { background: #c8e6c9; color: #2e7d32; }
+        .status-completed { background: #bbdefb; color: #1565c0; }
+        .status-cancelled { background: #ffcdd2; color: #c62828; }
+        .status-draft { background: #e0e0e0; color: #616161; }
+        
+        @@media print {
+            body { padding: 10mm; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Nút in (chỉ hiển thị trên web) -->
+    <div class="no-print" style="position: fixed; top: 20px; right: 20px; z-index: 1000;">
+        <button onclick="window.print()" style="padding: 10px 20px; background: #1565c0; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+            🖨️ In hợp đồng
+        </button>
+        <button onclick="window.close()" style="padding: 10px 20px; background: #757575; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-left: 10px;">
+            ✕ Đóng
+        </button>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="company-name">@Model.CompanyName</div>
+        <div class="company-info">
+            @Model.CompanyAddress<br>
+            Điện thoại: @Model.CompanyPhone | Email: @Model.CompanyEmail
+        </div>
+    </div>
+
+    <!-- Tiêu đề -->
+    <div class="contract-title">Hợp đồng thuê xe</div>
+    <div class="contract-code">
+        Số: <strong>@Model.ContractCode</strong>
+        <span class="status-badge @GetStatusClass(Model.Status)">@Model.Status</span>
+    </div>
+
+    <!-- Thông tin bên cho thuê -->
+    <div class="section">
+        <div class="section-title">Bên A: Bên cho thuê</div>
+        <div class="info-row">
+            <span class="info-label">Tên công ty:</span>
+            <span class="info-value">@Model.CompanyName</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Địa chỉ:</span>
+            <span class="info-value">@Model.CompanyAddress</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Điện thoại:</span>
+            <span class="info-value">@Model.CompanyPhone</span>
+        </div>
+    </div>
+
+    <!-- Thông tin khách hàng -->
+    <div class="section">
+        <div class="section-title">Bên B: Bên thuê</div>
+        <div class="info-row">
+            <span class="info-label">Họ tên:</span>
+            <span class="info-value">@Model.CustomerName</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Số điện thoại:</span>
+            <span class="info-value">@Model.CustomerPhone</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Email:</span>
+            <span class="info-value">@Model.CustomerEmail</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">CMND/CCCD:</span>
+            <span class="info-value">@Model.CustomerIdNumber</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Địa chỉ:</span>
+            <span class="info-value">@Model.CustomerAddress</span>
+        </div>
+    </div>
+
+    <!-- Thông tin xe -->
+    <div class="section">
+        <div class="section-title">Thông tin phương tiện</div>
+        <div class="info-row">
+            <span class="info-label">Xe:</span>
+            <span class="info-value">@Model.VehicleInfo</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Biển số:</span>
+            <span class="info-value">@Model.LicensePlate</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Màu sắc:</span>
+            <span class="info-value">@Model.VehicleColor</span>
+        </div>
+    </div>
+
+    <!-- Thời gian và địa điểm -->
+    <div class="section">
+        <div class="section-title">Thời gian và địa điểm</div>
+        <table>
+            <tr>
+                <th style="width: 50%;">Nhận xe</th>
+                <th style="width: 50%;">Trả xe</th>
+            </tr>
+            <tr>
+                <td>
+                    <strong>Thời gian:</strong> @Model.PlannedStart.ToString("dd/MM/yyyy HH:mm")<br>
+                    <strong>Địa điểm:</strong> @Model.PickupLocation
+                </td>
+                <td>
+                    <strong>Thời gian:</strong> @Model.PlannedEnd.ToString("dd/MM/yyyy HH:mm")<br>
+                    <strong>Địa điểm:</strong> @Model.ReturnLocation
+                </td>
+            </tr>
+        </table>
+        <div class="info-row">
+            <span class="info-label">Số ngày thuê:</span>
+            <span class="info-value">@Model.RentalDays ngày</span>
+        </div>
+    </div>
+
+    <!-- Chi phí -->
+    <div class="section">
+        <div class="section-title">Chi phí</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mô tả</th>
+                    <th style="width: 150px; text-align: right;">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="amount-row">
+                    <td>Phí thuê xe (@Model.RentalDays ngày x @Model.DailyRate.ToString("N0")đ/ngày)</td>
+                    <td>@Model.RentalAmount.ToString("N0")đ</td>
+                </tr>
+                @if (Model.ExtraCharges > 0)
+                {
+                    <tr class="amount-row">
+                        <td>Phụ phí phát sinh</td>
+                        <td>@Model.ExtraCharges.ToString("N0")đ</td>
+                    </tr>
+                }
+                <tr class="amount-row">
+                    <td>Tiền cọc</td>
+                    <td>@Model.DepositAmount.ToString("N0")đ</td>
+                </tr>
+                <tr class="total-row">
+                    <td>TỔNG CỘNG</td>
+                    <td style="text-align: right;">@Model.TotalAmount.ToString("N0")đ</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Điều khoản -->
+    <div class="section">
+        <div class="section-title">Điều khoản hợp đồng</div>
+        <div class="terms-section">
+            <pre>@Model.Terms</pre>
+        </div>
+    </div>
+
+    <!-- Chữ ký -->
+    <div class="signature-section">
+        <div class="signature-box">
+            <div class="signature-title">ĐẠI DIỆN BÊN A</div>
+            <div class="signature-date">(Ký, ghi rõ họ tên)</div>
+            @if (Model.ConfirmedAt.HasValue)
+            {
+                <div style="font-style: italic;">Đã xác nhận: @Model.ConfirmedAt.Value.ToString("dd/MM/yyyy HH:mm")</div>
+            }
+            <div class="signature-name">@Model.ConfirmedByName</div>
+        </div>
+        <div class="signature-box">
+            <div class="signature-title">ĐẠI DIỆN BÊN B</div>
+            <div class="signature-date">(Ký, ghi rõ họ tên)</div>
+            @if (Model.CustomerSignedAt.HasValue)
+            {
+                <div style="font-style: italic;">Đã ký: @Model.CustomerSignedAt.Value.ToString("dd/MM/yyyy HH:mm")</div>
+            }
+            <div class="signature-name">@Model.CustomerName</div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        Hợp đồng được lập thành 02 bản, mỗi bên giữ 01 bản có giá trị pháp lý như nhau.<br>
+        Ngày tạo: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm") | In ngày: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+    </div>
+</body>
+</html>
+
+@functions {
+    string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            "Đang hoạt động" or "Active" or "InProgress" => "status-active",
+            "Hoàn thành" or "Completed" => "status-completed",
+            "Đã hủy" or "Cancelled" => "status-cancelled",
+            _ => "status-draft"
+        };
+    }
+}

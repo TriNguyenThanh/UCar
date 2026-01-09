@@ -74,9 +74,9 @@ public class BookingController : Controller
         {
             // Default: Tomorrow 8AM to DayAfterTomorrow 8PM
             vm.StartDate = DateTime.Today.AddDays(1);
-            vm.StartTime = new TimeSpan(8, 0, 0);
+            vm.StartTime = TimeOnly.FromTimeSpan(TimeSpan.FromHours(8)).ToTimeSpan();
             vm.EndDate = DateTime.Today.AddDays(2);
-            vm.EndTime = new TimeSpan(20, 0, 0);
+            vm.EndTime = TimeOnly.FromTimeSpan(TimeSpan.FromHours(20)).ToTimeSpan();
         }
 
         return View(vm);
