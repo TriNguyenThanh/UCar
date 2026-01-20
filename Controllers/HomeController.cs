@@ -23,6 +23,12 @@ public class HomeController : Controller
     [Authorize]
     public async Task<IActionResult> Index()
     {
+        // Customer redirect to vehicle search page
+        if (User.IsInRole("Customer"))
+        {
+            return RedirectToAction("Search", "Booking");
+        }
+
         var viewModel = new DashboardViewModel();
         var today = DateTime.Today;
         var monthStart = new DateTime(today.Year, today.Month, 1);

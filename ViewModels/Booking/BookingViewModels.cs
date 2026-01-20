@@ -21,8 +21,15 @@ public class BookingSearchCheckVM
     [Required(ErrorMessage = "Vui lòng chọn giờ trả")]
     public TimeSpan? EndTime { get; set; }
     
-    // Optional filters
+    // Filter properties
+    [Display(Name = "Loại xe")]
     public Guid? VehicleTypeId { get; set; }
+    
+    [Display(Name = "Hãng xe")]
+    public string? Make { get; set; }
+    
+    [Display(Name = "Số ghế")]
+    public int? Seats { get; set; }
 }
 
 public class VehicleSearchResultVM

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using UCar.Interfaces;
 using UCar.Models.Enums;
 using UCar.ViewModels.Booking;
@@ -11,11 +12,16 @@ namespace UCar.Controllers;
 public class BookingController : Controller
 {
     private readonly IBookingService _bookingService;
+    private readonly IVehicleCatalogService _vehicleCatalogService;
     private readonly ILogger<BookingController> _logger;
 
-    public BookingController(IBookingService bookingService, ILogger<BookingController> logger)
+    public BookingController(
+        IBookingService bookingService, 
+        IVehicleCatalogService vehicleCatalogService,
+        ILogger<BookingController> logger)
     {
         _bookingService = bookingService;
+        _vehicleCatalogService = vehicleCatalogService;
         _logger = logger;
     }
 
@@ -39,47 +45,31 @@ public class BookingController : Controller
 
     // GET: /Booking/Search
     [AllowAnonymous]
-    public async Task<IActionResult> Search(DateTime? startDate, string? startTime, DateTime? endDate, string? endTime)
+    public async Task<IActionResult> Search(BookingSearchCheckVM model)
     {
-        var vm = new BookingSearchCheckVM();
+        // Prepare filter dropdowns
+        await PrepareFilterDropdownsAsync();
         
-        if (startDate.HasValue && endDate.HasValue)
+        if (model.StartDate.HasValue && model.EndDate.HasValue)
         {
-            // Parse time strings (format: "HH:mm" or "H:mm")
-            TimeSpan parsedStartTime = TimeSpan.Zero;
-            TimeSpan parsedEndTime = TimeSpan.Zero;
-            
-            if (!string.IsNullOrEmpty(startTime))
-            {
-                TimeSpan.TryParse(startTime, out parsedStartTime);
-            }
-            if (!string.IsNullOrEmpty(endTime))
-            {
-                TimeSpan.TryParse(endTime, out parsedEndTime);
-            }
-            
-            vm.StartDate = startDate;
-            vm.StartTime = parsedStartTime;
-            vm.EndDate = endDate;
-            vm.EndTime = parsedEndTime;
-            
             // Normalize DateTimes
-            var start = startDate.Value.Date + parsedStartTime;
-            var end = endDate.Value.Date + parsedEndTime;
+            var start = model.StartDate.Value.Date + (model.StartTime ?? TimeSpan.Zero);
+            var end = model.EndDate.Value.Date + (model.EndTime ?? TimeSpan.Zero);
 
-            ViewBag.Results = await _bookingService.SearchVehiclesAsync(start, end);
+            ViewBag.Results = await _bookingService.SearchVehiclesAsync(
+                start, end, model.VehicleTypeId, model.Make, model.Seats);
             ViewBag.SearchPerformed = true;
         }
         else
         {
             // Default: Tomorrow 8AM to DayAfterTomorrow 8PM
-            vm.StartDate = DateTime.Today.AddDays(1);
-            vm.StartTime = TimeOnly.FromTimeSpan(TimeSpan.FromHours(8)).ToTimeSpan();
-            vm.EndDate = DateTime.Today.AddDays(2);
-            vm.EndTime = TimeOnly.FromTimeSpan(TimeSpan.FromHours(20)).ToTimeSpan();
+            model.StartDate = DateTime.Today.AddDays(1);
+            model.StartTime = TimeSpan.FromHours(8);
+            model.EndDate = DateTime.Today.AddDays(2);
+            model.EndTime = TimeSpan.FromHours(20);
         }
 
-        return View(vm);
+        return View(model);
     }
 
     // GET: /Booking/Create?vehicleId=...&start=...&end=...
@@ -206,5 +196,20 @@ public class BookingController : Controller
             TempData["ErrorMessage"] = ex.Message;
         }
         return RedirectToAction(nameof(Details), new { id = model.BookingId });
+    }
+
+    private async Task PrepareFilterDropdownsAsync()
+    {
+        // Vehicle Types dropdown
+        var vehicleTypes = await _vehicleCatalogService.GetAllVehicleTypesAsync();
+        ViewBag.VehicleTypes = new SelectList(vehicleTypes, "VehicleTypeId", "TypeName");
+
+        // Makes dropdown (distinct values from VehicleModels)
+        var vehicleModels = await _vehicleCatalogService.GetAllVehicleModelsAsync();
+        var distinctMakes = vehicleModels.Select(vm => vm.Make).Distinct().OrderBy(m => m).ToList();
+        ViewBag.Makes = new SelectList(distinctMakes);
+
+        // Seats dropdown (common values)
+        ViewBag.SeatsList = new SelectList(new[] { 4, 5, 7, 8, 16 });
     }
 }

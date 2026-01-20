@@ -93,8 +93,9 @@
                         <div style="margin-top: 1rem;">
                             @if (Model.CanApprove)
                             {
-                                <form asp-action="Confirm" style="display: inline-block;">
-                                    <input type="hidden" name="bookingId" value="@Model.BookingId" />
+                                <form asp-action="Confirm" method="post" style="display: inline-block;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" asp-for="BookingId" name="bookingId" />
                                     <button class="btn waves-effect waves-light green" type="submit">
                                         <i class="material-icons left">check</i>Xác nhận đơn
                                     </button>
@@ -143,13 +144,14 @@
 <!-- Modal Reject -->
 <div id="modal-reject" class="modal">
     <form asp-action="Reject" method="post">
+        @Html.AntiForgeryToken()
         <div class="modal-content">
             <h4>Từ chối đặt xe</h4>
             <p>Vui lòng nhập lý do từ chối đơn đặt xe này:</p>
-            <input type="hidden" name="BookingId" value="@Model.BookingId" />
+            <input type="hidden" asp-for="BookingId" name="BookingId" />
             <div class="input-field">
-                <textarea name="Reason" class="materialize-textarea" required></textarea>
-                <label>Lý do</label>
+                <textarea id="RejectReason" name="Reason" class="materialize-textarea" required></textarea>
+                <label for="RejectReason">Lý do</label>
             </div>
         </div>
         <div class="modal-footer">
@@ -162,13 +164,14 @@
 <!-- Modal Cancel -->
 <div id="modal-cancel" class="modal">
     <form asp-action="Cancel" method="post">
+        @Html.AntiForgeryToken()
         <div class="modal-content">
             <h4>Hủy đặt xe</h4>
             <p>Bạn có chắc chắn muốn hủy đơn này không?</p>
-            <input type="hidden" name="BookingId" value="@Model.BookingId" />
+            <input type="hidden" asp-for="BookingId" name="BookingId" />
             <div class="input-field">
-                <textarea name="Reason" class="materialize-textarea" placeholder="Nhập lý do hủy (tùy chọn)"></textarea>
-                <label>Lý do</label>
+                <textarea id="CancelReason" name="Reason" class="materialize-textarea" placeholder="Nhập lý do hủy (tùy chọn)"></textarea>
+                <label for="CancelReason">Lý do</label>
             </div>
         </div>
         <div class="modal-footer">

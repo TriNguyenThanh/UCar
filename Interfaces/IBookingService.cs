@@ -6,7 +6,12 @@ namespace UCar.Interfaces;
 public interface IBookingService
 {
     // 4.1 Tra cứu & Chọn xe
-    Task<List<VehicleSearchResultVM>> SearchVehiclesAsync(DateTime start, DateTime end, Guid? typeId = null);
+    Task<List<VehicleSearchResultVM>> SearchVehiclesAsync(
+        DateTime start, 
+        DateTime end, 
+        Guid? vehicleTypeId = null, 
+        string? make = null, 
+        int? seats = null);
     Task<VehicleSearchResultVM?> GetVehicleForBookingAsync(Guid vehicleId, DateTime start, DateTime end);
 
     // 4.2 Tạo đặt xe
@@ -25,5 +30,5 @@ public interface IBookingService
     Task CancelBookingAsync(Guid bookingId, Guid userId, string reason); // Customer or Staff
     
     // Helpers
-    Task<bool> CheckAvailabilityAsync(Guid vehicleId, DateTime start, DateTime end);
+    Task<bool> CheckAvailabilityAsync(Guid vehicleId, DateTime start, DateTime end, Guid? excludeBookingId = null);
 }

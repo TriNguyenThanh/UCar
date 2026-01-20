@@ -18,7 +18,12 @@ public class BookingService : IBookingService
         _logger = logger;
     }
 
-    public async Task<List<VehicleSearchResultVM>> SearchVehiclesAsync(DateTime start, DateTime end, Guid? typeId = null)
+    public async Task<List<VehicleSearchResultVM>> SearchVehiclesAsync(
+        DateTime start, 
+        DateTime end, 
+        Guid? vehicleTypeId = null, 
+        string? make = null, 
+        int? seats = null)
     {
         // Validate dates
         if (start < DateTime.Now.Date || end <= start) return new List<VehicleSearchResultVM>();
@@ -32,9 +37,18 @@ public class BookingService : IBookingService
             .Where(v => v.CurrentStatus == VehicleStatus.Available || 
                         v.CurrentStatus == VehicleStatus.Reserved);
 
-        if (typeId.HasValue)
+        // Apply filters
+        if (vehicleTypeId.HasValue)
         {
-            query = query.Where(v => v.Model.VehicleTypeId == typeId.Value);
+            query = query.Where(v => v.Model.VehicleTypeId == vehicleTypeId.Value);
+        }
+        if (!string.IsNullOrWhiteSpace(make))
+        {
+            query = query.Where(v => v.Model.Make == make);
+        }
+        if (seats.HasValue)
+        {
+            query = query.Where(v => v.Model.Seats == seats.Value);
         }
 
         var candidates = await query.ToListAsync();
@@ -266,7 +280,7 @@ public class BookingService : IBookingService
         // Check availability again strictly
         if (booking.AssignedVehicleId.HasValue)
         {
-            if (!await CheckAvailabilityAsync(booking.AssignedVehicleId.Value, booking.StartAt, booking.EndAt))
+            if (!await CheckAvailabilityAsync(booking.AssignedVehicleId.Value, booking.StartAt, booking.EndAt, booking.BookingId))
             {
                 throw new InvalidOperationException("Xe đã bị trùng lịch trong lúc chờ xác nhận. Vui lòng chọn xe khác.");
             }
@@ -307,7 +321,7 @@ public class BookingService : IBookingService
         _logger.LogInformation($"Booking {bookingId} Cancelled by User {userId}. Reason: {reason}");
     }
 
-    public async Task<bool> CheckAvailabilityAsync(Guid vehicleId, DateTime start, DateTime end)
+    public async Task<bool> CheckAvailabilityAsync(Guid vehicleId, DateTime start, DateTime end, Guid? excludeBookingId = null)
     {
         // Các trạng thái đang chiếm xe: Pending, Confirmed, Deposited, InProgress
         var blockingStatuses = new[] 
@@ -322,7 +336,8 @@ public class BookingService : IBookingService
         bool overlap = await _context.Bookings.AnyAsync(b => 
             b.AssignedVehicleId == vehicleId &&
             blockingStatuses.Contains(b.Status) &&
-            b.StartAt < end && b.EndAt > start
+            b.StartAt < end && b.EndAt > start &&
+            (!excludeBookingId.HasValue || b.BookingId != excludeBookingId.Value)
         );
         
         return !overlap;

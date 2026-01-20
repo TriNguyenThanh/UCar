@@ -352,6 +352,20 @@ public class UCarDbContext : DbContext
             .HasForeignKey(rc => rc.HandledBy)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // RentalContract -> UserAccount (confirmed by)
+        modelBuilder.Entity<RentalContract>()
+            .HasOne(rc => rc.Confirmer)
+            .WithMany()
+            .HasForeignKey(rc => rc.ConfirmedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // RentalContract -> UserAccount (cancelled by)
+        modelBuilder.Entity<RentalContract>()
+            .HasOne(rc => rc.Canceller)
+            .WithMany()
+            .HasForeignKey(rc => rc.CancelledBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // HandoverRecord -> RentalContract (one-to-one)
         modelBuilder.Entity<HandoverRecord>()
             .HasOne(hr => hr.RentalContract)

@@ -83,8 +83,8 @@
                             </a>
                         </li>
 
-                        <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons left">event</i>Đặt xe</a>
-                        </li>
+                        @* <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons left">event</i>Đặt xe</a>
+                        </li> *@
                     }
 
                     @if (User.IsInRole("Admin"))
@@ -95,6 +95,7 @@
 
                     @if (User.IsInRole("Customer"))
                     {
+                        <li><a asp-controller="Booking" asp-action="Search"><i class="material-icons left">search</i>Thuê xe</a></li>
                         <li><a asp-controller="Booking" asp-action="MyBookings"><i class="material-icons left">event</i>Đặt xe
                                 của tôi</a></li>
                         <li><a asp-controller="Rental" asp-action="MyRentals"><i
