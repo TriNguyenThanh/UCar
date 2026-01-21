@@ -36,6 +36,10 @@ builder.Services.AddScoped<IVehicleService, VehicleService>();
 
 // Register Handover services
 builder.Services.AddScoped<IHandoverService, HandoverService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+
+// Register Contract services
+builder.Services.AddScoped<IContractService, ContractService>();
 
 // Register Operations & HR services (Module 8.0)
 builder.Services.AddScoped<IBranchService, BranchService>();
@@ -61,9 +65,6 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-
-
-
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -73,14 +74,15 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseStaticFiles();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Account}/{action=Login}/{id?}");
+    pattern: "{controller=Home}/{action=Index}");
 
 app.Run();

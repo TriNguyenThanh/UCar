@@ -1,0 +1,128 @@
+@model UCar.ViewModels.Contract.ContractCancelViewModel
+@{
+    ViewData["Title"] = "Hủy hợp đồng " + Model.ContractCode;
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header -->
+    <div style="margin-bottom: 1.5rem;">
+        <a asp-action="Details" asp-route-id="@Model.ContractId" class="btn-flat waves-effect">
+            <i class="material-icons left">arrow_back</i>Quay lại
+        </a>
+        <h4 style="font-weight: 700; margin-bottom: 0.5rem; margin-top: 1rem;">
+            <i class="material-icons red-text" style="vertical-align: middle; margin-right: 8px;">cancel</i>
+            Hủy hợp đồng
+        </h4>
+        <p class="grey-text">Hợp đồng: <strong>@Model.ContractCode</strong></p>
+    </div>
+
+    <div class="row">
+        <div class="col s12 m8 offset-m2">
+            <!-- Cảnh báo -->
+            <div class="card-panel red lighten-4">
+                <h5 class="red-text text-darken-4" style="margin-top: 0;">
+                    <i class="material-icons left">warning</i>
+                    Cảnh báo: Thao tác không thể hoàn tác
+                </h5>
+                <p>Hủy hợp đồng sẽ:</p>
+                <ul class="browser-default">
+                    <li>Giải phóng xe cho các đơn đặt khác</li>
+                    <li>Hủy các liên kết với đơn đặt xe (nếu có)</li>
+                    <li>Không thể khôi phục hợp đồng đã hủy</li>
+                </ul>
+            </div>
+
+            <!-- Thông tin hợp đồng -->
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title">
+                        <i class="material-icons grey-text">description</i>
+                        Thông tin hợp đồng
+                    </span>
+                    
+                    <table class="striped">
+                        <tbody>
+                            <tr>
+                                <td><strong>Mã hợp đồng:</strong></td>
+                                <td>@Model.ContractCode</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Trạng thái:</strong></td>
+                                <td><span class="chip">@Model.CurrentStatus</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Khách hàng:</strong></td>
+                                <td>@Model.CustomerName</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Xe:</strong></td>
+                                <td>@Model.VehicleInfo</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Thời gian thuê:</strong></td>
+                                <td>@Model.PlannedStart.ToString("dd/MM/yyyy") → @Model.PlannedEnd.ToString("dd/MM/yyyy")</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            @if (Model.HasDeposit)
+            {
+                <div class="card orange lighten-4">
+                    <div class="card-content">
+                        <span class="card-title">
+                            <i class="material-icons orange-text text-darken-2">attach_money</i>
+                            Thông tin cọc
+                        </span>
+                        <p><strong>Tiền cọc đã thu:</strong> @Model.DepositAmount.ToString("N0")đ</p>
+                        <p><strong>Số tiền hoàn trả:</strong> @Model.RefundAmount.ToString("N0")đ</p>
+                        <p class="grey-text"><small>* Số tiền hoàn trả sẽ được xử lý tại phân hệ Thanh toán</small></p>
+                    </div>
+                </div>
+            }
+
+            <!-- Form hủy -->
+            <div class="card">
+                <form asp-action="Cancel" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="ContractId" />
+                    
+                    <div class="card-content">
+                        <span class="card-title">
+                            <i class="material-icons red-text">cancel</i>
+                            Lý do hủy
+                        </span>
+                        
+                        <div class="input-field">
+                            <textarea asp-for="CancellationReason" id="CancellationReason" class="materialize-textarea validate" required></textarea>
+                            <label for="CancellationReason">Lý do hủy hợp đồng *</label>
+                            <span asp-validation-for="CancellationReason" class="helper-text red-text"></span>
+                        </div>
+                        
+                        <p class="grey-text">
+                            <small>Vui lòng nhập lý do hủy hợp đồng để lưu vào hồ sơ.</small>
+                        </p>
+                    </div>
+                    
+                    <div class="card-action">
+                        <button type="submit" class="btn waves-effect waves-light red" onclick="return confirm('Bạn có chắc chắn muốn hủy hợp đồng này?');">
+                            <i class="material-icons left">cancel</i>Xác nhận hủy
+                        </button>
+                        <a asp-action="Details" asp-route-id="@Model.ContractId" class="btn-flat waves-effect">
+                            Quay lại
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        M.updateTextFields();
+    });
+</script>
+}

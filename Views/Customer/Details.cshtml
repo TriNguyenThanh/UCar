@@ -239,6 +239,48 @@
                                             }
                                         </div>
                                     }
+                                    
+                                    @* Document Verification Actions *@
+                                    @if (!doc.IsVerified)
+                                    {
+                                        <div class="divider" style="margin: 1rem 0;"></div>
+                                        <div class="document-actions">
+                                            <form asp-action="VerifyDocument" method="post" style="display: inline;">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="docId" value="@doc.DocId" />
+                                                <input type="hidden" name="customerId" value="@Model.CustomerId" />
+                                                <button type="submit" class="btn-small waves-effect waves-light green">
+                                                    <i class="material-icons left">verified</i>Xác thực
+                                                </button>
+                                            </form>
+                                            <a href="#rejectModal-@doc.DocId" class="btn-small waves-effect waves-light red modal-trigger">
+                                                <i class="material-icons left">cancel</i>Từ chối
+                                            </a>
+                                        </div>
+                                        
+                                        @* Reject Modal *@
+                                        <div id="rejectModal-@doc.DocId" class="modal">
+                                            <form asp-action="RejectDocument" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="docId" value="@doc.DocId" />
+                                                <input type="hidden" name="customerId" value="@Model.CustomerId" />
+                                                <div class="modal-content">
+                                                    <h5>Từ chối giấy tờ</h5>
+                                                    <p>Bạn có chắc muốn từ chối giấy tờ này?</p>
+                                                    <div class="input-field">
+                                                        <textarea name="reason" id="reason-@doc.DocId" class="materialize-textarea"></textarea>
+                                                        <label for="reason-@doc.DocId">Lý do từ chối (tùy chọn)</label>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <a href="#!" class="modal-close waves-effect btn-flat">Hủy</a>
+                                                    <button type="submit" class="btn waves-effect waves-light red">
+                                                        <i class="material-icons left">cancel</i>Từ chối
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -390,6 +432,10 @@
         var tabs = document.querySelectorAll('.tabs');
         M.Tabs.init(tabs);
 
+        // Initialize modals
+        var modals = document.querySelectorAll('.modal');
+        M.Modal.init(modals);
+
         // Show toast messages
         @if (TempData["SuccessMessage"] != null)
         {
@@ -409,6 +455,16 @@
         forms.forEach(function(form) {
             form.addEventListener('submit', function(e) {
                 if (!confirm('Bạn có chắc chắn muốn thực hiện thao tác này?')) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        // Confirmation for verify document
+        var verifyForms = document.querySelectorAll('form[action*="VerifyDocument"]');
+        verifyForms.forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                if (!confirm('Bạn có chắc chắn muốn xác thực giấy tờ này?')) {
                     e.preventDefault();
                 }
             });

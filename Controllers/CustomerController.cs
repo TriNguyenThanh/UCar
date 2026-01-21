@@ -52,6 +52,30 @@ public class CustomerController : Controller
 
     #endregion
 
+    #region Pending Documents Approval
+
+    /// <summary>
+    /// Display pending documents for approval
+    /// GET: /Customer/PendingDocuments
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> PendingDocuments()
+    {
+        try
+        {
+            var pendingDocs = await _customerService.GetPendingDocumentsAsync();
+            return View(pendingDocs);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading pending documents");
+            TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải danh sách giấy tờ chờ duyệt";
+            return View(new List<PendingDocumentViewModel>());
+        }
+    }
+
+    #endregion
+
     #region DFD 2.2: Tra cứu lịch sử khách - Details
 
     /// <summary>
@@ -344,6 +368,79 @@ public class CustomerController : Controller
     {
         var exists = await _customerService.IsPhoneExistsAsync(phone, excludeId);
         return Json(new { exists });
+    }
+
+    #endregion
+
+    #region Document Verification
+
+    /// <summary>
+    /// Verify customer document
+    /// POST: /Customer/VerifyDocument
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VerifyDocument(Guid docId, Guid customerId)
+    {
+        try
+        {
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+            {
+                TempData["ErrorMessage"] = "Không thể xác định người dùng";
+                return RedirectToAction(nameof(Details), new { id = customerId });
+            }
+
+            var result = await _customerService.VerifyCustomerDocumentAsync(docId, userId);
+
+            if (result.Success)
+            {
+                TempData["SuccessMessage"] = result.Message;
+            }
+            else
+            {
+                TempData["ErrorMessage"] = result.Message;
+            }
+
+            return RedirectToAction(nameof(Details), new { id = customerId });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error verifying document: {DocId}", docId);
+            TempData["ErrorMessage"] = "Có lỗi xảy ra khi xác thực giấy tờ";
+            return RedirectToAction(nameof(Details), new { id = customerId });
+        }
+    }
+
+    /// <summary>
+    /// Reject customer document
+    /// POST: /Customer/RejectDocument
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RejectDocument(Guid docId, Guid customerId, string? reason)
+    {
+        try
+        {
+            var result = await _customerService.RejectCustomerDocumentAsync(docId, reason);
+
+            if (result.Success)
+            {
+                TempData["SuccessMessage"] = result.Message;
+            }
+            else
+            {
+                TempData["ErrorMessage"] = result.Message;
+            }
+
+            return RedirectToAction(nameof(Details), new { id = customerId });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error rejecting document: {DocId}", docId);
+            TempData["ErrorMessage"] = "Có lỗi xảy ra khi từ chối giấy tờ";
+            return RedirectToAction(nameof(Details), new { id = customerId });
+        }
     }
 
     #endregion

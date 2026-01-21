@@ -37,4 +37,15 @@ public interface ICustomerService
     Task<bool> IsEmailExistsAsync(string email, Guid? excludeCustomerId = null);
     Task<bool> IsPhoneExistsAsync(string phone, Guid? excludeCustomerId = null);
     Task<bool> IsDocumentNumberExistsAsync(string documentNumber, Guid? excludeCustomerId = null);
+    
+    // Cập nhật giấy tờ tùy thân - Customer self-service
+    Task<CustomerDocumentUpdateViewModel?> GetCustomerDocumentsForEditAsync(Guid customerId);
+    Task<(bool Success, string Message)> UpdateCustomerDocumentsAsync(CustomerDocumentUpdateViewModel model);
+    
+    // Xác thực giấy tờ - Admin/Staff
+    Task<(bool Success, string Message)> VerifyCustomerDocumentAsync(Guid docId, Guid verifiedByUserId);
+    Task<(bool Success, string Message)> RejectCustomerDocumentAsync(Guid docId, string? reason);
+    
+    // Danh sách giấy tờ chờ duyệt
+    Task<List<PendingDocumentViewModel>> GetPendingDocumentsAsync();
 }

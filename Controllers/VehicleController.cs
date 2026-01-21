@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using UCar.Interfaces;
@@ -195,14 +196,16 @@ public class VehicleController : Controller
     }
 
     /// <summary>
-    /// Thay đổi trạng thái xe (AJAX)
+    /// Thay đổi trạng thái xe (Form POST)
     /// </summary>
     [HttpPost]
-    public async Task<IActionResult> ChangeStatus([FromBody] VehicleStatusChangeDto dto)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangeStatus(VehicleStatusChangeDto dto)
     {
         if (!ModelState.IsValid)
         {
-            return Json(new { success = false, message = "Dữ liệu không hợp lệ" });
+            TempData["Error"] = "Dữ liệu không hợp lệ";
+            return RedirectToAction(nameof(Details), new { id = dto.VehicleId });
         }
 
         var userId = GetCurrentUserId();

@@ -1,0 +1,241 @@
+@model UCar.ViewModels.Booking.BookingDetailVM
+@{
+    ViewData["Title"] = "Chi tiết đặt xe";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    
+    <!-- Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="card-panel green lighten-4 green-text text-darken-4 valign-wrapper" style="padding: 10px;">
+            <i class="material-icons left">check_circle</i> @TempData["SuccessMessage"]
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="card-panel red lighten-4 red-text text-darken-4 valign-wrapper" style="padding: 10px;">
+            <i class="material-icons left">error</i> @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <!-- Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between;">
+        <h5 style="font-weight: 600;">Mã đơn: #@Model.BookingId.ToString().ToUpper().Substring(0, 8)</h5>
+        <div>
+             @if (Model.Status == UCar.Models.Enums.BookingStatus.Pending)
+            {
+                <span class="chip orange white-text">Đang chờ duyệt</span>
+            }
+            else if (Model.Status == UCar.Models.Enums.BookingStatus.Confirmed)
+            {
+                <span class="chip green white-text">Đã xác nhận</span>
+            }
+            else if (Model.Status == UCar.Models.Enums.BookingStatus.Cancelled)
+            {
+                <span class="chip grey white-text">Đã hủy</span>
+            }
+            else
+            {
+                <span class="chip">@Model.Status</span>
+            }
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Main Info -->
+        <div class="col s12 m8">
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title" style="font-weight: 600;">Thông tin xe & Lịch trình</span>
+                    
+                    <div class="row" style="margin-top: 1.5rem;">
+                        <div class="col s12 m6">
+                            <h6 class="grey-text">Loại xe / Xe</h6>
+                            <p style="font-size: 1.1rem; font-weight: 500;">
+                                @(Model.AssignedVehicleName ?? Model.VehicleTypeName)
+                            </p>
+                            @if (!string.IsNullOrEmpty(Model.AssignedVehiclePlate))
+                            {
+                                <div class="chip blue lighten-5 blue-text">@Model.AssignedVehiclePlate</div>
+                            }
+                            else
+                            {
+                                <div class="chip grey lighten-3">Chưa gán biển số</div>
+                            }
+                        </div>
+                        <div class="col s12 m6">
+                            <h6 class="grey-text">Thời gian</h6>
+                            <p><strong>Nhận:</strong> @Model.StartAt.ToString("dd/MM/yyyy HH:mm")</p>
+                            <p><strong>Trả:</strong> @Model.EndAt.ToString("dd/MM/yyyy HH:mm")</p>
+                            <p class="grey-text tiny">(@Model.TotalDays ngày)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-content">
+                     <span class="card-title" style="font-weight: 600;">Chi phí (Dự kiến)</span>
+                     <div style="display: flex; justify-content: space-between; align-items: center;">
+                         <span>Tổng cộng</span>
+                         <h4 class="orange-text" style="font-weight: 700; margin: 0;">@Model.EstimatedTotal.ToString("N0")đ</h4>
+                     </div>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            @if (Model.CanApprove || Model.CanReject || Model.CanCancel)
+            {
+                <div class="card">
+                    <div class="card-content">
+                        <span class="card-title">Hành động</span>
+                        <div style="margin-top: 1rem;">
+                            @if (Model.CanApprove)
+                            {
+                                <form asp-action="Confirm" method="post" style="display: inline-block;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" asp-for="BookingId" name="bookingId" />
+                                    <button class="btn waves-effect waves-light green" type="submit">
+                                        <i class="material-icons left">check</i>Xác nhận đơn
+                                    </button>
+                                </form>
+                            }
+                            
+                            @if (Model.CanReject)
+                            {
+                                <button class="btn waves-effect waves-light red modal-trigger" data-target="modal-reject">
+                                    <i class="material-icons left">block</i>Từ chối / Hủy
+                                </button>
+                            }
+                            else if (Model.CanCancel) // User cancel
+                            {
+                                <button class="btn waves-effect waves-light red lighten-2 modal-trigger" data-target="modal-cancel">
+                                    <i class="material-icons left">cancel</i>Hủy đặt xe
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Card Hợp đồng -->
+            @if (User.IsInRole("Admin") || User.IsInRole("Staff") ||
+                Model.Status == UCar.Models.Enums.BookingStatus.Confirmed || 
+                 Model.Status == UCar.Models.Enums.BookingStatus.Deposited ||
+                 Model.Status == UCar.Models.Enums.BookingStatus.InProgress ||
+                 Model.HasActiveContract)
+            {
+                <div class="card" style="border-left: 4px solid @(Model.HasActiveContract ? "#2196F3" : "#4CAF50");">
+                    <div class="card-content">
+                        <span class="card-title">
+                            <i class="material-icons @(Model.HasActiveContract ? "blue-text" : "green-text")">description</i>
+                            Hợp đồng thuê xe
+                        </span>
+                        
+                        @if (Model.HasActiveContract)
+                        {
+                            <!-- Đã có hợp đồng active -->
+                            <div style="margin-bottom: 1rem;">
+                                <p style="margin-bottom: 0.5rem;">
+                                    <strong>Mã HĐ:</strong> 
+                                    <span style="font-size: 1.1rem; font-weight: 600;">@Model.ContractCode</span>
+                                </p>
+                                <p style="margin-bottom: 0.5rem;">
+                                    <strong>Trạng thái:</strong>
+                                    <span class="@Model.ContractStatusClass">
+                                        <i class="material-icons tiny" style="vertical-align: middle;">@Model.ContractStatusIcon</i>
+                                        @Model.ContractStatusDisplay
+                                    </span>
+                                </p>
+                            </div>
+                            <a asp-controller="Contract" asp-action="Details" asp-route-id="@Model.ContractId" 
+                               class="btn waves-effect waves-light blue">
+                                <i class="material-icons left">visibility</i>Xem hợp đồng
+                            </a>
+                        }
+                        else
+                        {
+                            <!-- Chưa có hợp đồng -->
+                            <p class="grey-text text-darken-1" style="margin-bottom: 1rem;">
+                                Đơn đặt xe đã được xác nhận. Tiến hành tạo hợp đồng để chuẩn bị giao xe.
+                            </p>
+                            <a asp-controller="Contract" asp-action="Create" asp-route-bookingId="@Model.BookingId" 
+                               class="btn waves-effect waves-light green">
+                                <i class="material-icons left">add</i>Tạo hợp đồng
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+        
+        <!-- Sidebar Info -->
+        <div class="col s12 m4">
+            <div class="card gradient-header">
+                <div class="card-image gradient-blue" style="height: 60px;"></div>
+                <div class="card-content">
+                    <span class="card-title" style="margin-top: -40px; color: white; font-weight: 600;">Khách hàng</span>
+                    
+                    <div style="margin-top: 1.5rem;">
+                        <h6 style="font-weight: 600;">@Model.CustomerName</h6>
+                        <p><i class="material-icons tiny grey-text">phone</i> @Model.CustomerPhone</p>
+                        <p><i class="material-icons tiny grey-text">email</i> @Model.CustomerEmail</p>
+                    </div>
+                    
+                    <div class="divider" style="margin: 1.5rem 0;"></div>
+                    <small class="grey-text">Ngày tạo: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Reject -->
+<div id="modal-reject" class="modal">
+    <form asp-action="Reject" method="post">
+        @Html.AntiForgeryToken()
+        <div class="modal-content">
+            <h4>Từ chối đặt xe</h4>
+            <p>Vui lòng nhập lý do từ chối đơn đặt xe này:</p>
+            <input type="hidden" asp-for="BookingId" name="BookingId" />
+            <div class="input-field">
+                <textarea id="RejectReason" name="Reason" class="materialize-textarea" required></textarea>
+                <label for="RejectReason">Lý do</label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class="modal-close waves-effect btn-flat">Đóng</a>
+            <button type="submit" class="waves-effect btn red">Từ chối</button>
+        </div>
+    </form>
+</div>
+
+<!-- Modal Cancel -->
+<div id="modal-cancel" class="modal">
+    <form asp-action="Cancel" method="post">
+        @Html.AntiForgeryToken()
+        <div class="modal-content">
+            <h4>Hủy đặt xe</h4>
+            <p>Bạn có chắc chắn muốn hủy đơn này không?</p>
+            <input type="hidden" asp-for="BookingId" name="BookingId" />
+            <div class="input-field">
+                <textarea id="CancelReason" name="Reason" class="materialize-textarea" placeholder="Nhập lý do hủy (tùy chọn)"></textarea>
+                <label for="CancelReason">Lý do</label>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class="modal-close waves-effect btn-flat">Không</a>
+            <button type="submit" class="waves-effect btn red">Hủy đơn</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var modals = document.querySelectorAll('.modal');
+            M.Modal.init(modals);
+        });
+    </script>
+}
