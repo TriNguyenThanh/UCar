@@ -78,17 +78,17 @@ public class VehicleService : IVehicleService
         // Apply sorting
         query = filter.SortBy?.ToLower() switch
         {
-            "plateno" => filter.SortDirection == "desc" 
-                ? query.OrderByDescending(v => v.PlateNo) 
+            "plateno" => filter.SortDirection == "desc"
+                ? query.OrderByDescending(v => v.PlateNo)
                 : query.OrderBy(v => v.PlateNo),
-            "make" => filter.SortDirection == "desc" 
-                ? query.OrderByDescending(v => v.Model.Make) 
+            "make" => filter.SortDirection == "desc"
+                ? query.OrderByDescending(v => v.Model.Make)
                 : query.OrderBy(v => v.Model.Make),
-            "year" => filter.SortDirection == "desc" 
-                ? query.OrderByDescending(v => v.ManufactureYear) 
+            "year" => filter.SortDirection == "desc"
+                ? query.OrderByDescending(v => v.ManufactureYear)
                 : query.OrderBy(v => v.ManufactureYear),
-            "status" => filter.SortDirection == "desc" 
-                ? query.OrderByDescending(v => v.CurrentStatus) 
+            "status" => filter.SortDirection == "desc"
+                ? query.OrderByDescending(v => v.CurrentStatus)
                 : query.OrderBy(v => v.CurrentStatus),
             _ => query.OrderBy(v => v.PlateNo)
         };
@@ -106,6 +106,7 @@ public class VehicleService : IVehicleService
                 v.Color,
                 v.ManufactureYear,
                 v.CurrentStatus,
+                v.BranchId,
                 v.Branch.Name,
                 v.CurrentOdoKm,
                 v.Model.Seats,
@@ -341,6 +342,7 @@ public class VehicleService : IVehicleService
                 v.Color,
                 v.ManufactureYear,
                 v.CurrentStatus,
+                v.BranchId,
                 v.Branch.Name,
                 v.CurrentOdoKm,
                 v.Model.Seats,
@@ -354,7 +356,7 @@ public class VehicleService : IVehicleService
     {
         var normalizedPlate = plateNo.Trim().ToUpper();
         var query = _context.Vehicles.Where(v => v.PlateNo == normalizedPlate);
-        
+
         if (excludeId.HasValue)
         {
             query = query.Where(v => v.VehicleId != excludeId.Value);

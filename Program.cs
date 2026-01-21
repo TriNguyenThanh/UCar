@@ -41,6 +41,12 @@ builder.Services.AddScoped<IBookingService, BookingService>();
 // Register Contract services
 builder.Services.AddScoped<IContractService, ContractService>();
 
+// Register Operations & HR services (Module 8.0)
+builder.Services.AddScoped<IBranchService, BranchService>();
+builder.Services.AddScoped<IStaffService, StaffService>();
+builder.Services.AddScoped<IOperationalTaskService, OperationalTaskService>();
+builder.Services.AddScoped<IShiftService, ShiftService>();
+
 var app = builder.Build();
 
 // Seed database with unified seeder

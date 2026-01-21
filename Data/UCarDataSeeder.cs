@@ -6,7 +6,7 @@ namespace UCar.Data;
 
 /// <summary>
 /// Unified Data Seeder for UCar - combines all seeders into one
-/// Handles: Roles, Users, Branches, Staff, Customers, Vehicles, Prices, Contracts, Handovers
+/// Handles: Roles, Users, Branches, Staff, Customers, Vehicles, Prices, Contracts, Handovers, Shifts, Tasks
 /// </summary>
 public static class UCarDataSeeder
 {
@@ -30,10 +30,11 @@ public static class UCarDataSeeder
         // Seed in dependency order
         var roles = await SeedRolesAsync(context);
         var (users, branches) = await SeedUsersAndBranchesAsync(context, roles);
-        var (staff, customers) = await SeedStaffAndCustomersAsync(context, users, branches);
+        var (staffList, customers) = await SeedStaffAndCustomersAsync(context, users, branches, roles.staff);
         var (vehicleTypes, vehicleModels, vehicles) = await SeedVehiclesAsync(context, branches);
         await SeedPricesAsync(context, vehicleTypes);
         await SeedContractsAndHandoversAsync(context, customers, vehicles, vehicleTypes, users.staffUser);
+        await SeedShiftsAndTasksAsync(context, staffList, branches, vehicles);
 
         Console.WriteLine("=== UCar Data Seeder Complete ===");
     }
@@ -48,6 +49,11 @@ public static class UCarDataSeeder
         context.IncidentImpoundDetails.RemoveRange(context.IncidentImpoundDetails);
         context.IncidentFineDetails.RemoveRange(context.IncidentFineDetails);
         context.Incidents.RemoveRange(context.Incidents);
+
+        // Operations related (Module 8.0)
+        context.ShiftAssignments.RemoveRange(context.ShiftAssignments);
+        context.Shifts.RemoveRange(context.Shifts);
+        context.OperationalTasks.RemoveRange(context.OperationalTasks);
 
         // Contract related - child tables first
         context.HandoverAccessories.RemoveRange(context.HandoverAccessories);
@@ -198,15 +204,20 @@ public static class UCarDataSeeder
     #endregion
 
     #region 3. Staff & Customers
-    private static async Task<(StaffProfile staff, List<Customer> customers)> SeedStaffAndCustomersAsync(
+    private static async Task<(List<StaffProfile> staffList, List<Customer> customers)> SeedStaffAndCustomersAsync(
         UCarDbContext context,
         (UserAccount adminUser, UserAccount staffUser, List<UserAccount> customerUsers) users,
-        List<Branch> branches)
+        List<Branch> branches,
+        Role staffRole)
     {
         Console.WriteLine("Seeding Staff Profiles and Customers...");
 
-        // Staff Profile
-        var staffProfile = new StaffProfile
+        string HashPassword(string password) => BCrypt.Net.BCrypt.HashPassword(password);
+
+        var staffList = new List<StaffProfile>();
+
+        // Staff 1 - Existing from staffUser
+        var staffProfile1 = new StaffProfile
         {
             StaffId = Guid.NewGuid(),
             UserId = users.staffUser.UserId,
@@ -216,8 +227,42 @@ public static class UCarDataSeeder
             Position = "Nhân viên giao nhận",
             IsActive = true
         };
+        staffList.Add(staffProfile1);
 
-        await context.StaffProfiles.AddAsync(staffProfile);
+        // Additional Staff for Module 8.0
+        var staffNames = new[] { "Trần Thị Bình", "Lê Hoàng Cường", "Phạm Văn Dũng", "Hoàng Thị Em" };
+        var positions = new[] { "Nhân viên bảo dưỡng", "Nhân viên giao nhận", "Nhân viên cứu hộ", "Nhân viên hành chính" };
+
+        for (int i = 0; i < staffNames.Length; i++)
+        {
+            // Create user account for new staff
+            var staffUser = new UserAccount
+            {
+                UserId = Guid.NewGuid(),
+                RoleId = staffRole.RoleId,
+                Username = $"staff{i + 2}",
+                Email = $"staff{i + 2}@ucar.com",
+                Phone = $"090{i + 2:D7}",
+                PasswordHash = HashPassword("staff123"),
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            await context.UserAccounts.AddAsync(staffUser);
+
+            var staffProfile = new StaffProfile
+            {
+                StaffId = Guid.NewGuid(),
+                UserId = staffUser.UserId,
+                BranchId = branches[i % branches.Count].BranchId,
+                StaffCode = $"NV00{i + 2}",
+                FullName = staffNames[i],
+                Position = positions[i],
+                IsActive = true
+            };
+            staffList.Add(staffProfile);
+        }
+
+        await context.StaffProfiles.AddRangeAsync(staffList);
 
         // Customers
         var customerNames = new[]
@@ -245,8 +290,8 @@ public static class UCarDataSeeder
         await context.Customers.AddRangeAsync(customers);
         await context.SaveChangesAsync();
 
-        Console.WriteLine($"  ✓ Created 1 staff profile, {customers.Count} customers");
-        return (staffProfile, customers);
+        Console.WriteLine($"  ✓ Created {staffList.Count} staff profiles, {customers.Count} customers");
+        return (staffList, customers);
     }
     #endregion
 
@@ -752,6 +797,146 @@ public static class UCarDataSeeder
         Console.WriteLine($"  ✓ Created {bookings.Count} bookings, {contracts.Count} contracts");
         Console.WriteLine($"    - {activeCount} contracts waiting for check-out");
         Console.WriteLine($"    - {inProgressCount} contracts waiting for check-in");
+    }
+    #endregion
+
+    #region 7. Shifts & Operational Tasks (Module 8.0)
+    private static async Task SeedShiftsAndTasksAsync(
+        UCarDbContext context,
+        List<StaffProfile> staffList,
+        List<Branch> branches,
+        List<Vehicle> vehicles)
+    {
+        Console.WriteLine("Seeding Shifts, ShiftAssignments, and OperationalTasks (Module 8.0)...");
+
+        // Create Shifts
+        var shifts = new List<Shift>
+        {
+            new()
+            {
+                ShiftId = Guid.NewGuid(),
+                ShiftName = "Ca sáng",
+                StartTime = new TimeOnly(7, 0),
+                EndTime = new TimeOnly(12, 0),
+                BranchId = branches[0].BranchId,
+                Description = "Ca sáng từ 7h-12h",
+                IsActive = true
+            },
+            new()
+            {
+                ShiftId = Guid.NewGuid(),
+                ShiftName = "Ca chiều",
+                StartTime = new TimeOnly(12, 0),
+                EndTime = new TimeOnly(17, 0),
+                BranchId = branches[0].BranchId,
+                Description = "Ca chiều từ 12h-17h",
+                IsActive = true
+            },
+            new()
+            {
+                ShiftId = Guid.NewGuid(),
+                ShiftName = "Ca tối",
+                StartTime = new TimeOnly(17, 0),
+                EndTime = new TimeOnly(22, 0),
+                BranchId = branches[0].BranchId,
+                Description = "Ca tối từ 17h-22h",
+                IsActive = true
+            },
+            new()
+            {
+                ShiftId = Guid.NewGuid(),
+                ShiftName = "Ca toàn thời gian",
+                StartTime = new TimeOnly(8, 0),
+                EndTime = new TimeOnly(17, 0),
+                BranchId = branches[1].BranchId,
+                Description = "Ca làm việc cả ngày 8h-17h",
+                IsActive = true
+            }
+        };
+
+        await context.Shifts.AddRangeAsync(shifts);
+        await context.SaveChangesAsync();
+
+        // Create Shift Assignments for next 7 days
+        var shiftAssignments = new List<ShiftAssignment>();
+        var random = new Random(456);
+        var today = DateOnly.FromDateTime(DateTime.Today);
+
+        for (int day = 0; day < 7; day++)
+        {
+            var workDate = today.AddDays(day);
+
+            // Assign 2-3 staff to each shift
+            foreach (var shift in shifts.Take(3))
+            {
+                var assignedStaff = staffList.OrderBy(_ => random.Next()).Take(2).ToList();
+                foreach (var staff in assignedStaff)
+                {
+                    shiftAssignments.Add(new ShiftAssignment
+                    {
+                        AssignmentId = Guid.NewGuid(),
+                        ShiftId = shift.ShiftId,
+                        StaffId = staff.StaffId,
+                        WorkDate = workDate,
+                        CreatedBy = staffList[0].UserId,
+                        CreatedAt = DateTime.UtcNow,
+                        Notes = null
+                    });
+                }
+            }
+        }
+
+        await context.ShiftAssignments.AddRangeAsync(shiftAssignments);
+        await context.SaveChangesAsync();
+
+        // Create Operational Tasks
+        var operationalTasks = new List<OperationalTask>();
+        var availableVehicles = vehicles.Where(v => v.CurrentStatus == VehicleStatus.Available).Take(10).ToList();
+        var taskTypes = new[] { TaskType.Delivery, TaskType.Return, TaskType.Maintenance, TaskType.Rescue, TaskType.Inspection };
+        var taskStatuses = new[] { OpTaskStatus.New, OpTaskStatus.Assigned, OpTaskStatus.InProgress, OpTaskStatus.Completed };
+
+        for (int i = 0; i < 15; i++)
+        {
+            var taskType = taskTypes[i % taskTypes.Length];
+            var status = taskStatuses[i % taskStatuses.Length];
+            var vehicle = i < availableVehicles.Count ? availableVehicles[i] : null;
+            var staff = status != OpTaskStatus.New ? staffList[i % staffList.Count] : null;
+            var scheduledAt = DateTime.UtcNow.AddHours(-24 + (i * 4));
+
+            var task = new OperationalTask
+            {
+                TaskId = Guid.NewGuid(),
+                TaskType = taskType,
+                Title = taskType switch
+                {
+                    TaskType.Delivery => $"Giao xe {vehicle?.PlateNo ?? "N/A"} cho khách",
+                    TaskType.Return => $"Nhận xe {vehicle?.PlateNo ?? "N/A"} từ khách",
+                    TaskType.Maintenance => $"Bảo dưỡng định kỳ xe {vehicle?.PlateNo ?? "N/A"}",
+                    TaskType.Rescue => $"Cứu hộ xe {vehicle?.PlateNo ?? "Khẩn cấp"}",
+                    TaskType.Inspection => $"Kiểm tra xe {vehicle?.PlateNo ?? "N/A"}",
+                    _ => "Nhiệm vụ vận hành"
+                },
+                VehicleId = vehicle?.VehicleId,
+                AssignedToStaffId = staff?.StaffId,
+                BranchId = branches[i % branches.Count].BranchId,
+                ScheduledAt = scheduledAt,
+                EstimatedDurationMinutes = taskType == TaskType.Maintenance ? 120 : 30,
+                Location = taskType == TaskType.Rescue ? $"Đường {i + 1}, Quận {(i % 5) + 1}" : null,
+                Status = status,
+                CompletedAt = status == OpTaskStatus.Completed ? scheduledAt.AddMinutes(25) : null,
+                Notes = status == OpTaskStatus.Completed ? "Hoàn thành đúng hẹn" : null,
+                CreatedBy = staffList[0].UserId,
+                CreatedAt = scheduledAt.AddHours(-2)
+            };
+
+            operationalTasks.Add(task);
+        }
+
+        await context.OperationalTasks.AddRangeAsync(operationalTasks);
+        await context.SaveChangesAsync();
+
+        Console.WriteLine($"  ✓ Created {shifts.Count} shifts, {shiftAssignments.Count} shift assignments");
+        Console.WriteLine($"  ✓ Created {operationalTasks.Count} operational tasks");
     }
     #endregion
 }

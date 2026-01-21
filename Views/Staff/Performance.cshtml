@@ -1,0 +1,139 @@
+@model UCar.Models.DTOs.Operations.StaffPerformanceDto
+@using UCar.Models.DTOs.Operations
+@{
+    ViewData["Title"] = "Hiệu suất nhân viên";
+    var staff = ViewBag.Staff as StaffDetailDto;
+    var dateFrom = (DateTime)ViewBag.DateFrom;
+    var dateTo = (DateTime)ViewBag.DateTo;
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons green-text" style="vertical-align: middle; margin-right: 8px;">bar_chart</i>
+                Hiệu suất: @Model.StaffName
+            </h4>
+            <p class="grey-text text-darken-1" style="margin: 0;">
+                Từ @dateFrom.ToString("dd/MM/yyyy") đến @dateTo.ToString("dd/MM/yyyy")
+            </p>
+        </div>
+        <a asp-action="Details" asp-route-id="@Model.StaffId" class="btn-flat">
+            <i class="material-icons left">arrow_back</i>Quay lại
+        </a>
+    </div>
+
+    <!-- Filter -->
+    <div class="card">
+        <div class="card-content">
+            <form method="get" asp-action="Performance" asp-route-id="@Model.StaffId">
+                <div class="row" style="margin-bottom: 0;">
+                    <div class="input-field col s12 m4">
+                        <i class="material-icons prefix">date_range</i>
+                        <input type="date" name="from" id="from" value="@dateFrom.ToString("yyyy-MM-dd")" />
+                        <label for="from" class="active">Từ ngày</label>
+                    </div>
+                    <div class="input-field col s12 m4">
+                        <i class="material-icons prefix">date_range</i>
+                        <input type="date" name="to" id="to" value="@dateTo.ToString("yyyy-MM-dd")" />
+                        <label for="to" class="active">Đến ngày</label>
+                    </div>
+                    <div class="col s12 m4" style="padding-top: 1.5rem;">
+                        <button type="submit" class="btn waves-effect waves-light green">
+                            <i class="material-icons left">refresh</i>Cập nhật
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row">
+        <div class="col s12 m4">
+            <div class="card">
+                <div class="card-content center-align">
+                    <i class="material-icons large blue-text">assignment</i>
+                    <h3 style="margin: 0.5rem 0;">@Model.TotalTasks</h3>
+                    <p class="grey-text">Tổng nhiệm vụ</p>
+                </div>
+            </div>
+        </div>
+        <div class="col s12 m4">
+            <div class="card">
+                <div class="card-content center-align">
+                    <i class="material-icons large green-text">check_circle</i>
+                    <h3 style="margin: 0.5rem 0;">@Model.CompletedTasks</h3>
+                    <p class="grey-text">Hoàn thành</p>
+                </div>
+            </div>
+        </div>
+        <div class="col s12 m4">
+            <div class="card">
+                <div class="card-content center-align">
+                    <i class="material-icons large purple-text">schedule</i>
+                    <h3 style="margin: 0.5rem 0;">@Model.TotalShiftsWorked</h3>
+                    <p class="grey-text">Ca làm việc</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="row">
+        <div class="col s12 m6">
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title"><i class="material-icons left">trending_up</i>Tỷ lệ hoàn thành</span>
+                    <div class="progress" style="height: 20px; border-radius: 10px;">
+                        <div class="determinate green"
+                            style="width: @Model.CompletionRate.ToString("0")%; height: 100%;"></div>
+                    </div>
+                    <p class="center-align" style="font-size: 2rem; font-weight: 700; color: #4CAF50;">
+                        @Model.CompletionRate.ToString("0.0")%
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="col s12 m6">
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title"><i class="material-icons left">timer</i>Tỷ lệ đúng hạn</span>
+                    <div class="progress" style="height: 20px; border-radius: 10px;">
+                        <div class="determinate blue" style="width: @Model.OnTimeRate.ToString("0")%; height: 100%;">
+                        </div>
+                    </div>
+                    <p class="center-align" style="font-size: 2rem; font-weight: 700; color: #2196F3;">
+                        @Model.OnTimeRate.ToString("0.0")%
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Table -->
+    <div class="card">
+        <div class="card-content">
+            <span class="card-title"><i class="material-icons left">summarize</i>Tổng kết</span>
+            <table class="striped">
+                <tr>
+                    <td>Nhiệm vụ hoàn thành</td>
+                    <td class="right-align green-text"><strong>@Model.CompletedTasks</strong></td>
+                </tr>
+                <tr>
+                    <td>Nhiệm vụ thất bại</td>
+                    <td class="right-align red-text"><strong>@Model.FailedTasks</strong></td>
+                </tr>
+                <tr>
+                    <td>Nhiệm vụ bị hủy</td>
+                    <td class="right-align grey-text"><strong>@Model.CancelledTasks</strong></td>
+                </tr>
+                <tr>
+                    <td><strong>Tổng số ca làm việc</strong></td>
+                    <td class="right-align"><strong>@Model.TotalShiftsWorked</strong></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
