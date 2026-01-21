@@ -423,5 +423,5 @@ package-lock.json
 # Environment variables
 *.env
 .vscode/*
-appsettings.Development.json
+Migrations/*
 Migrations

@@ -1,0 +1,503 @@
+@model UCar.Models.DTOs.Operations.ShiftScheduleFilterDto
+@using UCar.Models.DTOs.Operations
+@{
+    ViewData["Title"] = "Lịch ca làm việc";
+    var filter = ViewBag.Filter as ShiftScheduleFilterDto ?? new ShiftScheduleFilterDto();
+    var branches = ViewBag.Branches as IEnumerable<BranchDto> ?? Enumerable.Empty<BranchDto>();
+    var shifts = ViewBag.Shifts as IEnumerable<ShiftDto> ?? Enumerable.Empty<ShiftDto>();
+    var staff = ViewBag.Staff as IEnumerable<StaffListDto> ?? Enumerable.Empty<StaffListDto>();
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons blue-text"
+                    style="vertical-align: middle; margin-right: 8px;">calendar_month</i>
+                Lịch ca làm việc
+            </h4>
+            <p class="grey-text text-darken-1" style="margin: 0;">DFD 8.3 - Xếp lịch ca làm cho nhân viên</p>
+        </div>
+        <div>
+            <a asp-action="Shifts" class="btn waves-effect waves-light blue">
+                <i class="material-icons left">schedule</i>Quản lý ca
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Row - Demo.cshtml style -->
+    <div class="row">
+        <div class="col s12 m6 l3">
+            <div class="card stats-card">
+                <i class="material-icons stats-icon blue-text">groups</i>
+                <div class="stats-value">@staff.Count()</div>
+                <div class="stats-label">Nhân viên</div>
+            </div>
+        </div>
+        <div class="col s12 m6 l3">
+            <div class="card stats-card">
+                <i class="material-icons stats-icon green-text">access_time</i>
+                <div class="stats-value">@shifts.Count()</div>
+                <div class="stats-label">Ca làm việc</div>
+            </div>
+        </div>
+        <div class="col s12 m6 l3">
+            <div class="card stats-card">
+                <i class="material-icons stats-icon orange-text">business</i>
+                <div class="stats-value">@branches.Count()</div>
+                <div class="stats-label">Chi nhánh</div>
+            </div>
+        </div>
+        <div class="col s12 m6 l3">
+            <div class="card stats-card">
+                <i class="material-icons stats-icon amber-text text-darken-2">today</i>
+                <div class="stats-value">@DateTime.Today.ToString("dd/MM")</div>
+                <div class="stats-label">Hôm nay</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="card">
+        <div class="card-content" style="padding: 1rem 1.5rem;">
+            <form method="get" asp-action="ShiftSchedule"
+                style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <div class="input-field" style="margin: 0; flex: 1; min-width: 200px;">
+                    <select name="BranchId" id="BranchId">
+                        <option value="">Tất cả chi nhánh</option>
+                        @foreach (var b in branches)
+                        {
+                            <option value="@b.BranchId" selected="@(filter.BranchId == b.BranchId)">@b.Name</option>
+                        }
+                    </select>
+                </div>
+                <button type="submit" class="btn waves-effect waves-light blue">
+                    <i class="material-icons left">filter_list</i>Áp dụng
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Calendar -->
+        <div class="col s12 l8">
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title">
+                        <i class="material-icons left blue-text">event</i>Lịch xếp ca
+                    </span>
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col s12 l4">
+            <!-- Quick Assign -->
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title" style="font-size: 1.1rem;">
+                        <i class="material-icons left green-text">person_add</i>Phân công ca
+                    </span>
+                    <form asp-action="AssignShift" method="post" id="assignForm">
+                        @Html.AntiForgeryToken()
+
+                        <div class="input-field">
+                            <select name="ShiftId" id="ShiftIdSelect" required>
+                                <option value="" disabled selected>Chọn ca làm</option>
+                                @foreach (var s in shifts)
+                                {
+                                    <option value="@s.ShiftId" data-branch-id="@s.BranchId">@s.ShiftName (@s.TimeRange)
+                                    </option>
+                                }
+                            </select>
+                            <label>Ca làm *</label>
+                        </div>
+
+                        <div class="input-field">
+                            <select name="StaffId" id="StaffIdSelect" required>
+                                <option value="" disabled selected>Chọn nhân viên</option>
+                                @foreach (var s in staff)
+                                {
+                                    <option value="@s.StaffId" data-branch-id="@s.BranchId" data-position="@s.Position"
+                                        data-branch="@s.BranchName">
+                                        @s.FullName (@s.StaffCode)
+                                    </option>
+                                }
+                            </select>
+                            <label>Nhân viên *</label>
+                        </div>
+
+                        <div class="input-field">
+                            <i class="material-icons prefix">event</i>
+                            <input type="date" name="WorkDate" id="WorkDate" required
+                                value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            <label for="WorkDate" class="active">Ngày làm việc *</label>
+                        </div>
+
+                        <div class="input-field">
+                            <i class="material-icons prefix">notes</i>
+                            <input type="text" name="Notes" id="Notes" />
+                            <label for="Notes">Ghi chú</label>
+                        </div>
+
+                        <button type="submit" class="btn waves-effect waves-light green" style="width: 100%;">
+                            <i class="material-icons left">add_circle</i>Phân công
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Staff Quick View -->
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title" style="font-size: 1.1rem;">
+                        <i class="material-icons left blue-text">groups</i>Danh sách nhân viên
+                    </span>
+                    <div style="max-height: 280px; overflow-y: auto;">
+                        @foreach (var s in staff)
+                        {
+                            <div class="staff-item"
+                                style="display: flex; align-items: center; padding: 0.5rem; border-radius: 8px; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s;"
+                                data-staff-id="@s.StaffId" data-staff-name="@s.FullName" data-staff-code="@s.StaffCode"
+                                data-staff-position="@s.Position" data-staff-branch="@s.BranchName">
+                                <div class="chip"
+                                    style="border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; margin: 0 0.75rem 0 0;">
+                                    @s.FullName.Substring(0, 1).ToUpper()
+                                </div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 500;">@s.FullName</div>
+                                    <small class="grey-text">@s.Position</small>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title" style="font-size: 1.1rem;">
+                        <i class="material-icons left orange-text">palette</i>Chú thích màu
+                    </span>
+                    @{
+                        var colors = new[] { "#2196F3", "#4CAF50", "#ff9800", "#9C27B0" };
+                        var idx = 0;
+                    }
+                    @foreach (var s in shifts.Take(4))
+                    {
+                        <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                            <span
+                                style="display: inline-block; width: 16px; height: 16px; background: @colors[idx++ % 4]; border-radius: 4px; margin-right: 10px;"></span>
+                            <span style="font-size: 0.9rem;">@s.ShiftName</span>
+                            <span class="grey-text" style="margin-left: auto; font-size: 0.85rem;">@s.TimeRange</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Staff Detail Tooltip -->
+<div id="staffTooltip" class="card z-depth-3"
+    style="display: none; position: fixed; z-index: 9999; width: 260px; padding: 0;">
+    <div class="card-content" style="padding: 1rem;">
+        <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
+            <div class="chip"
+                style="border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; margin: 0 0.75rem 0 0; font-weight: 600;"
+                id="tooltipInitial">?</div>
+            <div>
+                <div style="font-weight: 600;" id="tooltipName">-</div>
+                <small class="grey-text" id="tooltipCode">-</small>
+            </div>
+        </div>
+        <table style="width: 100%; font-size: 0.9rem;">
+            <tr>
+                <td class="grey-text"><i class="material-icons tiny">work</i> Chức vụ</td>
+                <td id="tooltipPosition">-</td>
+            </tr>
+            <tr>
+                <td class="grey-text"><i class="material-icons tiny">business</i> Chi nhánh</td>
+                <td id="tooltipBranch">-</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+<!-- Day Hover Overlay -->
+<div id="dayHoverOverlay" style="display: none; position: absolute; z-index: 100; pointer-events: none;">
+    <div
+        style="background: rgba(33, 150, 243, 0.85); color: white; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+        <i class="material-icons" style="font-size: 18px;">add_circle</i>
+        <span>Thêm phân công ca</span>
+    </div>
+</div>
+
+
+@section Styles {
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet" />
+    <style>
+        #calendar {
+            min-height: 500px;
+        }
+
+        .fc {
+            font-family: inherit;
+        }
+
+        .fc-toolbar-title {
+            font-size: 1.2rem !important;
+            font-weight: 600 !important;
+        }
+
+        .fc-button {
+            padding: 0.5rem 1rem !important;
+            font-size: 0.85rem !important;
+            text-transform: none !important;
+            border-radius: 4px !important;
+        }
+
+        .fc-button-primary {
+            background-color: #2196F3 !important;
+            border-color: #2196F3 !important;
+        }
+
+        .fc-button-primary:hover {
+            background-color: #1976D2 !important;
+        }
+
+        .fc-event {
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px !important;
+            font-size: 0.8rem;
+            border: none !important;
+            background-color: inherit;
+        }
+
+        .fc-event:hover {
+            opacity: 0.85;
+        }
+
+        /* Today cell - very subtle border instead of background */
+        .fc-day-today {
+        @*background:transparent!important;*@box-shadow: inset 0 0 0 2px #2196F3 !important;
+        }
+
+        .fc-day-today .fc-daygrid-day-number {
+            background: #2196F3;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .staff-item:hover {
+            background: #f5f5f5;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            M.FormSelect.init(document.querySelectorAll('select'));
+            M.updateTextFields();
+
+            // Store original options for filtering
+            var shiftSelect = document.getElementById('ShiftIdSelect');
+            var staffSelect = document.getElementById('StaffIdSelect');
+
+            // Backup innerHTML to restore later
+            var shiftOriginalHTML = shiftSelect.innerHTML;
+            var staffOriginalHTML = staffSelect.innerHTML;
+
+            function filterOptions(selectId, originalHTML, branchId) {
+                var select = document.getElementById(selectId);
+                var tempDiv = document.createElement('div');
+                tempDiv.innerHTML = originalHTML;
+
+                select.innerHTML = '';
+
+                // Add default option
+                select.appendChild(tempDiv.querySelector('option').cloneNode(true));
+
+                var options = Array.from(tempDiv.querySelectorAll('option')).slice(1);
+                options.forEach(opt => {
+                    var optBranchId = opt.getAttribute('data-branch-id');
+                    // Show if no branch filter, or option matches branch, or option has no specific branch
+                    if (!branchId || !optBranchId || optBranchId === branchId) {
+                        select.appendChild(opt.cloneNode(true));
+                    }
+                });
+
+                M.FormSelect.init(select);
+            }
+
+            // Handle Global Branch Filter Change (Redirects)
+            // No JS needed for global filter as it limits the initial data
+
+            // Handle Shift Selection Change -> Filter Staff
+            shiftSelect.addEventListener('change', function () {
+                var selectedOption = this.options[this.selectedIndex];
+                var branchId = selectedOption.getAttribute('data-branch-id');
+
+                if (branchId) {
+                    filterOptions('StaffIdSelect', staffOriginalHTML, branchId);
+                    UCarToast.info('Đã lọc nhân viên theo chi nhánh của ca làm việc');
+                } else {
+                    // Reset staff list if shift has no specific branch (or system wide)
+                    // But if global filter is active, we should respect it?
+                    // For now, reset to what was initially loaded
+                    document.getElementById('StaffIdSelect').innerHTML = staffOriginalHTML;
+                    M.FormSelect.init(document.getElementById('StaffIdSelect'));
+                }
+            });
+
+            // Initialize FullCalendar
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'vi',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,listWeek'
+                },
+                buttonText: {
+                    today: 'Hôm nay',
+                    month: 'Tháng',
+                    week: 'Tuần',
+                    list: 'Danh sách'
+                },
+                dayMaxEvents: 3,
+                moreLinkText: 'thêm',
+                events: function (info, successCallback, failureCallback) {
+                    var branchId = '@(filter.BranchId?.ToString() ?? "")';
+                    var url = '@Url.Action("GetCalendarEvents")' +
+                        '?dateFrom=' + info.startStr.split('T')[0] +
+                        '&dateTo=' + info.endStr.split('T')[0] +
+                        (branchId ? '&branchId=' + branchId : '');
+
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => successCallback(data))
+                        .catch(err => failureCallback(err));
+                },
+                eventDidMount: function (info) {
+                    info.el.title = info.event.extendedProps.description || info.event.title;
+                },
+                eventClick: function (info) {
+                    if (confirm('Xóa phân công ca này?\n\n' + info.event.title)) {
+                        var form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = '@Url.Action("RemoveShiftAssignment")' + '?id=' + info.event.id;
+
+                        var token = document.createElement('input');
+                        token.type = 'hidden';
+                        token.name = '__RequestVerificationToken';
+                        token.value = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                        form.appendChild(token);
+
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                },
+                dateClick: function (info) {
+                    document.getElementById('WorkDate').value = info.dateStr;
+                    document.getElementById('dayHoverOverlay').style.display = 'none';
+
+                    // Block past dates
+                    var selectedDate = new Date(info.dateStr);
+                    var today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (selectedDate < today) {
+        @* UCarToast.error('Không thể chọn ngày trong quá khứ'); *@
+                                    return;
+                    }
+
+                    UCarToast.info('Đã chọn ngày ' + info.dateStr.split('-').reverse().join('/'));
+                },
+                dayCellDidMount: function (info) {
+                    var overlay = document.getElementById('dayHoverOverlay');
+                    var cellDate = info.date;
+                    var today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    var isPast = cellDate < today;
+
+                    if (isPast) {
+                        // Style past dates as disabled
+                        info.el.style.opacity = '0.5';
+                        info.el.style.cursor = 'not-allowed';
+                    } else {
+                        info.el.style.cursor = 'pointer';
+
+                        info.el.addEventListener('mouseenter', function (e) {
+                            var rect = this.getBoundingClientRect();
+                            overlay.style.display = 'block';
+                            overlay.style.position = 'fixed';
+                            overlay.style.left = (rect.left + rect.width / 2 - 90) + 'px';
+                            overlay.style.top = (rect.top + rect.height / 2 - 20) + 'px';
+                        });
+
+                        info.el.addEventListener('mouseleave', function () {
+                            overlay.style.display = 'none';
+                        });
+                    }
+                },
+                height: 'auto'
+            });
+            calendar.render();
+
+            // Staff tooltip
+            var tooltip = document.getElementById('staffTooltip');
+            var staffItems = document.querySelectorAll('.staff-item');
+
+            staffItems.forEach(function (item) {
+                item.addEventListener('mouseenter', function (e) {
+                    var name = this.dataset.staffName;
+                    document.getElementById('tooltipInitial').textContent = name.charAt(0).toUpperCase();
+                    document.getElementById('tooltipName').textContent = name;
+                    document.getElementById('tooltipCode').textContent = this.dataset.staffCode;
+                    document.getElementById('tooltipPosition').textContent = this.dataset.staffPosition || '-';
+                    document.getElementById('tooltipBranch').textContent = this.dataset.staffBranch || '-';
+
+                    var rect = this.getBoundingClientRect();
+                    tooltip.style.display = 'block';
+                    tooltip.style.left = (rect.left - 270) + 'px';
+                    tooltip.style.top = rect.top + 'px';
+                });
+
+                item.addEventListener('mouseleave', function () {
+                    tooltip.style.display = 'none';
+                });
+
+                item.addEventListener('click', function () {
+                    var staffId = this.dataset.staffId;
+                    var select = document.getElementById('StaffIdSelect');
+                    select.value = staffId;
+                    M.FormSelect.init(select);
+                    UCarToast.info('Đã chọn: ' + this.dataset.staffName);
+                });
+            });
+
+            // Toast notifications
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <text>UCarToast.success('@TempData["SuccessMessage"]');</text>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <text>UCarToast.error('@TempData["ErrorMessage"]');</text>
+        }
+                                });
+    </script>
+}
