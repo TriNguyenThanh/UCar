@@ -422,3 +422,5 @@ package-lock.json
 *.env
 **Migrations
 .vscode/*
+Migrations/*
+Migrations

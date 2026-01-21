@@ -17,6 +17,15 @@ public class HandoverController : Controller
         _handoverService = handoverService;
     }
 
+    /// <summary>Lấy User ID từ authentication cookie</summary>
+    private Guid GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        return userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId)
+            ? userId
+            : Guid.Empty;
+    }
+
     /// <summary>
     /// Danh sách hợp đồng chờ giao xe (Check-out list)
     /// GET: /Handover
@@ -86,8 +95,7 @@ public class HandoverController : Controller
             return View(form);
         }
 
-        // TODO: Lấy userId từ session/authentication
-        var userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var userId = GetCurrentUserId();
 
         var result = await _handoverService.ConfirmCheckOutAsync(dto, userId);
         if (!result.Success)
@@ -138,8 +146,7 @@ public class HandoverController : Controller
             return View(form);
         }
 
-        // TODO: Lấy userId từ session/authentication
-        var userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var userId = GetCurrentUserId();
 
         var result = await _handoverService.ConfirmCheckInAsync(dto, userId);
         if (!result.Success)
@@ -228,7 +235,7 @@ public class HandoverController : Controller
         if (!ModelState.IsValid)
             return View(dto);
 
-        var userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var userId = GetCurrentUserId();
         var result = await _handoverService.CreateIncidentAsync(dto, userId);
 
         if (!result.Success)
@@ -277,7 +284,7 @@ public class HandoverController : Controller
         if (!ModelState.IsValid)
             return View(dto);
 
-        var userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var userId = GetCurrentUserId();
         var result = await _handoverService.CreateViolationAsync(dto, userId);
 
         if (!result.Success)

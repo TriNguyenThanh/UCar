@@ -36,6 +36,13 @@ builder.Services.AddScoped<IVehicleService, VehicleService>();
 
 // Register Handover services
 builder.Services.AddScoped<IHandoverService, HandoverService>();
+
+// Register Operations & HR services (Module 8.0)
+builder.Services.AddScoped<IBranchService, BranchService>();
+builder.Services.AddScoped<IStaffService, StaffService>();
+builder.Services.AddScoped<IOperationalTaskService, OperationalTaskService>();
+builder.Services.AddScoped<IShiftService, ShiftService>();
+
 var app = builder.Build();
 
 // Seed database with unified seeder
@@ -45,7 +52,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<UCarDbContext>();
-        await UCarDataSeeder.SeedAllDataAsync(context, force: true);
+        await UCarDataSeeder.SeedAllDataAsync(context, force: false);
     }
     catch (Exception ex)
     {

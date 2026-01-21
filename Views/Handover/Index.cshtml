@@ -1,4 +1,4 @@
-@model UCar.Models.DTOs.Vehicle.PagedResult<UCar.Models.DTOs.Handover.ContractForHandoverListDto>
+@model UCar.Models.DTOs.PagedResult<UCar.Models.DTOs.Handover.ContractForHandoverListDto>
 @using UCar.Models.DTOs.Handover
 @using UCar.Models.Enums
 @{
@@ -14,7 +14,8 @@
                 <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">car_rental</i>
                 Danh sách chờ giao xe
             </h4>
-            <p class="grey-text text-darken-1" style="margin: 0;">Các hợp đồng đang chờ nhân viên xác nhận giao xe cho khách</p>
+            <p class="grey-text text-darken-1" style="margin: 0;">Các hợp đồng đang chờ nhân viên xác nhận giao xe cho
+                khách</p>
         </div>
     </div>
 
@@ -62,14 +63,16 @@
                     <div class="col s12 m3">
                         <div class="input-field">
                             <i class="material-icons prefix">date_range</i>
-                            <input type="date" id="fromDate" name="FromDate" value="@filter.FromDate?.ToString("yyyy-MM-dd")" class="datepicker">
+                            <input type="date" id="fromDate" name="FromDate"
+                                value="@filter.FromDate?.ToString("yyyy-MM-dd")" class="datepicker">
                             <label for="fromDate" class="active">Từ ngày</label>
                         </div>
                     </div>
                     <div class="col s12 m3">
                         <div class="input-field">
                             <i class="material-icons prefix">date_range</i>
-                            <input type="date" id="toDate" name="ToDate" value="@filter.ToDate?.ToString("yyyy-MM-dd")" class="datepicker">
+                            <input type="date" id="toDate" name="ToDate" value="@filter.ToDate?.ToString("yyyy-MM-dd")"
+                                class="datepicker">
                             <label for="toDate" class="active">Đến ngày</label>
                         </div>
                     </div>
@@ -127,8 +130,8 @@
                                     <span class="chip blue white-text">@item.StatusDisplayName</span>
                                 </td>
                                 <td class="center-align">
-                                    <a asp-action="CheckOut" asp-route-contractId="@item.ContractId" 
-                                       class="btn-small waves-effect waves-light green">
+                                    <a asp-action="CheckOut" asp-route-contractId="@item.ContractId"
+                                        class="btn-small waves-effect waves-light green">
                                         <i class="material-icons left">exit_to_app</i>Giao xe
                                     </a>
                                 </td>
@@ -154,7 +157,8 @@
     {
         <ul class="pagination center-align">
             <li class="@(Model.Page <= 1 ? "disabled" : "waves-effect")">
-                <a href="@Url.Action("Index", new { Page = Model.Page - 1, filter.SearchTerm, filter.FromDate, filter.ToDate })">
+                <a
+                    href="@Url.Action("Index", new { Page = Model.Page - 1, filter.SearchTerm, filter.FromDate, filter.ToDate })">
                     <i class="material-icons">chevron_left</i>
                 </a>
             </li>
@@ -165,7 +169,8 @@
                 </li>
             }
             <li class="@(Model.Page >= Model.TotalPages ? "disabled" : "waves-effect")">
-                <a href="@Url.Action("Index", new { Page = Model.Page + 1, filter.SearchTerm, filter.FromDate, filter.ToDate })">
+                <a
+                    href="@Url.Action("Index", new { Page = Model.Page + 1, filter.SearchTerm, filter.FromDate, filter.ToDate })">
                     <i class="material-icons">chevron_right</i>
                 </a>
             </li>
@@ -179,14 +184,17 @@
             padding: 1.5rem;
             text-align: center;
         }
+
         .stats-icon {
             font-size: 2.5rem;
         }
+
         .stats-value {
             font-size: 2rem;
             font-weight: 700;
             margin: 0.5rem 0;
         }
+
         .stats-label {
             color: #666;
             font-size: 0.9rem;
@@ -196,16 +204,16 @@
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Toast messages
-            @if (TempData["SuccessMessage"] != null)
-            {
-                <text>UCarToast.success('@TempData["SuccessMessage"]');</text>
-            }
-            @if (TempData["ErrorMessage"] != null)
-            {
-                <text>UCarToast.error('@TempData["ErrorMessage"]');</text>
-            }
-        });
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <text>UCarToast.success('@TempData["SuccessMessage"]');</text>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <text>UCarToast.error('@TempData["ErrorMessage"]');</text>
+        }
+            });
     </script>
 }

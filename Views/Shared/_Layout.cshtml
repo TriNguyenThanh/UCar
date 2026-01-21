@@ -62,6 +62,13 @@
                             </a>
                         </li>
                         
+                        <!-- 8.0 Vận hành & Nhân sự Dropdown -->
+                        <li>
+                            <a class="dropdown-trigger" href="#!" data-target="operations-dropdown">
+                                <i class="material-icons left">assignment_ind</i>Vận hành<i class="material-icons right">arrow_drop_down</i>
+                            </a>
+                        </li>
+                        
                         <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons left">event</i>Đặt xe</a></li>
                     }
                     
@@ -107,6 +114,16 @@
         <li class="divider"></li>
         <li><a asp-controller="Handover" asp-action="Overdue"><i class="material-icons">warning</i>Quá hạn</a></li>
         <li><a asp-controller="Handover" asp-action="Documents"><i class="material-icons">description</i>Biên bản</a></li>
+    </ul>
+    
+    <!-- Operations & HR Dropdown Structure (Module 8.0) -->
+    <ul id="operations-dropdown" class="dropdown-content">
+        <li><a asp-controller="Staff" asp-action="Index"><i class="material-icons">people</i>Nhân viên</a></li>
+        <li><a asp-controller="Operations" asp-action="Branches"><i class="material-icons">business</i>Chi nhánh</a></li>
+        <li class="divider"></li>
+        <li><a asp-controller="Operations" asp-action="Tasks"><i class="material-icons">assignment</i>Nhiệm vụ</a></li>
+        <li><a asp-controller="Operations" asp-action="Shifts"><i class="material-icons">schedule</i>Ca làm việc</a></li>
+        <li><a asp-controller="Operations" asp-action="ShiftSchedule"><i class="material-icons">calendar_month</i>Lịch xếp ca</a></li>
     </ul>
     
     <!-- User Dropdown Structure -->
@@ -172,6 +189,24 @@
                                     <li><a asp-controller="Handover" asp-action="Return">Chờ nhận xe</a></li>
                                     <li><a asp-controller="Handover" asp-action="Overdue">Quá hạn</a></li>
                                     <li><a asp-controller="Handover" asp-action="Documents">Biên bản</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+                
+                <!-- Vận hành & Nhân sự - Collapsible (Module 8.0) -->
+                <li class="no-padding">
+                    <ul class="collapsible collapsible-accordion">
+                        <li>
+                            <a class="collapsible-header"><i class="material-icons">assignment_ind</i>Vận hành<i class="material-icons right">arrow_drop_down</i></a>
+                            <div class="collapsible-body">
+                                <ul>
+                                    <li><a asp-controller="Staff" asp-action="Index">Nhân viên</a></li>
+                                    <li><a asp-controller="Operations" asp-action="Branches">Chi nhánh</a></li>
+                                    <li><a asp-controller="Operations" asp-action="Tasks">Nhiệm vụ</a></li>
+                                    <li><a asp-controller="Operations" asp-action="Shifts">Ca làm việc</a></li>
+                                    <li><a asp-controller="Operations" asp-action="ShiftSchedule">Lịch xếp ca</a></li>
                                 </ul>
                             </div>
                         </li>
