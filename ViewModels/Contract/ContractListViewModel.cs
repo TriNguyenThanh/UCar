@@ -32,6 +32,24 @@ public class ContractListViewModel
     public string StatusDisplay => GetStatusDisplay();
     public string StatusClass => GetStatusClass();
     
+    // Handover Integration
+    /// <summary>
+    /// Hợp đồng sẵn sàng giao xe (đã ký và booking chưa bị hủy)
+    /// </summary>
+    public bool IsReadyForHandover { get; set; }
+    
+    /// <summary>
+    /// Booking liên kết đã bị hủy
+    /// </summary>
+    public bool IsBookingCancelled { get; set; }
+    
+    /// <summary>
+    /// Icon và class hiển thị cho trạng thái giao xe
+    /// </summary>
+    public string HandoverStatusIcon => IsReadyForHandover ? "check_circle" : (IsBookingCancelled ? "cancel" : "schedule");
+    public string HandoverStatusClass => IsReadyForHandover ? "green-text" : (IsBookingCancelled ? "red-text" : "orange-text");
+    public string HandoverStatusText => IsReadyForHandover ? "Sẵn sàng" : (IsBookingCancelled ? "Đã hủy" : "Chờ ký");
+    
     // Booking liên quan
     public Guid? BookingId { get; set; }
     public string? BookingCode { get; set; }

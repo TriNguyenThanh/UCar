@@ -92,6 +92,14 @@
                                     <i class="material-icons left">edit</i>Chỉnh sửa thông tin
                                 </a>
                             </li>
+                            @if (Model.CustomerId.HasValue)
+                            {
+                                <li class="collection-item">
+                                    <a asp-action="Documents" class="black-text">
+                                        <i class="material-icons left">credit_card</i>Cập nhật giấy tờ tùy thân
+                                    </a>
+                                </li>
+                            }
                             <li class="collection-item">
                                 <a href="#!" class="black-text">
                                     <i class="material-icons left">lock</i>Đổi mật khẩu

@@ -121,7 +121,13 @@ public class ContractService : IContractService
                 Status = c.Status,
                 BookingId = c.BookingId,
                 CreatedAt = c.CreatedAt,
-                CreatedByName = c.Handler.Username
+                CreatedByName = c.Handler.Username,
+                // Handover Integration: Check if contract is ready for handover
+                IsBookingCancelled = c.Booking != null && c.Booking.Status == BookingStatus.Cancelled,
+                IsReadyForHandover = (c.Status == RentalContractStatus.Signed || 
+                                      c.Status == RentalContractStatus.Active || 
+                                      c.Status == RentalContractStatus.AwaitingDelivery) &&
+                                     (c.Booking == null || c.Booking.Status != BookingStatus.Cancelled)
             })
             .ToListAsync();
 
@@ -1193,6 +1199,178 @@ public class ContractService : IContractService
         }
 
         return result.Trim() + " đồng";
+    }
+
+    #endregion
+
+    #region Handover Integration (Bridge)
+
+    /// <summary>
+    /// Statuses that indicate Contract is ready for Handover
+    /// </summary>
+    private static readonly RentalContractStatus[] HandoverReadyStatuses = new[]
+    {
+        RentalContractStatus.Signed,
+        RentalContractStatus.Active,
+        RentalContractStatus.AwaitingDelivery
+    };
+
+    /// <inheritdoc/>
+    public async Task<bool> IsBookingReadyForHandoverAsync(Guid bookingId)
+    {
+        _logger.LogInformation("IsBookingReadyForHandoverAsync: Checking booking {BookingId}", bookingId);
+
+        // Find Contract linked to this Booking
+        var contract = await _context.RentalContracts
+            .Include(c => c.Booking)
+            .FirstOrDefaultAsync(c => c.BookingId == bookingId);
+
+        if (contract == null)
+        {
+            _logger.LogWarning("IsBookingReadyForHandoverAsync: No contract found for booking {BookingId}", bookingId);
+            return false;
+        }
+
+        // Check if Booking is cancelled
+        if (contract.Booking != null && contract.Booking.Status == BookingStatus.Cancelled)
+        {
+            _logger.LogWarning("IsBookingReadyForHandoverAsync: Booking {BookingId} is cancelled", bookingId);
+            return false;
+        }
+
+        // Check if Contract is signed (ready for handover)
+        var isReady = HandoverReadyStatuses.Contains(contract.Status);
+        _logger.LogInformation(
+            "IsBookingReadyForHandoverAsync: Booking {BookingId} -> Contract {ContractId} Status={Status}, IsReady={IsReady}",
+            bookingId, contract.ContractId, contract.Status, isReady);
+
+        return isReady;
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> IsContractReadyForHandoverAsync(Guid contractId)
+    {
+        _logger.LogInformation("IsContractReadyForHandoverAsync: Checking contract {ContractId}", contractId);
+
+        var contract = await _context.RentalContracts
+            .Include(c => c.Booking)
+            .FirstOrDefaultAsync(c => c.ContractId == contractId);
+
+        if (contract == null)
+        {
+            _logger.LogWarning("IsContractReadyForHandoverAsync: Contract {ContractId} not found", contractId);
+            return false;
+        }
+
+        // If linked to a Booking, check Booking status
+        if (contract.Booking != null && contract.Booking.Status == BookingStatus.Cancelled)
+        {
+            _logger.LogWarning("IsContractReadyForHandoverAsync: Linked booking is cancelled");
+            return false;
+        }
+
+        var isReady = HandoverReadyStatuses.Contains(contract.Status);
+        _logger.LogInformation(
+            "IsContractReadyForHandoverAsync: Contract {ContractId} Status={Status}, IsReady={IsReady}",
+            contractId, contract.Status, isReady);
+
+        return isReady;
+    }
+
+    /// <inheritdoc/>
+    public async Task<ContractStatusViewModel?> GetContractStatusByBookingAsync(Guid bookingId)
+    {
+        _logger.LogInformation("GetContractStatusByBookingAsync: Getting status for booking {BookingId}", bookingId);
+
+        var contract = await _context.RentalContracts
+            .Include(c => c.Booking)
+            .Include(c => c.Customer)
+            .FirstOrDefaultAsync(c => c.BookingId == bookingId);
+
+        if (contract == null)
+        {
+            return null;
+        }
+
+        return MapToContractStatusViewModel(contract);
+    }
+
+    /// <inheritdoc/>
+    public async Task<ContractStatusViewModel?> GetContractStatusAsync(Guid contractId)
+    {
+        _logger.LogInformation("GetContractStatusAsync: Getting status for contract {ContractId}", contractId);
+
+        var contract = await _context.RentalContracts
+            .Include(c => c.Booking)
+            .Include(c => c.Customer)
+            .FirstOrDefaultAsync(c => c.ContractId == contractId);
+
+        if (contract == null)
+        {
+            return null;
+        }
+
+        return MapToContractStatusViewModel(contract);
+    }
+
+    private ContractStatusViewModel MapToContractStatusViewModel(RentalContract contract)
+    {
+        var isBookingCancelled = contract.Booking?.Status == BookingStatus.Cancelled;
+        var isSigned = HandoverReadyStatuses.Contains(contract.Status);
+
+        return new ContractStatusViewModel
+        {
+            ContractId = contract.ContractId,
+            ContractCode = contract.ContractCode,
+            BookingId = contract.BookingId,
+            Status = contract.Status,
+            StatusDisplay = GetStatusDisplayName(contract.Status),
+            IsSigned = contract.CustomerSignedAt.HasValue,
+            SignedAt = contract.CustomerSignedAt,
+            IsConfirmed = contract.ConfirmedAt.HasValue,
+            ConfirmedAt = contract.ConfirmedAt,
+            IsReadyForHandover = isSigned && !isBookingCancelled,
+            IsBookingCancelled = isBookingCancelled,
+            TotalEstimatedCost = contract.TotalAmountFinal,
+            CustomerName = contract.Customer?.FullName,
+            PlannedStart = contract.PlannedStart,
+            PlannedEnd = contract.PlannedEnd,
+            Message = GetStatusMessage(contract.Status, isBookingCancelled)
+        };
+    }
+
+    private static string GetStatusDisplayName(RentalContractStatus status) => status switch
+    {
+        RentalContractStatus.Draft => "Bản nháp",
+        RentalContractStatus.Pending => "Chờ ký",
+        RentalContractStatus.Signed => "Đã ký",
+        RentalContractStatus.Active => "Đang hoạt động",
+        RentalContractStatus.AwaitingDelivery => "Chờ giao xe",
+        RentalContractStatus.InProgress => "Đang thuê",
+        RentalContractStatus.AwaitingReturn => "Chờ trả xe",
+        RentalContractStatus.PendingSettlement => "Chờ quyết toán",
+        RentalContractStatus.Completed => "Hoàn tất",
+        RentalContractStatus.Violation => "Vi phạm",
+        RentalContractStatus.Cancelled => "Đã hủy",
+        _ => status.ToString()
+    };
+
+    private static string GetStatusMessage(RentalContractStatus status, bool isBookingCancelled)
+    {
+        if (isBookingCancelled)
+            return "Không thể giao xe: Booking đã bị hủy.";
+
+        return status switch
+        {
+            RentalContractStatus.Draft => "Hợp đồng đang ở trạng thái bản nháp. Cần chờ khách hàng ký.",
+            RentalContractStatus.Pending => "Hợp đồng đang chờ khách hàng ký.",
+            RentalContractStatus.Signed or
+            RentalContractStatus.Active or
+            RentalContractStatus.AwaitingDelivery => "Hợp đồng đã ký. Sẵn sàng giao xe.",
+            RentalContractStatus.InProgress => "Xe đã được giao. Đang trong quá trình thuê.",
+            RentalContractStatus.Cancelled => "Hợp đồng đã bị hủy.",
+            _ => $"Trạng thái: {status}"
+        };
     }
 
     #endregion

@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using UCar.Interfaces;
@@ -84,8 +85,9 @@ public class VehicleController : Controller
             return View(dto);
         }
 
-        // TODO: Get current user ID from authentication
-        var userId = Guid.Empty; // Placeholder
+        // Get current user ID from authentication
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+        var userId = claim != null ? Guid.Parse(claim.Value) : Guid.Empty;
 
         var result = await _vehicleService.CreateVehicleAsync(dto, userId);
         
@@ -145,8 +147,9 @@ public class VehicleController : Controller
             return View(dto);
         }
 
-        // TODO: Get current user ID from authentication
-        var userId = Guid.Empty; // Placeholder
+        // Get current user ID from authentication
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+        var userId = claim != null ? Guid.Parse(claim.Value) : Guid.Empty;
 
         var result = await _vehicleService.UpdateVehicleAsync(id, dto, userId);
         
@@ -188,25 +191,34 @@ public class VehicleController : Controller
     }
 
     /// <summary>
-    /// Thay đổi trạng thái xe (AJAX)
+    /// Thay đổi trạng thái xe (Form POST)
     /// </summary>
     [HttpPost]
-    public async Task<IActionResult> ChangeStatus([FromBody] VehicleStatusChangeDto dto)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangeStatus(VehicleStatusChangeDto dto)
     {
         if (!ModelState.IsValid)
         {
-            return Json(new { success = false, message = "Dữ liệu không hợp lệ" });
+            TempData["Error"] = "Dữ liệu không hợp lệ";
+            return RedirectToAction(nameof(Details), new { id = dto.VehicleId });
         }
 
-        // TODO: Get current user ID from authentication
-        var userId = Guid.Empty; // Placeholder
+        // Get current user ID from authentication
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+        var userId = claim != null ? Guid.Parse(claim.Value) : Guid.Empty;
 
         var result = await _statusService.ChangeStatusAsync(dto, userId);
         
-        return Json(new { 
-            success = result.Success, 
-            message = result.Success ? result.Message : result.Errors.FirstOrDefault() 
-        });
+        if (result.Success)
+        {
+            TempData["Success"] = result.Message;
+        }
+        else
+        {
+            TempData["Error"] = result.Errors.FirstOrDefault() ?? "Có lỗi xảy ra";
+        }
+
+        return RedirectToAction(nameof(Details), new { id = dto.VehicleId });
     }
 
     /// <summary>

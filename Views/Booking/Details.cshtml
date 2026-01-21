@@ -118,6 +118,56 @@
                     </div>
                 </div>
             }
+
+            <!-- Card Hợp đồng -->
+            @if (User.IsInRole("Admin") || User.IsInRole("Staff") ||
+                Model.Status == UCar.Models.Enums.BookingStatus.Confirmed || 
+                 Model.Status == UCar.Models.Enums.BookingStatus.Deposited ||
+                 Model.Status == UCar.Models.Enums.BookingStatus.InProgress ||
+                 Model.HasActiveContract)
+            {
+                <div class="card" style="border-left: 4px solid @(Model.HasActiveContract ? "#2196F3" : "#4CAF50");">
+                    <div class="card-content">
+                        <span class="card-title">
+                            <i class="material-icons @(Model.HasActiveContract ? "blue-text" : "green-text")">description</i>
+                            Hợp đồng thuê xe
+                        </span>
+                        
+                        @if (Model.HasActiveContract)
+                        {
+                            <!-- Đã có hợp đồng active -->
+                            <div style="margin-bottom: 1rem;">
+                                <p style="margin-bottom: 0.5rem;">
+                                    <strong>Mã HĐ:</strong> 
+                                    <span style="font-size: 1.1rem; font-weight: 600;">@Model.ContractCode</span>
+                                </p>
+                                <p style="margin-bottom: 0.5rem;">
+                                    <strong>Trạng thái:</strong>
+                                    <span class="@Model.ContractStatusClass">
+                                        <i class="material-icons tiny" style="vertical-align: middle;">@Model.ContractStatusIcon</i>
+                                        @Model.ContractStatusDisplay
+                                    </span>
+                                </p>
+                            </div>
+                            <a asp-controller="Contract" asp-action="Details" asp-route-id="@Model.ContractId" 
+                               class="btn waves-effect waves-light blue">
+                                <i class="material-icons left">visibility</i>Xem hợp đồng
+                            </a>
+                        }
+                        else
+                        {
+                            <!-- Chưa có hợp đồng -->
+                            <p class="grey-text text-darken-1" style="margin-bottom: 1rem;">
+                                Đơn đặt xe đã được xác nhận. Tiến hành tạo hợp đồng để chuẩn bị giao xe.
+                            </p>
+                            <a asp-controller="Contract" asp-action="Create" asp-route-bookingId="@Model.BookingId" 
+                               class="btn waves-effect waves-light green">
+                                <i class="material-icons left">add</i>Tạo hợp đồng
+                            </a>
+                        }
+                    </div>
+                </div>
+            }
         </div>
         
         <!-- Sidebar Info -->

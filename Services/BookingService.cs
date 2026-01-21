@@ -266,7 +266,23 @@ public class BookingService : IBookingService
             // Permissions Logic
             CanCancel = booking.Status == BookingStatus.Pending || booking.Status == BookingStatus.Confirmed,
             CanApprove = isAdminOrStaff && booking.Status == BookingStatus.Pending,
-            CanReject = isAdminOrStaff && (booking.Status == BookingStatus.Pending || booking.Status == BookingStatus.Confirmed)
+            CanReject = isAdminOrStaff && (booking.Status == BookingStatus.Pending || booking.Status == BookingStatus.Confirmed),
+            
+            // Contract Info - Query active contract (not cancelled)
+            HasActiveContract = await _context.RentalContracts
+                .AnyAsync(c => c.BookingId == bookingId && c.Status != RentalContractStatus.Cancelled),
+            ContractId = await _context.RentalContracts
+                .Where(c => c.BookingId == bookingId && c.Status != RentalContractStatus.Cancelled)
+                .Select(c => (Guid?)c.ContractId)
+                .FirstOrDefaultAsync(),
+            ContractCode = await _context.RentalContracts
+                .Where(c => c.BookingId == bookingId && c.Status != RentalContractStatus.Cancelled)
+                .Select(c => c.ContractCode)
+                .FirstOrDefaultAsync(),
+            ContractStatus = await _context.RentalContracts
+                .Where(c => c.BookingId == bookingId && c.Status != RentalContractStatus.Cancelled)
+                .Select(c => (RentalContractStatus?)c.Status)
+                .FirstOrDefaultAsync()
         };
     }
 

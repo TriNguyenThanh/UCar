@@ -12,11 +12,16 @@ namespace UCar.Controllers;
 public class AccountController : Controller
 {
     private readonly IAuthService _authService;
+    private readonly ICustomerService _customerService;
     private readonly ILogger<AccountController> _logger;
 
-    public AccountController(IAuthService authService, ILogger<AccountController> logger)
+    public AccountController(
+        IAuthService authService, 
+        ICustomerService customerService,
+        ILogger<AccountController> logger)
     {
         _authService = authService;
+        _customerService = customerService;
         _logger = logger;
     }
 
@@ -168,6 +173,83 @@ public class AccountController : Controller
         }
 
         return View(viewModel);
+    }
+
+    /// <summary>
+    /// Display customer documents for editing
+    /// GET: /Account/Documents
+    /// </summary>
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> Documents()
+    {
+        // Check if user is a customer
+        var customerIdClaim = User.FindFirst("CustomerId");
+        if (customerIdClaim == null || !Guid.TryParse(customerIdClaim.Value, out var customerId))
+        {
+            TempData["ErrorMessage"] = "Chức năng này chỉ dành cho khách hàng";
+            return RedirectToAction("Profile");
+        }
+
+        var model = await _customerService.GetCustomerDocumentsForEditAsync(customerId);
+        if (model == null)
+        {
+            return NotFound();
+        }
+
+        return View(model);
+    }
+
+    /// <summary>
+    /// Handle customer document update
+    /// POST: /Account/Documents
+    /// </summary>
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Documents(CustomerDocumentUpdateViewModel model)
+    {
+        // Check if user is a customer
+        var customerIdClaim = User.FindFirst("CustomerId");
+        if (customerIdClaim == null || !Guid.TryParse(customerIdClaim.Value, out var customerId))
+        {
+            TempData["ErrorMessage"] = "Chức năng này chỉ dành cho khách hàng";
+            return RedirectToAction("Profile");
+        }
+
+        // Verify the customer ID matches
+        if (model.CustomerId != customerId)
+        {
+            _logger.LogWarning("Customer ID mismatch in document update. Claim: {ClaimId}, Model: {ModelId}", 
+                customerId, model.CustomerId);
+            return Forbid();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            // Reload existing images info
+            var existingModel = await _customerService.GetCustomerDocumentsForEditAsync(customerId);
+            if (existingModel != null)
+            {
+                model.ExistingImageFrontUrl = existingModel.ExistingImageFrontUrl;
+                model.ExistingImageBackUrl = existingModel.ExistingImageBackUrl;
+                model.CustomerFullName = existingModel.CustomerFullName;
+            }
+            return View(model);
+        }
+
+        var (success, message) = await _customerService.UpdateCustomerDocumentsAsync(model);
+
+        if (success)
+        {
+            TempData["SuccessMessage"] = message;
+        }
+        else
+        {
+            TempData["ErrorMessage"] = message;
+        }
+
+        return RedirectToAction("Documents");
     }
 
     [Authorize]

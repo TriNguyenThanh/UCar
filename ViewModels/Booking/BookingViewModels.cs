@@ -120,6 +120,84 @@ public class BookingDetailVM
     public bool CanCancel { get; set; }
     public bool CanApprove { get; set; } // Staff only
     public bool CanReject { get; set; } // Staff only
+    
+    // ===== Contract Info =====
+    /// <summary>
+    /// Có hợp đồng active (không bị hủy) liên kết với booking này
+    /// </summary>
+    public bool HasActiveContract { get; set; }
+    
+    /// <summary>
+    /// ID của hợp đồng (nếu có)
+    /// </summary>
+    public Guid? ContractId { get; set; }
+    
+    /// <summary>
+    /// Mã hợp đồng (ví dụ: HD-001234)
+    /// </summary>
+    public string? ContractCode { get; set; }
+    
+    /// <summary>
+    /// Trạng thái hợp đồng
+    /// </summary>
+    public RentalContractStatus? ContractStatus { get; set; }
+    
+    /// <summary>
+    /// Text hiển thị trạng thái hợp đồng
+    /// </summary>
+    public string ContractStatusDisplay => ContractStatus switch
+    {
+        RentalContractStatus.Draft => "Bản nháp",
+        RentalContractStatus.Pending => "Chờ ký",
+        RentalContractStatus.Signed => "Đã ký",
+        RentalContractStatus.Active => "Đang hoạt động",
+        RentalContractStatus.AwaitingDelivery => "Chờ giao xe",
+        RentalContractStatus.InProgress => "Đang thuê",
+        RentalContractStatus.AwaitingReturn => "Chờ trả xe",
+        RentalContractStatus.PendingSettlement => "Chờ quyết toán",
+        RentalContractStatus.Completed => "Hoàn tất",
+        RentalContractStatus.Violation => "Vi phạm",
+        RentalContractStatus.Cancelled => "Đã hủy",
+        _ => ""
+    };
+    
+    /// <summary>
+    /// CSS class cho chip trạng thái hợp đồng
+    /// </summary>
+    public string ContractStatusClass => ContractStatus switch
+    {
+        RentalContractStatus.Draft => "chip grey lighten-1",
+        RentalContractStatus.Pending => "chip orange white-text",
+        RentalContractStatus.Signed => "chip green white-text",
+        RentalContractStatus.Active => "chip blue white-text",
+        RentalContractStatus.AwaitingDelivery => "chip light-blue white-text",
+        RentalContractStatus.InProgress => "chip teal white-text",
+        RentalContractStatus.AwaitingReturn => "chip amber white-text",
+        RentalContractStatus.PendingSettlement => "chip deep-orange white-text",
+        RentalContractStatus.Completed => "chip green darken-2 white-text",
+        RentalContractStatus.Violation => "chip red white-text",
+        RentalContractStatus.Cancelled => "chip grey white-text",
+        _ => "chip"
+    };
+    
+    /// <summary>
+    /// Icon cho trạng thái hợp đồng
+    /// </summary>
+    public string ContractStatusIcon => ContractStatus switch
+    {
+        RentalContractStatus.Draft => "edit",
+        RentalContractStatus.Pending => "schedule",
+        RentalContractStatus.Signed => "check_circle",
+        RentalContractStatus.Active => "play_circle",
+        RentalContractStatus.AwaitingDelivery => "local_shipping",
+        RentalContractStatus.InProgress => "directions_car",
+        RentalContractStatus.AwaitingReturn => "assignment_return",
+        RentalContractStatus.PendingSettlement => "receipt_long",
+        RentalContractStatus.Completed => "verified",
+        RentalContractStatus.Violation => "report",
+        RentalContractStatus.Cancelled => "cancel",
+        _ => "description"
+    };
 }
 
 public class BookingActionVM

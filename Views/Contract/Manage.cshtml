@@ -98,6 +98,7 @@
                             <th>Thời gian thuê</th>
                             <th>Tổng tiền</th>
                             <th>Trạng thái</th>
+                            <th title="Sẵn sàng giao xe">Giao xe</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -138,6 +139,9 @@
                                 </td>
                                 <td>
                                     <span class="@item.StatusClass">@item.StatusDisplay</span>
+                                </td>
+                                <td class="center-align">
+                                    <i class="material-icons @item.HandoverStatusClass" title="@item.HandoverStatusText">@item.HandoverStatusIcon</i>
                                 </td>
                                 <td>
                                     <a asp-action="Details" asp-route-id="@item.ContractId" class="btn-flat waves-effect" title="Chi tiết">

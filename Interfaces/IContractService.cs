@@ -125,4 +125,38 @@ public interface IContractService
     /// Kiểm tra khách hàng có đủ điều kiện thuê xe
     /// </summary>
     Task<(bool isEligible, string? reason)> CheckCustomerEligibilityAsync(Guid customerId);
+
+    // ===== Handover Integration (Bridge) =====
+    
+    /// <summary>
+    /// Kiểm tra Booking có sẵn sàng để giao xe (Contract đã ký)
+    /// Handover module sử dụng method này để validate trước khi tạo HandoverRecord
+    /// </summary>
+    /// <param name="bookingId">ID của Booking cần kiểm tra</param>
+    /// <returns>
+    /// true: nếu Contract tồn tại, đã ký (Status >= Signed), và Booking chưa bị hủy
+    /// false: các trường hợp khác
+    /// </returns>
+    Task<bool> IsBookingReadyForHandoverAsync(Guid bookingId);
+
+    /// <summary>
+    /// Kiểm tra Contract có sẵn sàng để giao xe (dành cho walk-in không có Booking)
+    /// </summary>
+    /// <param name="contractId">ID của Contract cần kiểm tra</param>
+    /// <returns>true nếu Contract đã ký và hợp lệ</returns>
+    Task<bool> IsContractReadyForHandoverAsync(Guid contractId);
+
+    /// <summary>
+    /// Lấy trạng thái Contract theo BookingId (dùng cho API status endpoint)
+    /// </summary>
+    /// <param name="bookingId">ID của Booking</param>
+    /// <returns>ViewModel chứa thông tin trạng thái Contract</returns>
+    Task<ContractStatusViewModel?> GetContractStatusByBookingAsync(Guid bookingId);
+
+    /// <summary>
+    /// Lấy trạng thái Contract theo ContractId
+    /// </summary>
+    /// <param name="contractId">ID của Contract</param>
+    /// <returns>ViewModel chứa thông tin trạng thái Contract</returns>
+    Task<ContractStatusViewModel?> GetContractStatusAsync(Guid contractId);
 }

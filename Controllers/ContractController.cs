@@ -73,6 +73,47 @@ public class ContractController : Controller
         return View(result);
     }
 
+    /// <summary>
+    /// Kiểm tra trạng thái hợp đồng (Server-side)
+    /// GET: /Contract/Status?searchId=...
+    /// Dùng để kiểm tra hợp đồng đã ký trước khi giao xe
+    /// </summary>
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<IActionResult> Status(string? searchId)
+    {
+        if (string.IsNullOrWhiteSpace(searchId))
+        {
+            return View((ContractStatusViewModel?)null);
+        }
+
+        // Try parse as GUID
+        if (!Guid.TryParse(searchId.Trim(), out Guid id))
+        {
+            ViewBag.SearchId = searchId;
+            ViewBag.ErrorMessage = "ID không hợp lệ. Vui lòng nhập đúng định dạng GUID.";
+            return View((ContractStatusViewModel?)null);
+        }
+
+        // Try find by BookingId first
+        var status = await _contractService.GetContractStatusByBookingAsync(id);
+        
+        // If not found, try by ContractId
+        if (status == null)
+        {
+            status = await _contractService.GetContractStatusAsync(id);
+        }
+
+        if (status == null)
+        {
+            ViewBag.SearchId = searchId;
+            ViewBag.ErrorMessage = $"Không tìm thấy hợp đồng với ID: {searchId}";
+            return View((ContractStatusViewModel?)null);
+        }
+
+        ViewBag.SearchId = searchId;
+        return View(status);
+    }
+
     #endregion
 
     #region 4.2 Tạo hợp đồng
@@ -84,6 +125,17 @@ public class ContractController : Controller
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IActionResult> Create(Guid? bookingId)
     {
+        // Chặn tạo trùng: Kiểm tra booking đã có contract active chưa
+        if (bookingId.HasValue)
+        {
+            var existingContract = await _contractService.GetContractStatusByBookingAsync(bookingId.Value);
+            if (existingContract != null && existingContract.Status != Models.Enums.RentalContractStatus.Cancelled)
+            {
+                TempData["Success"] = $"Đơn đặt xe này đã có hợp đồng {existingContract.ContractCode}. Đang chuyển đến trang chi tiết.";
+                return RedirectToAction(nameof(Details), new { id = existingContract.ContractId });
+            }
+        }
+
         var model = new ContractCreateViewModel();
         var options = await _contractService.GetCreateOptionsAsync();
         ViewBag.Options = options;
@@ -561,6 +613,113 @@ public class ContractController : Controller
     {
         var (isEligible, reason) = await _contractService.CheckCustomerEligibilityAsync(customerId);
         return Json(new { isEligible, reason });
+    }
+
+    #endregion
+
+    #region API Endpoints for Handover Integration
+
+    /// <summary>
+    /// API: Lấy trạng thái Contract theo BookingId
+    /// GET: /Contract/StatusByBooking/{bookingId}
+    /// Dùng để Handover module kiểm tra trạng thái hợp đồng
+    /// </summary>
+    /// <param name="bookingId">ID của Booking</param>
+    /// <returns>
+    /// 200: ContractStatusViewModel với thông tin trạng thái
+    /// 404: Không tìm thấy Contract cho Booking này
+    /// </returns>
+    [HttpGet]
+    [Route("[controller]/StatusByBooking/{bookingId:guid}")]
+    public async Task<IActionResult> GetStatusByBooking(Guid bookingId)
+    {
+        var status = await _contractService.GetContractStatusByBookingAsync(bookingId);
+        if (status == null)
+        {
+            return NotFound(new { 
+                success = false, 
+                message = $"Không tìm thấy hợp đồng cho Booking {bookingId}" 
+            });
+        }
+
+        return Json(new { success = true, data = status });
+    }
+
+    /// <summary>
+    /// API: Lấy trạng thái Contract theo ContractId
+    /// GET: /Contract/Status/{contractId}
+    /// </summary>
+    /// <param name="contractId">ID của Contract</param>
+    /// <returns>
+    /// 200: ContractStatusViewModel với thông tin trạng thái
+    /// 404: Không tìm thấy Contract
+    /// </returns>
+    [HttpGet]
+    [Route("[controller]/Status/{contractId:guid}")]
+    public async Task<IActionResult> GetStatus(Guid contractId)
+    {
+        var status = await _contractService.GetContractStatusAsync(contractId);
+        if (status == null)
+        {
+            return NotFound(new { 
+                success = false, 
+                message = $"Không tìm thấy hợp đồng {contractId}" 
+            });
+        }
+
+        return Json(new { success = true, data = status });
+    }
+
+    /// <summary>
+    /// API: Kiểm tra Booking có sẵn sàng để giao xe hay không
+    /// GET: /Contract/IsReadyForHandover/{bookingId}
+    /// ✅ QUAN TRỌNG: Handover module inject IContractService và gọi method này
+    /// </summary>
+    /// <param name="bookingId">ID của Booking</param>
+    /// <returns>
+    /// 200: { success: true, isReady: true/false, message: "..." }
+    /// </returns>
+    [HttpGet]
+    [Route("[controller]/IsReadyForHandover/{bookingId:guid}")]
+    public async Task<IActionResult> IsReadyForHandover(Guid bookingId)
+    {
+        var isReady = await _contractService.IsBookingReadyForHandoverAsync(bookingId);
+        var status = await _contractService.GetContractStatusByBookingAsync(bookingId);
+
+        return Json(new { 
+            success = true, 
+            isReady, 
+            message = status?.Message ?? (isReady 
+                ? "Sẵn sàng giao xe." 
+                : "Chưa sẵn sàng: Hợp đồng chưa được ký hoặc không tồn tại."),
+            contractId = status?.ContractId,
+            contractStatus = status?.StatusDisplay
+        });
+    }
+
+    /// <summary>
+    /// API: Kiểm tra Contract (walk-in, không có Booking) có sẵn sàng để giao xe hay không
+    /// GET: /Contract/IsContractReadyForHandover/{contractId}
+    /// </summary>
+    /// <param name="contractId">ID của Contract</param>
+    /// <returns>
+    /// 200: { success: true, isReady: true/false, message: "..." }
+    /// </returns>
+    [HttpGet]
+    [Route("[controller]/IsContractReadyForHandover/{contractId:guid}")]
+    public async Task<IActionResult> IsContractReadyForHandover(Guid contractId)
+    {
+        var isReady = await _contractService.IsContractReadyForHandoverAsync(contractId);
+        var status = await _contractService.GetContractStatusAsync(contractId);
+
+        return Json(new { 
+            success = true, 
+            isReady, 
+            message = status?.Message ?? (isReady 
+                ? "Sẵn sàng giao xe." 
+                : "Chưa sẵn sàng: Hợp đồng chưa được ký hoặc không tồn tại."),
+            contractStatus = status?.StatusDisplay
+        });
     }
 
     #endregion

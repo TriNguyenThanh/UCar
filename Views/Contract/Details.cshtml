@@ -10,6 +10,13 @@
             <a asp-action="Index" class="btn-flat waves-effect">
                 <i class="material-icons left">arrow_back</i>Quay lại
             </a>
+            @if (Model.BookingId.HasValue)
+            {
+                <a asp-controller="Booking" asp-action="Details" asp-route-id="@Model.BookingId" 
+                   class="btn-flat waves-effect" title="Xem đơn đặt xe gốc">
+                    <i class="material-icons left">event</i>Xem đơn đặt xe
+                </a>
+            }
             <h4 style="font-weight: 700; margin-bottom: 0.5rem; margin-top: 1rem;">
                 <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">description</i>
                 Hợp đồng @Model.ContractCode
