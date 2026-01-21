@@ -302,7 +302,7 @@
                         @if (Model.CanHandover && (User.IsInRole("Admin") || User.IsInRole("Staff")))
                         {
                             <a asp-controller="Handover" asp-action="Create" asp-route-contractId="@Model.ContractId" class="btn waves-effect waves-light teal">
-                                <i class="material-icons left">car_rental</i>Bàn giao xe
+                                <i class="material-icons left">car_rental</i>Tạo biên bản giao xe
                             </a>
                         }
                         
