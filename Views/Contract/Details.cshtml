@@ -301,7 +301,7 @@
                         
                         @if (Model.CanHandover && (User.IsInRole("Admin") || User.IsInRole("Staff")))
                         {
-                            <a asp-controller="Handover" asp-action="Create" asp-route-contractId="@Model.ContractId" class="btn waves-effect waves-light teal">
+                            <a asp-controller="Handover" asp-action="CheckOut" asp-route-contractId="@Model.ContractId" class="btn waves-effect waves-light teal">
                                 <i class="material-icons left">car_rental</i>Bàn giao xe
                             </a>
                         }
@@ -315,9 +315,9 @@
                         
                         @if (Model.Status == UCar.Models.Enums.RentalContractStatus.InProgress && (User.IsInRole("Admin") || User.IsInRole("Staff")))
                         {
-                            <a asp-action="Extend" asp-route-id="@Model.ContractId" class="btn btn-secondary waves-effect waves-light">
+                            @* <a asp-action="Extend" asp-route-id="@Model.ContractId" class="btn btn-secondary waves-effect waves-light">
                                 <i class="material-icons left">update</i>Gia hạn
-                            </a>
+                            </a> *@
                         }
                         
                         @if (Model.CanCancel && (User.IsInRole("Admin") || User.IsInRole("Staff")))
@@ -401,9 +401,9 @@
                             </a>
                         }
                         
-                        @if (Model.HandoverId.HasValue)
+                        @if (Model.ContractId != Guid.Empty)
                         {
-                            <a asp-controller="Handover" asp-action="Details" asp-route-id="@Model.HandoverId" class="collection-item">
+                            <a asp-controller="Handover" asp-action="HandoverDocument" asp-route-contractId="@Model.ContractId" class="collection-item">
                                 <i class="material-icons left grey-text">car_rental</i>
                                 Biên bản giao xe
                                 <span class="secondary-content">@Model.HandedAt?.ToString("dd/MM")</span>
@@ -419,7 +419,7 @@
                         
                         @if (Model.ReturnId.HasValue)
                         {
-                            <a asp-controller="Return" asp-action="Details" asp-route-id="@Model.ReturnId" class="collection-item">
+                            <a asp-controller="Handover" asp-action="ReturnDocument" asp-route-contractId="@Model.ContractId" class="collection-item">
                                 <i class="material-icons left grey-text">assignment_return</i>
                                 Biên bản trả xe
                                 <span class="secondary-content">@Model.ReturnedAt?.ToString("dd/MM")</span>

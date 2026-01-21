@@ -710,7 +710,7 @@ public class CustomerService : ICustomerService
             }
 
             // Get existing document or create new one
-            var document = customer.Documents.FirstOrDefault();
+            var document = customer.Documents.FirstOrDefault(dc => dc.DocType == model.DocType);
             bool isNewDocument = document == null;
 
             if (isNewDocument)

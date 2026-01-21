@@ -389,12 +389,13 @@ public class ContractService : IContractService
             throw new InvalidOperationException($"Khách hàng không đủ điều kiện thuê xe: {reason}");
         }
 
-        // Validate vehicle availability
-        var isAvailable = await CheckVehicleAvailabilityAsync(model.VehicleId, model.PlannedStart, model.PlannedEnd);
-        if (!isAvailable)
-        {
-            throw new InvalidOperationException("Xe không khả dụng trong khoảng thời gian này");
-        }
+        // // Validate vehicle availability
+        // var isAvailable = await CheckVehicleAvailabilityAsync(model.VehicleId, model.PlannedStart, model.PlannedEnd);
+        // if (!isAvailable)
+        // {
+        //     throw new InvalidOperationException("Xe không khả dụng trong khoảng thời gian này");
+        // } chỗ này để Trí sửaaaa
+
 
         // Validate dates
         if (model.PlannedStart >= model.PlannedEnd)
@@ -1035,6 +1036,7 @@ public class ContractService : IContractService
             BookingStatus.Confirmed, 
             BookingStatus.Deposited 
         };
+
 
         var hasBookingOverlap = await _context.Bookings
             .AnyAsync(b => b.AssignedVehicleId == vehicleId &&

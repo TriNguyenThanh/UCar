@@ -290,10 +290,7 @@ public class ContractController : Controller
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IActionResult> Edit(Guid id, ContractEditViewModel model)
     {
-        if (id != model.ContractId)
-        {
-            return BadRequest();
-        }
+        id = model.ContractId;
 
         if (!ModelState.IsValid)
         {
@@ -372,6 +369,8 @@ public class ContractController : Controller
 
         try
         {
+            id = model.ContractId;
+            
             var userId = GetCurrentUserId();
             var success = await _contractService.SignContractAsync(id, userId);
 
@@ -420,8 +419,9 @@ public class ContractController : Controller
     {
         try
         {
+            id = model.ContractId;
             var userId = GetCurrentUserId();
-            var success = await _contractService.ConfirmContractAsync(id, userId, model.ConfirmNote);
+            var success = await _contractService.ConfirmContractAsync(model.ContractId, userId, model.ConfirmNote);
 
             if (!success)
             {
@@ -430,7 +430,7 @@ public class ContractController : Controller
             }
 
             TempData["Success"] = "Đã xác nhận hợp đồng thành công!";
-            return RedirectToAction(nameof(Details), new { id });
+            return RedirectToAction(nameof(Details), new { id = model.ContractId });
         }
         catch (Exception ex)
         {
@@ -536,6 +536,7 @@ public class ContractController : Controller
 
         try
         {
+            id = model.ContractId;
             var userId = GetCurrentUserId();
             var success = await _contractService.ExtendContractAsync(model, userId);
 
