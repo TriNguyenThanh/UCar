@@ -9,7 +9,7 @@ namespace UCar.Controllers;
 /// Customer management controller
 /// Implements customer management UI according to DFD 2.0
 /// </summary>
-[Authorize(Roles = "Admin,Staff")]
+[Authorize(Roles = "Admin,BranchManager,Staff")]
 public class CustomerController : Controller
 {
     private readonly ICustomerService _customerService;

@@ -102,6 +102,7 @@ public class AccountController : Controller
             return user.Role.Code switch
             {
                 Models.Enums.RoleCode.Admin => RedirectToAction("Index", "Home"),
+                Models.Enums.RoleCode.BranchManager => RedirectToAction("Index", "Home"),
                 Models.Enums.RoleCode.Staff => RedirectToAction("Index", "Home"),
                 Models.Enums.RoleCode.Customer => RedirectToAction("Index", "Home"),
                 _ => RedirectToAction("Index", "Home")

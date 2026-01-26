@@ -31,7 +31,7 @@
     <!-- Navigation -->
     <nav class="ucar-navbar">
         <div class="nav-wrapper container">
-            @if (User.IsInRole("Admin") || User.IsInRole("Staff"))
+            @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff"))
             {
                 <!-- Brand -->
                 <a asp-controller="Home" asp-action="Index" class="brand-logo">
@@ -60,7 +60,7 @@
             <ul class="right hide-on-med-and-down">
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    @if (User.IsInRole("Admin") || User.IsInRole("Staff"))
+                    @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff"))
                     {
                         <li><a asp-controller="Home" asp-action="Index"><i class="material-icons left">home</i>Trang chủ</a>
                         </li>
@@ -153,8 +153,6 @@
 
     <!-- Handover Management Dropdown Structure -->
     <ul id="handover-dropdown" class="dropdown-content">
-        <li><a asp-controller="Contract" asp-action="Status"><i class="material-icons">fact_check</i>Kiểm tra HĐ</a></li>
-        <li class="divider"></li>
         <li><a asp-controller="Handover" asp-action="Index"><i class="material-icons">exit_to_app</i>Chờ giao xe</a>
         </li>
         <li><a asp-controller="Handover" asp-action="Return"><i class="material-icons">login</i>Chờ nhận xe</a></li>
@@ -205,7 +203,7 @@
                 </div>
             </li>
 
-            @if (User.IsInRole("Admin") || User.IsInRole("Staff"))
+            @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff"))
             {
                 <li><a asp-controller="Home" asp-action="Index"><i class="material-icons">home</i>Trang chủ</a></li>
                 

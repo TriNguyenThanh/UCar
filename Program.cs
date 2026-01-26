@@ -1,13 +1,18 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using UCar.Data;
+using UCar.Infrastructure;
 using UCar.Interfaces;
 using UCar.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    // Register custom DateTime model binder for all DateTime properties
+    options.ModelBinderProviders.Insert(0, new DateTimeModelBinderProvider());
+});
 builder.Services.AddDbContext<UCarDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 

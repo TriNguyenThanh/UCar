@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using UCar.Interfaces;
@@ -9,6 +10,7 @@ namespace UCar.Controllers;
 /// Controller quản lý nhân viên
 /// Tương ứng DFD 8.3 - Quản lý nhân sự
 /// </summary>
+[Authorize(Roles = "Admin,BranchManager")]
 public class StaffController : Controller
 {
     private readonly IStaffService _staffService;

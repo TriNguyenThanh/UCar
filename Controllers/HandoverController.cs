@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UCar.Interfaces;
 using UCar.Models.DTOs.Handover;
@@ -8,6 +9,7 @@ namespace UCar.Controllers;
 /// Controller quản lý giao nhận xe
 /// Tương ứng DFD 6.0 - QUẢN LÝ GIAO NHẬN XE
 /// </summary>
+[Authorize(Roles = "Admin,BranchManager,Staff")]
 public class HandoverController : Controller
 {
     private readonly IHandoverService _handoverService;

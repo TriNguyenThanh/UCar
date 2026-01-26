@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using UCar.Interfaces;
@@ -10,6 +11,7 @@ namespace UCar.Controllers;
 /// Controller quản lý vận hành (chi nhánh, nhiệm vụ, ca làm)
 /// Tương ứng DFD 8.1, 8.2, 8.3
 /// </summary>
+[Authorize(Roles = "Admin,BranchManager")]
 public class OperationsController : Controller
 {
     private readonly IBranchService _branchService;

@@ -52,4 +52,9 @@ public interface IVehicleService
     /// Lấy danh sách chi nhánh cho dropdown
     /// </summary>
     Task<IEnumerable<(Guid Id, string Name)>> GetBranchesAsync();
+
+    /// <summary>
+    /// Lấy thống kê xe theo trạng thái từ database
+    /// </summary>
+    Task<VehicleStatsDto> GetVehicleStatsAsync(VehicleFilterDto? filter = null);
 }

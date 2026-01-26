@@ -32,7 +32,7 @@ public class ContractController : Controller
         return Guid.Empty;
     }
 
-    private bool IsAdminOrStaff => User.IsInRole("Admin") || User.IsInRole("Staff");
+    private bool IsAdminOrStaff => User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff");
 
     #endregion
 
@@ -54,7 +54,7 @@ public class ContractController : Controller
     /// Danh sách hợp đồng (Admin/Staff)
     /// GET: /Contract/Manage
     /// </summary>
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,BranchManager,Staff")]
     public async Task<IActionResult> Manage(ContractSearchViewModel filter)
     {
         var result = await _contractService.GetContractsAsync(filter);
@@ -78,7 +78,7 @@ public class ContractController : Controller
     /// GET: /Contract/Status?searchId=...
     /// Dùng để kiểm tra hợp đồng đã ký trước khi giao xe
     /// </summary>
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,BranchManager,Staff")]
     public async Task<IActionResult> Status(string? searchId)
     {
         if (string.IsNullOrWhiteSpace(searchId))
@@ -122,7 +122,7 @@ public class ContractController : Controller
     /// Form tạo hợp đồng
     /// GET: /Contract/Create?bookingId=...
     /// </summary>
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,BranchManager,Staff")]
     public async Task<IActionResult> Create(Guid? bookingId)
     {
         // Chặn tạo trùng: Kiểm tra booking đã có contract active chưa
@@ -191,7 +191,7 @@ public class ContractController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,BranchManager,Staff")]
     public async Task<IActionResult> Create(ContractCreateViewModel model)
     {
         if (!ModelState.IsValid)
@@ -265,7 +265,7 @@ public class ContractController : Controller
     /// Form sửa hợp đồng
     /// GET: /Contract/Edit/{id}
     /// </summary>
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,BranchManager,Staff")]
     public async Task<IActionResult> Edit(Guid id)
     {
         var model = await _contractService.GetContractForEditAsync(id);
@@ -287,7 +287,7 @@ public class ContractController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,BranchManager,Staff")]
     public async Task<IActionResult> Edit(Guid id, ContractEditViewModel model)
     {
         id = model.ContractId;
@@ -395,7 +395,7 @@ public class ContractController : Controller
     /// Form xác nhận hợp đồng (Staff/Admin)
     /// GET: /Contract/Confirm/{id}
     /// </summary>
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,BranchManager,Staff")]
     public async Task<IActionResult> Confirm(Guid id)
     {
         var model = await _contractService.GetContractForConfirmAsync(id);
@@ -414,7 +414,7 @@ public class ContractController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,BranchManager,Staff")]
     public async Task<IActionResult> Confirm(Guid id, ContractConfirmViewModel model)
     {
         try
@@ -448,7 +448,7 @@ public class ContractController : Controller
     /// Form hủy hợp đồng
     /// GET: /Contract/Cancel/{id}
     /// </summary>
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,BranchManager,Staff")]
     public async Task<IActionResult> Cancel(Guid id)
     {
         var model = await _contractService.GetContractForCancelAsync(id);
@@ -467,7 +467,7 @@ public class ContractController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,BranchManager,Staff")]
     public async Task<IActionResult> Cancel(Guid id, ContractCancelViewModel model)
     {
         if (string.IsNullOrWhiteSpace(model.CancellationReason))
@@ -507,7 +507,7 @@ public class ContractController : Controller
     /// Form gia hạn hợp đồng
     /// GET: /Contract/Extend/{id}
     /// </summary>
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,BranchManager,Staff")]
     public async Task<IActionResult> Extend(Guid id)
     {
         var model = await _contractService.GetContractForExtendAsync(id);
@@ -526,7 +526,7 @@ public class ContractController : Controller
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,BranchManager,Staff")]
     public async Task<IActionResult> Extend(Guid id, ContractExtendViewModel model)
     {
         if (!ModelState.IsValid)

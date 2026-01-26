@@ -583,6 +583,10 @@ public class HandoverService : IHandoverService
                 Amount = c.Amount,
                 Description = c.Description
             }).ToList(),
+            RentalDays = contract.RentalDays,
+            RentalUnitPrice = contract.SnapshotUnitPrice,
+            RentalAmount = contract.RentalAmount,
+            DepositAmount = contract.SnapshotDepositAmount,
             Note = returnRecord.Note,
             ReceivedByName = returnRecord.ReceivedByUser.StaffProfile?.FullName ?? returnRecord.ReceivedByUser.Username,
             BranchName = contract.Vehicle.Branch.Name
@@ -698,11 +702,25 @@ public class HandoverService : IHandoverService
         if (filter.Status.HasValue)
             query = query.Where(c => c.Status == filter.Status.Value);
 
-        if (filter.FromDate.HasValue)
-            query = query.Where(c => c.PlannedStart >= filter.FromDate.Value);
+        // Validate date range - only apply if FromDate <= ToDate
+        if (filter.FromDate.HasValue && filter.ToDate.HasValue)
+        {
+            // If FromDate > ToDate, skip date filters (invalid range)
+            if (filter.FromDate.Value <= filter.ToDate.Value)
+            {
+                query = query.Where(c => c.PlannedStart >= filter.FromDate.Value &&
+                                        c.PlannedStart <= filter.ToDate.Value);
+            }
+        }
+        else
+        {
+            // Apply individual date filters if only one is provided
+            if (filter.FromDate.HasValue)
+                query = query.Where(c => c.PlannedStart >= filter.FromDate.Value);
 
-        if (filter.ToDate.HasValue)
-            query = query.Where(c => c.PlannedStart <= filter.ToDate.Value);
+            if (filter.ToDate.HasValue)
+                query = query.Where(c => c.PlannedStart <= filter.ToDate.Value);
+        }
 
         return query;
     }

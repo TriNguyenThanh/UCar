@@ -380,4 +380,64 @@ public class VehicleService : IVehicleService
             .Select(b => new ValueTuple<Guid, string>(b.BranchId, b.Name))
             .ToListAsync();
     }
+
+    public async Task<VehicleStatsDto> GetVehicleStatsAsync(VehicleFilterDto? filter = null)
+    {
+        var query = _context.Vehicles.AsQueryable();
+
+        // Apply same filters as GetAllVehiclesAsync (except status filter for stats)
+        if (filter != null)
+        {
+            if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+            {
+                var term = filter.SearchTerm.ToLower();
+                query = query.Where(v =>
+                    v.PlateNo.ToLower().Contains(term) ||
+                    v.Model.Make.ToLower().Contains(term) ||
+                    v.Model.ModelName.ToLower().Contains(term));
+            }
+
+            if (filter.VehicleTypeId.HasValue)
+            {
+                query = query.Where(v => v.Model.VehicleTypeId == filter.VehicleTypeId.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.Make))
+            {
+                query = query.Where(v => v.Model.Make == filter.Make);
+            }
+
+            if (filter.BranchId.HasValue)
+            {
+                query = query.Where(v => v.BranchId == filter.BranchId.Value);
+            }
+
+            if (filter.YearFrom.HasValue)
+            {
+                query = query.Where(v => v.ManufactureYear >= filter.YearFrom.Value);
+            }
+
+            if (filter.YearTo.HasValue)
+            {
+                query = query.Where(v => v.ManufactureYear <= filter.YearTo.Value);
+            }
+        }
+
+        // Get stats from database
+        var stats = await query
+            .GroupBy(v => 1)
+            .Select(g => new VehicleStatsDto
+            {
+                TotalCount = g.Count(),
+                AvailableCount = g.Count(v => v.CurrentStatus == VehicleStatus.Available),
+                RentingCount = g.Count(v => v.CurrentStatus == VehicleStatus.Renting),
+                MaintenanceCount = g.Count(v => v.CurrentStatus == VehicleStatus.Maintenance),
+                ReservedCount = g.Count(v => v.CurrentStatus == VehicleStatus.Reserved),
+                ImpoundedCount = g.Count(v => v.CurrentStatus == VehicleStatus.Impounded),
+                IncidentCount = g.Count(v => v.CurrentStatus == VehicleStatus.Incident)
+            })
+            .FirstOrDefaultAsync();
+
+        return stats ?? new VehicleStatsDto();
+    }
 }

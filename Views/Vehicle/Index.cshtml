@@ -5,6 +5,7 @@
     ViewData["Title"] = "Quản lý xe";
     ViewData["Description"] = "Danh sách và quản lý thông tin xe trong hệ thống UCar";
     var filter = ViewBag.Filter as VehicleFilterDto ?? new VehicleFilterDto();
+    var stats = ViewBag.Stats as VehicleStatsDto ?? new VehicleStatsDto();
 }
 
 <div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
@@ -30,28 +31,28 @@
         <div class="col s12 m3">
             <div class="card stats-card">
                 <i class="material-icons stats-icon blue-text">directions_car</i>
-                <div class="stats-value">@Model.TotalCount</div>
+                <div class="stats-value">@stats.TotalCount</div>
                 <div class="stats-label">Tổng số xe</div>
             </div>
         </div>
         <div class="col s12 m3">
             <div class="card stats-card">
                 <i class="material-icons stats-icon green-text">check_circle</i>
-                <div class="stats-value">@Model.Items.Count(v => v.CurrentStatus == VehicleStatus.Available)</div>
+                <div class="stats-value">@stats.AvailableCount</div>
                 <div class="stats-label">Sẵn sàng</div>
             </div>
         </div>
         <div class="col s12 m3">
             <div class="card stats-card">
                 <i class="material-icons stats-icon orange-text">event</i>
-                <div class="stats-value">@Model.Items.Count(v => v.CurrentStatus == VehicleStatus.Renting)</div>
+                <div class="stats-value">@stats.RentingCount</div>
                 <div class="stats-label">Đang thuê</div>
             </div>
         </div>
         <div class="col s12 m3">
             <div class="card stats-card">
                 <i class="material-icons stats-icon red-text">build</i>
-                <div class="stats-value">@Model.Items.Count(v => v.CurrentStatus == VehicleStatus.Maintenance)</div>
+                <div class="stats-value">@stats.MaintenanceCount</div>
                 <div class="stats-label">Bảo dưỡng</div>
             </div>
         </div>

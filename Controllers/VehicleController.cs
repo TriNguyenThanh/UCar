@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using UCar.Interfaces;
@@ -10,6 +11,7 @@ namespace UCar.Controllers;
 /// <summary>
 /// Controller quản lý xe
 /// </summary>
+[Authorize(Roles = "Admin,BranchManager,Staff")]
 public class VehicleController : Controller
 {
     private readonly IVehicleService _vehicleService;
@@ -41,11 +43,13 @@ public class VehicleController : Controller
     public async Task<IActionResult> Index(VehicleFilterDto filter)
     {
         var result = await _vehicleService.GetAllVehiclesAsync(filter);
+        var stats = await _vehicleService.GetVehicleStatsAsync(filter);
 
         // Prepare filter dropdowns
         await PrepareFilterDropdowns(filter);
 
         ViewBag.Filter = filter;
+        ViewBag.Stats = stats;
         return View(result);
     }
 
