@@ -1,4 +1,4 @@
-@model UCar.Models.DTOs.Vehicle.PagedResult<UCar.Models.DTOs.Vehicle.VehicleListDto>
+@model UCar.Models.DTOs.PagedResult<UCar.Models.DTOs.Vehicle.VehicleListDto>
 @using UCar.Models.DTOs.Vehicle
 @using UCar.Models.Enums
 @{
@@ -12,7 +12,8 @@
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
         <div>
             <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
-                <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">directions_car</i>
+                <i class="material-icons blue-text"
+                    style="vertical-align: middle; margin-right: 8px;">directions_car</i>
                 Quản lý xe
             </h4>
             <p class="grey-text text-darken-1" style="margin: 0;">Danh sách và quản lý thông tin xe trong hệ thống</p>
@@ -149,7 +150,7 @@
                                         <strong>@vehicle.Make @vehicle.ModelName</strong>
                                         <br>
                                         <small class="grey-text">
-                                            @vehicle.Seats chỗ • 
+                                            @vehicle.Seats chỗ •
                                             @(vehicle.Transmission == TransmissionType.Auto ? "Tự động" : "Số sàn") •
                                             @(vehicle.FuelType ?? "N/A")
                                         </small>
@@ -165,12 +166,12 @@
                                 </td>
                                 <td>@vehicle.BranchName</td>
                                 <td style="text-align: center;">
-                                    <a asp-action="Details" asp-route-id="@vehicle.VehicleId" 
-                                       class="btn-flat waves-effect tooltipped" data-position="top" data-tooltip="Chi tiết">
+                                    <a asp-action="Details" asp-route-id="@vehicle.VehicleId"
+                                        class="btn-flat waves-effect tooltipped" data-position="top" data-tooltip="Chi tiết">
                                         <i class="material-icons">visibility</i>
                                     </a>
-                                    <a asp-action="Edit" asp-route-id="@vehicle.VehicleId" 
-                                       class="btn-flat waves-effect tooltipped" data-position="top" data-tooltip="Sửa">
+                                    <a asp-action="Edit" asp-route-id="@vehicle.VehicleId"
+                                        class="btn-flat waves-effect tooltipped" data-position="top" data-tooltip="Sửa">
                                         <i class="material-icons">edit</i>
                                     </a>
                                 </td>
@@ -242,9 +243,9 @@
 </div>
 
 @section Scripts {
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Show toast messages from TempData
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Show toast messages from TempData
         @if (TempData["Success"] != null)
         {
             <text>UCarToast.success('@TempData["Success"]');</text>
@@ -253,6 +254,6 @@
         {
             <text>UCarToast.error('@TempData["Error"]');</text>
         }
-    });
-</script>
+        });
+    </script>
 }

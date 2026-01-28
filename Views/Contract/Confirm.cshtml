@@ -1,0 +1,122 @@
+@model UCar.ViewModels.Contract.ContractConfirmViewModel
+@{
+    ViewData["Title"] = "Xác nhận hợp đồng " + Model.ContractCode;
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header -->
+    <div style="margin-bottom: 1.5rem;">
+        <a asp-action="Manage" class="btn-flat waves-effect">
+            <i class="material-icons left">arrow_back</i>Quay lại
+        </a>
+        <h4 style="font-weight: 700; margin-bottom: 0.5rem; margin-top: 1rem;">
+            <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">verified</i>
+            Xác nhận hợp đồng
+        </h4>
+        <p class="grey-text">Hợp đồng: <strong>@Model.ContractCode</strong></p>
+    </div>
+
+    <div class="row">
+        <div class="col s12 m8 offset-m2">
+            <!-- Tóm tắt -->
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title">
+                        <i class="material-icons blue-text">description</i>
+                        Thông tin hợp đồng
+                    </span>
+                    
+                    <table class="striped">
+                        <tbody>
+                            <tr>
+                                <td><strong>Mã hợp đồng:</strong></td>
+                                <td>@Model.ContractCode</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Khách hàng:</strong></td>
+                                <td>@Model.CustomerName</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Xe:</strong></td>
+                                <td>@Model.VehicleInfo</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Thời gian thuê:</strong></td>
+                                <td>@Model.PlannedStart.ToString("dd/MM/yyyy HH:mm") → @Model.PlannedEnd.ToString("dd/MM/yyyy HH:mm")</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Tiền cọc:</strong></td>
+                                <td>@Model.DepositAmount.ToString("N0")đ</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Tổng tiền:</strong></td>
+                                <td><strong>@Model.TotalAmount.ToString("N0")đ</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Trạng thái ký của khách -->
+            <div class="card @(Model.CustomerHasSigned ? "green lighten-5" : "orange lighten-5")">
+                <div class="card-content">
+                    <span class="card-title">
+                        @if (Model.CustomerHasSigned)
+                        {
+                            <i class="material-icons green-text">check_circle</i>
+                            <span class="green-text">Khách hàng đã ký</span>
+                        }
+                        else
+                        {
+                            <i class="material-icons orange-text">schedule</i>
+                            <span class="orange-text">Chờ khách hàng ký</span>
+                        }
+                    </span>
+                    
+                    @if (Model.CustomerHasSigned && Model.CustomerSignedAt.HasValue)
+                    {
+                        <p>Thời gian ký: @Model.CustomerSignedAt.Value.ToString("dd/MM/yyyy HH:mm")</p>
+                    }
+                    else
+                    {
+                        <p>Khách hàng chưa ký hợp đồng. Bạn vẫn có thể xác nhận nếu đã thu thập chữ ký trực tiếp.</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Form xác nhận -->
+            <div class="card">
+                <form asp-action="Confirm" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="ContractId" />
+                    
+                    <div class="card-content">
+                        <span class="card-title">
+                            <i class="material-icons blue-text">verified</i>
+                            Xác nhận hợp đồng
+                        </span>
+                        
+                        <div class="input-field">
+                            <textarea asp-for="ConfirmNote" id="ConfirmNote" class="materialize-textarea"></textarea>
+                            <label for="ConfirmNote">Ghi chú xác nhận (tùy chọn)</label>
+                        </div>
+                        
+                        <div class="card-panel blue lighten-4">
+                            <i class="material-icons left">info</i>
+                            <span>Sau khi xác nhận, hợp đồng sẽ chuyển sang trạng thái "Đang hoạt động" và có thể tiến hành bàn giao xe.</span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-action">
+                        <button type="submit" class="btn waves-effect waves-light blue">
+                            <i class="material-icons left">check</i>Xác nhận hợp đồng
+                        </button>
+                        <a asp-action="Details" asp-route-id="@Model.ContractId" class="btn-flat waves-effect">
+                            Hủy
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

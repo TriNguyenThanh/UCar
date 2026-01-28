@@ -1,4 +1,4 @@
-@model UCar.Models.DTOs.Vehicle.PagedResult<UCar.Models.DTOs.Handover.ContractForHandoverListDto>
+@model UCar.Models.DTOs.PagedResult<UCar.Models.DTOs.Handover.ContractForHandoverListDto>
 @using UCar.Models.DTOs.Handover
 @using UCar.Models.Enums
 @{
@@ -11,7 +11,8 @@
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
         <div>
             <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
-                <i class="material-icons green-text" style="vertical-align: middle; margin-right: 8px;">assignment_return</i>
+                <i class="material-icons green-text"
+                    style="vertical-align: middle; margin-right: 8px;">assignment_return</i>
                 Danh sách chờ nhận xe
             </h4>
             <p class="grey-text text-darken-1" style="margin: 0;">Các hợp đồng đang thuê, chờ khách hàng trả xe</p>
@@ -61,7 +62,8 @@
                     <div class="col s12 m2">
                         <div class="input-field">
                             <label>
-                                <input type="checkbox" name="IsOverdue" value="true" @(filter.IsOverdue == true ? "checked" : "") />
+                                <input type="checkbox" name="IsOverdue" value="true" @(filter.IsOverdue == true ?
+                                    "checked" : "") />
                                 <span>Chỉ quá hạn</span>
                             </label>
                         </div>
@@ -114,7 +116,7 @@
                                     {
                                         <span class="red-text">
                                             @item.PlannedEnd.ToString("dd/MM/yyyy HH:mm")
-                                            <br/><small>Quá hạn!</small>
+                                            <br /><small>Quá hạn!</small>
                                         </span>
                                     }
                                     else
@@ -133,16 +135,16 @@
                                     }
                                 </td>
                                 <td class="center-align">
-                                    <a asp-action="CheckIn" asp-route-contractId="@item.ContractId" 
-                                       class="btn-small waves-effect waves-light orange">
+                                    <a asp-action="CheckIn" asp-route-contractId="@item.ContractId"
+                                        class="btn-small waves-effect waves-light orange">
                                         <i class="material-icons left">login</i>Nhận xe
                                     </a>
-                                    <a asp-action="Incidents" asp-route-contractId="@item.ContractId" 
-                                       class="btn-small waves-effect waves-light red" title="Sự cố">
+                                    <a asp-action="Incidents" asp-route-contractId="@item.ContractId"
+                                        class="btn-small waves-effect waves-light red" title="Sự cố">
                                         <i class="material-icons">warning</i>
                                     </a>
-                                    <a asp-action="Violations" asp-route-contractId="@item.ContractId" 
-                                       class="btn-small waves-effect waves-light grey" title="Vi phạm">
+                                    <a asp-action="Violations" asp-route-contractId="@item.ContractId"
+                                        class="btn-small waves-effect waves-light grey" title="Vi phạm">
                                         <i class="material-icons">gavel</i>
                                     </a>
                                 </td>
@@ -183,23 +185,35 @@
             padding: 1.5rem;
             text-align: center;
         }
-        .stats-icon { font-size: 2.5rem; }
-        .stats-value { font-size: 2rem; font-weight: 700; margin: 0.5rem 0; }
-        .stats-label { color: #666; font-size: 0.9rem; }
+
+        .stats-icon {
+            font-size: 2.5rem;
+        }
+
+        .stats-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+        }
+
+        .stats-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
     </style>
 }
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            @if (TempData["SuccessMessage"] != null)
-            {
-                <text>UCarToast.success('@TempData["SuccessMessage"]');</text>
-            }
-            @if (TempData["ErrorMessage"] != null)
-            {
-                <text>UCarToast.error('@TempData["ErrorMessage"]');</text>
-            }
-        });
+        document.addEventListener('DOMContentLoaded', function () {
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <text>UCarToast.success('@TempData["SuccessMessage"]');</text>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <text>UCarToast.error('@TempData["ErrorMessage"]');</text>
+        }
+            });
     </script>
 }

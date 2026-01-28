@@ -47,6 +47,12 @@ public class UCarDbContext : DbContext
     // Supporting
     public DbSet<CustomerDocument> CustomerDocuments { get; set; }
 
+    // Operations & HR (Module 8.0)
+    public DbSet<OperationalTask> OperationalTasks { get; set; } = null!;
+    public DbSet<Shift> Shifts { get; set; } = null!;
+    public DbSet<ShiftAssignment> ShiftAssignments { get; set; } = null!;
+
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -160,6 +166,14 @@ public class UCarDbContext : DbContext
         // MaintenanceOrder
         modelBuilder.Entity<MaintenanceOrder>()
             .Property(mo => mo.Status)
+            .HasConversion<string>();
+
+        // OperationalTask (Module 8.0)
+        modelBuilder.Entity<OperationalTask>()
+            .Property(ot => ot.TaskType)
+            .HasConversion<string>();
+        modelBuilder.Entity<OperationalTask>()
+            .Property(ot => ot.Status)
             .HasConversion<string>();
     }
 
@@ -350,6 +364,20 @@ public class UCarDbContext : DbContext
             .HasOne(rc => rc.Handler)
             .WithMany(u => u.HandledContracts)
             .HasForeignKey(rc => rc.HandledBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // RentalContract -> UserAccount (confirmed by)
+        modelBuilder.Entity<RentalContract>()
+            .HasOne(rc => rc.Confirmer)
+            .WithMany()
+            .HasForeignKey(rc => rc.ConfirmedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // RentalContract -> UserAccount (cancelled by)
+        modelBuilder.Entity<RentalContract>()
+            .HasOne(rc => rc.Canceller)
+            .WithMany()
+            .HasForeignKey(rc => rc.CancelledBy)
             .OnDelete(DeleteBehavior.Restrict);
 
         // HandoverRecord -> RentalContract (one-to-one)

@@ -1,0 +1,79 @@
+@model UCar.Models.DTOs.Operations.BranchCreateDto
+@{
+    ViewData["Title"] = "Thêm chi nhánh";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons orange-text"
+                    style="vertical-align: middle; margin-right: 8px;">add_business</i>
+                Thêm chi nhánh mới
+            </h4>
+        </div>
+        <a asp-action="Branches" class="btn-flat">
+            <i class="material-icons left">arrow_back</i>Quay lại
+        </a>
+    </div>
+
+
+
+    <!-- Form -->
+    <div class="card">
+        <div class="card-content">
+            <form asp-action="CreateBranch" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        <i class="material-icons prefix">business</i>
+                        <input type="text" asp-for="Name" id="Name" class="validate" />
+                        <label for="Name">Tên chi nhánh *</label>
+                        <span asp-validation-for="Name" class="red-text"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        <i class="material-icons prefix">location_on</i>
+                        <textarea asp-for="Address" id="Address" class="materialize-textarea"></textarea>
+                        <label for="Address">Địa chỉ</label>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">phone</i>
+                        <input type="tel" asp-for="PhoneContact" id="PhoneContact" />
+                        <label for="PhoneContact">Số điện thoại liên hệ</label>
+                        <span asp-validation-for="PhoneContact" class="red-text"></span>
+                    </div>
+                </div>
+
+                <div class="row" style="margin-top: 1.5rem;">
+                    <div class="col s12">
+                        <button type="submit" class="btn waves-effect waves-light orange">
+                            <i class="material-icons left">save</i>Tạo chi nhánh
+                        </button>
+                        <a asp-action="Branches" class="btn-flat">Hủy</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            M.updateTextFields();
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <text>UCarToast.error('@TempData["ErrorMessage"]');</text>
+        }
+            });
+    </script>
+}

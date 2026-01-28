@@ -36,6 +36,17 @@ builder.Services.AddScoped<IVehicleService, VehicleService>();
 
 // Register Handover services
 builder.Services.AddScoped<IHandoverService, HandoverService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+
+// Register Contract services
+builder.Services.AddScoped<IContractService, ContractService>();
+
+// Register Operations & HR services (Module 8.0)
+builder.Services.AddScoped<IBranchService, BranchService>();
+builder.Services.AddScoped<IStaffService, StaffService>();
+builder.Services.AddScoped<IOperationalTaskService, OperationalTaskService>();
+builder.Services.AddScoped<IShiftService, ShiftService>();
+
 var app = builder.Build();
 
 // Seed database with unified seeder
@@ -45,7 +56,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<UCarDbContext>();
-        await UCarDataSeeder.SeedAllDataAsync(context, force: true);
+        await UCarDataSeeder.SeedAllDataAsync(context, force: false);
     }
     catch (Exception ex)
     {
@@ -53,9 +64,6 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "An error occurred seeding the database.");
     }
 }
-
-
-
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -66,14 +74,15 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseStaticFiles();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Account}/{action=Login}/{id?}");
+    pattern: "{controller=Home}/{action=Index}");
 
 app.Run();

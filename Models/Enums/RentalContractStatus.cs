@@ -5,7 +5,16 @@ namespace UCar.Models.Enums;
 /// </summary>
 public enum RentalContractStatus
 {
-    /// <summary>Đang hoạt động (đã tạo, chờ giao xe)</summary>
+    /// <summary>Bản nháp (chưa hoàn tất, chưa ký)</summary>
+    Draft,
+
+    /// <summary>Chờ xác nhận/ký (đã tạo, chờ khách ký)</summary>
+    Pending,
+
+    /// <summary>Đã ký/Xác nhận (khách đã đồng ý điều khoản)</summary>
+    Signed,
+
+    /// <summary>Đang hoạt động (đã xác nhận, chờ giao xe)</summary>
     Active,
     
     /// <summary>Chờ giao xe</summary>
