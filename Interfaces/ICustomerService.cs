@@ -48,4 +48,5 @@ public interface ICustomerService
     
     // Danh sách giấy tờ chờ duyệt
     Task<List<PendingDocumentViewModel>> GetPendingDocumentsAsync();
+    Task<string?> GetPhoneNumberAsync(Guid customerId);
 }

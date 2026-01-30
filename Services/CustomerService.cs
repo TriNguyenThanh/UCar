@@ -219,6 +219,15 @@ public class CustomerService : ICustomerService
 
     #region DFD 2.1: Đăng ký thông tin khách - Create
 
+    public Task<string?> GetPhoneNumberAsync(Guid customerId)
+    {
+        return _context.Customers
+            .Include(c => c.UserAccount)
+            .Where(c => c.UserId == customerId)
+            .Select(c => c.UserAccount.Phone)
+            .FirstOrDefaultAsync();
+    }
+
     public async Task<(bool Success, string Message, Guid? CustomerId)> CreateCustomerAsync(CustomerCreateViewModel model)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
@@ -893,6 +902,8 @@ public class CustomerService : ICustomerService
             throw;
         }
     }
+
+
 
     #endregion
 }

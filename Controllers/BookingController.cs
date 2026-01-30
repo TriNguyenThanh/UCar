@@ -14,15 +14,18 @@ public class BookingController : Controller
     private readonly IBookingService _bookingService;
     private readonly IVehicleCatalogService _vehicleCatalogService;
     private readonly ILogger<BookingController> _logger;
+    private readonly ICustomerService _customerService;
 
     public BookingController(
         IBookingService bookingService, 
         IVehicleCatalogService vehicleCatalogService,
+        ICustomerService customerService,
         ILogger<BookingController> logger)
     {
         _bookingService = bookingService;
         _vehicleCatalogService = vehicleCatalogService;
         _logger = logger;
+        _customerService = customerService;
     }
 
     private Guid GetCurrentUserId()
@@ -34,8 +37,11 @@ public class BookingController : Controller
 
     // GET: /Booking
     // Admin/Staff sees all, Customer sees theirs (redirect)
-    public IActionResult Index()
+    // GET: /Booking
+    // Admin/Staff sees all, Customer sees theirs (redirect)
+    public async Task<IActionResult> Index()
     {
+        ViewBag.Branches = await _bookingService.GetAllBranches();
         if (User.IsInRole("Admin") || User.IsInRole("Staff"))
         {
             return RedirectToAction(nameof(Manage));
@@ -49,7 +55,7 @@ public class BookingController : Controller
     {
         // Prepare filter dropdowns
         await PrepareFilterDropdownsAsync();
-        
+
         if (model.StartDate.HasValue && model.EndDate.HasValue)
         {
             // Normalize DateTimes
@@ -57,7 +63,7 @@ public class BookingController : Controller
             var end = model.EndDate.Value.Date + (model.EndTime ?? TimeSpan.Zero);
 
             ViewBag.Results = await _bookingService.SearchVehiclesAsync(
-                start, end, model.VehicleTypeId, model.Make, model.Seats);
+                start, end, model.VehicleTypeId, model.Make, model.Seats, model.BranchId);
             ViewBag.SearchPerformed = true;
         }
         else
@@ -79,6 +85,8 @@ public class BookingController : Controller
         var vehicleInfo = await _bookingService.GetVehicleForBookingAsync(vehicleId, start, end);
         if (vehicleInfo == null) return NotFound("Xe không tồn tại hoặc không khả dụng.");
 
+        var customerPhone = await _customerService.GetPhoneNumberAsync(GetCurrentUserId());
+
         var vm = new BookingCreateVM
         {
             VehicleId = vehicleId,
@@ -89,11 +97,15 @@ public class BookingController : Controller
             EndAt = end,
             EstimatedPrice = vehicleInfo.EstimatedTotal,
             TotalAmount = vehicleInfo.EstimatedTotal,
-            
+            BranchId = vehicleInfo.BranchId,
+
             // Pre-fill user info (mock or fetch from UserService if available, here just pass from User claims if possible)
-            CustomerName = User.Identity?.Name ?? ""
+            CustomerName = User.Identity?.Name ?? "",
+            CustomerPhone = customerPhone ?? ""
         };
 
+        ViewBag.Branches = await _bookingService.GetAllBranches();
+        ViewBag.CustomerPhone = customerPhone ?? "";
         return View(vm);
     }
 
@@ -103,18 +115,23 @@ public class BookingController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(BookingCreateVM model)
     {
-        if (!ModelState.IsValid) return View(model);
+        if (!ModelState.IsValid) 
+        {
+            ViewBag.Branches = await _bookingService.GetAllBranches();
+            return View(model);
+        }
 
         try
         {
             var bookingId = await _bookingService.CreateBookingAsync(GetCurrentUserId(), model);
-            TempData["SuccessMessage"] = "To yêu cầu đặt xe thành công!";
+            TempData["SuccessMessage"] = "Yêu cầu đặt xe thành công!";
             return RedirectToAction(nameof(Details), new { id = bookingId });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error creating booking");
             ModelState.AddModelError("", ex.Message);
+            ViewBag.Branches = await _bookingService.GetAllBranches();
             return View(model);
         }
     }
@@ -211,5 +228,9 @@ public class BookingController : Controller
 
         // Seats dropdown (common values)
         ViewBag.SeatsList = new SelectList(new[] { 4, 5, 7, 8, 16 });
+        // Branches dropdown
+        var branches = await _bookingService.GetAllBranches();
+        ViewBag.BranchesList = new SelectList(branches, "BranchId", "Name");
     }
 }
+    

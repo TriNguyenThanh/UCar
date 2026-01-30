@@ -1,5 +1,5 @@
 1. chỉnh màu sắc panel xe (Hiếu)
-2. Thêm thông tin vị trí giao nhận xe trong lúc đặt xe của khách hàng
+2. Thêm thông tin vị trí giao nhận xe trong lúc đặt xe của khách hàng (Trí - done)
     Khách hàng nhận xe tại chi nhánh đã chọn
     Khách hàng trả xe tại chi nhánh đã chọn
 3. Thêm filter vị trí theo chi nhánh lúc đặt xe
