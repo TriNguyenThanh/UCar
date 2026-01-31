@@ -1,0 +1,179 @@
+@model List<UCar.ViewModels.Holiday.HolidayListViewModel>
+@{
+    ViewData["Title"] = "Quản lý Ngày lễ";
+}
+
+<div class="container" style="margin-top: 2rem;">
+    <!-- Header -->
+    <div class="row" style="margin-bottom: 2rem;">
+        <div class="col s12">
+            <h4 style="font-weight: 600; color: #00275e;">
+                <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">event</i>
+                Quản lý Ngày lễ
+            </h4>
+            <p style="color: #757575; margin-top: 0.5rem;">
+                Cấu hình ngày lễ để áp dụng hệ số tăng giá trong tính toán giá thuê
+            </p>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row" style="margin-bottom: 1.5rem;">
+        <div class="col s12">
+            <a asp-action="Create" class="btn waves-effect waves-light" style="background-color: #00275e;">
+                <i class="material-icons left">add</i>
+                Thêm ngày lễ
+            </a>
+        </div>
+    </div>
+
+    <!-- Holidays Table -->
+    <div class="card">
+        <div class="card-content">
+            @if (Model.Any())
+            {
+                <table class="striped highlight responsive-table">
+                    <thead style="background-color: #f5f5f5;">
+                        <tr>
+                            <th style="width: 25%;">Tên ngày lễ</th>
+                            <th style="width: 15%;">Dương lịch</th>
+                            <th style="width: 10%;">Âm lịch</th>
+                            <th style="width: 20%;">Kỳ nghỉ</th>
+                            <th style="width: 10%; text-align: center;">Lặp lại</th>
+                            <th style="width: 10%; text-align: center;">Trạng thái</th>
+                            <th style="width: 10%; text-align: center;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var holiday in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@holiday.Name</strong>
+                                </td>
+                                <td>
+                                    @if (holiday.Date.HasValue)
+                                    {
+                                        <span>@holiday.Date.Value.ToString("dd/MM/yyyy")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="grey-text">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(holiday.LunarDate))
+                                    {
+                                        <span class="badge orange lighten-4 orange-text text-darken-2" style="border-radius: 12px;">
+                                            @holiday.LunarDate
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="grey-text">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(holiday.DateRange))
+                                    {
+                                        <span style="font-size: 0.9em;">@holiday.DateRange</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="grey-text">-</span>
+                                    }
+                                </td>
+                                <td style="text-align: center;">
+                                    @if (holiday.IsRecurring)
+                                    {
+                                        <i class="material-icons green-text" title="Lặp lại hàng năm">check_circle</i>
+                                    }
+                                    else
+                                    {
+                                        <i class="material-icons grey-text" title="Không lặp lại">cancel</i>
+                                    }
+                                </td>
+                                <td style="text-align: center;">
+                                    <div class="switch">
+                                        <label>
+                                            <input type="checkbox" 
+                                                   @(holiday.IsActive ? "checked" : "")
+                                                   onchange="toggleStatus('@holiday.HolidayId')">
+                                            <span class="lever"></span>
+                                        </label>
+                                    </div>
+                                </td>
+                                <td style="text-align: center;">
+                                    <a asp-action="Edit" asp-route-id="@holiday.HolidayId" 
+                                       class="btn-small waves-effect waves-light blue" 
+                                       title="Chỉnh sửa">
+                                        <i class="material-icons">edit</i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn-small waves-effect waves-light red" 
+                                            onclick="confirmDelete('@holiday.HolidayId', '@holiday.Name')"
+                                            title="Xóa">
+                                        <i class="material-icons">delete</i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div style="text-align: center; padding: 3rem;">
+                    <i class="material-icons" style="font-size: 4rem; color: #e0e0e0;">event_busy</i>
+                    <p style="color: #9e9e9e; margin-top: 1rem;">Chưa có ngày lễ nào được cấu hình</p>
+                    <a asp-action="Create" class="btn waves-effect waves-light" style="background-color: #00275e; margin-top: 1rem;">
+                        <i class="material-icons left">add</i>
+                        Thêm ngày lễ đầu tiên
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Form -->
+<form id="deleteForm" method="post" style="display: none;">
+    @Html.AntiForgeryToken()
+</form>
+
+@section Scripts {
+    <script>
+        function toggleStatus(holidayId) {
+            fetch('@Url.Action("ToggleStatus", "Holiday")/' + holidayId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    M.toast({html: data.isActive ? 'Đã kích hoạt ngày lễ' : 'Đã vô hiệu hóa ngày lễ', classes: 'green'});
+                } else {
+                    M.toast({html: data.message || 'Có lỗi xảy ra', classes: 'red'});
+                    // Revert switch
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                M.toast({html: 'Có lỗi xảy ra', classes: 'red'});
+                location.reload();
+            });
+        }
+
+        function confirmDelete(holidayId, holidayName) {
+            if (confirm('Bạn có chắc chắn muốn xóa ngày lễ "' + holidayName + '"?')) {
+                const form = document.getElementById('deleteForm');
+                form.action = '@Url.Action("Delete", "Holiday")/' + holidayId;
+                form.submit();
+            }
+        }
+    </script>
+}

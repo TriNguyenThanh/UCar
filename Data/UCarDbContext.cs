@@ -25,6 +25,11 @@ public class UCarDbContext : DbContext
     public DbSet<VehicleStatusHistory> VehicleStatusHistories { get; set; }
     public DbSet<MaintenanceOrder> MaintenanceOrders { get; set; }
 
+    // Pricing & Policies (Module 3.0)
+    public DbSet<DepositPolicy> DepositPolicies { get; set; }
+    public DbSet<SurchargePolicy> SurchargePolicies { get; set; }
+    public DbSet<HolidayConfig> HolidayConfigs { get; set; }
+
     // Booking & Contracts
     public DbSet<Booking> Bookings { get; set; }
     public DbSet<RentalContract> RentalContracts { get; set; }
@@ -71,6 +76,9 @@ public class UCarDbContext : DbContext
 
         // Configure default values
         ConfigureDefaults(modelBuilder);
+
+        // Seed data
+        HolidayDataSeeder.SeedHolidays(modelBuilder);
     }
 
     private void ConfigureEnumConversions(ModelBuilder modelBuilder)
@@ -88,11 +96,6 @@ public class UCarDbContext : DbContext
         // VehicleModel
         modelBuilder.Entity<VehicleModel>()
             .Property(vm => vm.Transmission)
-            .HasConversion<string>();
-
-        // Price
-        modelBuilder.Entity<Price>()
-            .Property(p => p.Unit)
             .HasConversion<string>();
 
         // Booking
@@ -174,6 +177,19 @@ public class UCarDbContext : DbContext
             .HasConversion<string>();
         modelBuilder.Entity<OperationalTask>()
             .Property(ot => ot.Status)
+            .HasConversion<string>();
+
+        // DepositPolicy (Module 3.0)
+        modelBuilder.Entity<DepositPolicy>()
+            .Property(dp => dp.CalculationType)
+            .HasConversion<string>();
+
+        // SurchargePolicy (Module 3.0)
+        modelBuilder.Entity<SurchargePolicy>()
+            .Property(sp => sp.Type)
+            .HasConversion<string>();
+        modelBuilder.Entity<SurchargePolicy>()
+            .Property(sp => sp.CalculationType)
             .HasConversion<string>();
     }
 

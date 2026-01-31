@@ -1,0 +1,166 @@
+@model UCar.ViewModels.Holiday.HolidayEditViewModel
+@{
+    ViewData["Title"] = "Chỉnh sửa Ngày lễ";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 3rem;">
+    <div class="row">
+        <div class="col s12 m10 offset-m1 l8 offset-l2">
+            <!-- Header -->
+            <div style="margin-bottom: 2rem;">
+                <a asp-action="Index" class="btn-flat waves-effect">
+                    <i class="material-icons left">arrow_back</i>
+                    Quay lại
+                </a>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title" style="font-weight: 600; color: #00275e; font-size: 1.8rem;">
+                        <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">edit</i>
+                        Chỉnh sửa Ngày lễ
+                    </span>
+                    <div class="divider" style="margin: 1.5rem 0;"></div>
+
+                    <form asp-action="Edit" method="post">
+                        <input type="hidden" asp-for="HolidayId" />
+                        <div asp-validation-summary="ModelOnly" class="red-text"></div>
+
+                        <!-- Basic Info -->
+                        <h5 style="font-weight: 600; margin-bottom: 1.5rem; color: #00275e;">
+                            <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">info</i>
+                            Thông tin cơ bản
+                        </h5>
+
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <i class="material-icons prefix">event_note</i>
+                                <input asp-for="Name" type="text" class="validate" required>
+                                <label asp-for="Name"></label>
+                                <span asp-validation-for="Name" class="red-text"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <i class="material-icons prefix">description</i>
+                                <textarea asp-for="Description" class="materialize-textarea"></textarea>
+                                <label asp-for="Description"></label>
+                                <span asp-validation-for="Description" class="red-text"></span>
+                            </div>
+                        </div>
+
+                        <div class="divider" style="margin: 2rem 0;"></div>
+
+                        <!-- Date Configuration -->
+                        <h5 style="font-weight: 600; margin-bottom: 1.5rem; color: #00275e;">
+                            <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">date_range</i>
+                            Cấu hình ngày
+                        </h5>
+
+                        <div class="row">
+                            <div class="col s12">
+                                <p style="color: #757575; margin-bottom: 1.5rem;">
+                                    <i class="material-icons tiny" style="vertical-align: middle;">info</i>
+                                    Chọn ít nhất một loại ngày: Dương lịch, Âm lịch, hoặc Kỳ nghỉ
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Solar Date -->
+                        <div class="row">
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">today</i>
+                                <input asp-for="Date" type="date" class="validate">
+                                <label asp-for="Date" class="active"></label>
+                                <span asp-validation-for="Date" class="red-text"></span>
+                                <span class="helper-text">Ngày cố định theo dương lịch</span>
+                            </div>
+
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">brightness_3</i>
+                                <input asp-for="LunarDate" type="text" class="validate" placeholder="VD: 01/01, 10/03">
+                                <label asp-for="LunarDate"></label>
+                                <span asp-validation-for="LunarDate" class="red-text"></span>
+                                <span class="helper-text">Format: DD/MM (âm lịch)</span>
+                            </div>
+                        </div>
+
+                        <!-- Date Range -->
+                        <div class="row">
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">event_available</i>
+                                <input asp-for="StartDate" type="date" class="validate">
+                                <span asp-validation-for="StartDate" class="red-text"></span>
+                                <span class="helper-text" style="margin-left: 3rem;">Cho kỳ nghỉ dài ngày</span>
+                            </div>
+
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">event_busy</i>
+                                <input asp-for="EndDate" type="date" class="validate">
+                                <span asp-validation-for="EndDate" class="red-text"></span>
+                                <span class="helper-text" style="margin-left: 3rem;">Ngày kết thúc kỳ nghỉ</span>
+                            </div>
+                        </div>
+
+                        <div class="divider" style="margin: 2rem 0;"></div>
+
+                        <!-- Settings -->
+                        <h5 style="font-weight: 600; margin-bottom: 1.5rem; color: #00275e;">
+                            <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">settings</i>
+                            Cài đặt
+                        </h5>
+
+                        <div class="row">
+                            <div class="col s12 m6">
+                                <p>
+                                    <label>
+                                        <input asp-for="IsRecurring" type="checkbox" />
+                                        <span>Lặp lại hàng năm</span>
+                                    </label>
+                                </p>
+                                <span class="helper-text">
+                                    <i class="material-icons tiny" style="vertical-align: middle;">info</i>
+                                    Ngày lễ này sẽ áp dụng cho mọi năm
+                                </span>
+                            </div>
+
+                            <div class="col s12 m6">
+                                <p>
+                                    <label>
+                                        <input asp-for="IsActive" type="checkbox" />
+                                        <span>Kích hoạt</span>
+                                    </label>
+                                </p>
+                                <span class="helper-text">
+                                    <i class="material-icons tiny" style="vertical-align: middle;">info</i>
+                                    Áp dụng hệ số tăng giá cho ngày lễ này
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="row" style="margin-top: 2rem;">
+                            <div class="col s12" style="text-align: right;">
+                                <a asp-action="Index" class="btn-flat waves-effect">Hủy</a>
+                                <button type="submit" class="btn waves-effect waves-light" style="background-color: #00275e;">
+                                    <i class="material-icons left">save</i>
+                                    Cập nhật
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            M.updateTextFields();
+        });
+    </script>
+}

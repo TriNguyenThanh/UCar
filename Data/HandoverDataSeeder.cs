@@ -151,12 +151,13 @@ public static class HandoverDataSeeder
             {
                 PriceId = Guid.NewGuid(),
                 VehicleTypeId = vehicleType.VehicleTypeId,
-                Name = "Giá thuê ngày chuẩn",
-                Unit = PriceUnit.Day,
-                UnitPrice = 800000,
+                Name = "Bảng giá chuẩn",
+                DailyBasePrice = 800000,
+                MonthlyMultiplier = 0.85m,
+                HolidayMultiplier = 1.30m,
+                WeekendMultiplier = 1.15m,
                 OvertimeHourlyPrice = 50000,
                 DepositSuggest = 5000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-1),
                 IsActive = true
             };
             await context.Prices.AddAsync(price);

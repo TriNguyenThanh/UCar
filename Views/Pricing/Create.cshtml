@@ -1,0 +1,341 @@
+@model PricingCreateViewModel
+@using UCar.ViewModels.Pricing
+
+@{
+    ViewData["Title"] = "Thêm bảng giá mới";
+    ViewData["Description"] = "Tạo bảng giá thuê xe theo loại xe";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Page Header -->
+    <div style="margin-bottom: 2rem;">
+        <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+            <i class="material-icons green-text" style="vertical-align: middle; margin-right: 8px;">add</i>
+            Thêm bảng giá mới
+        </h4>
+        <p class="grey-text text-darken-1" style="font-size: 1.125rem; margin: 0;">
+            Cấu hình giá thuê, giá overtime và đặt cọc theo loại xe
+        </p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card">
+        <div class="card-content">
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="red-text" style="margin-bottom: 1rem;"></div>
+
+                <!-- Vehicle Type Section -->
+                <h5 style="font-weight: 600; margin-bottom: 1.5rem; color: #00275e;">
+                    <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">directions_car</i>
+                    Loại xe
+                </h5>
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        <select asp-for="VehicleTypeId" required>
+                            <option value="" disabled selected>-- Chọn loại xe --</option>
+                            @if (ViewData["VehicleTypes"] != null)
+                            {
+                                var vehicleTypes = ViewData["VehicleTypes"] as IEnumerable<SelectListItem>;
+                                if (vehicleTypes != null)
+                                {
+                                    foreach (var vt in vehicleTypes)
+                                    {
+                                        <option value="@vt.Value">@vt.Text</option>
+                                    }
+                                }
+                            }
+                        </select>
+                        <label asp-for="VehicleTypeId"></label>
+                        <span asp-validation-for="VehicleTypeId" class="red-text"></span>
+                    </div>
+                </div>
+
+                <div class="divider" style="margin: 2rem 0;"></div>
+
+                <!-- Pricing Section -->
+                <h5 style="font-weight: 600; margin-bottom: 1.5rem; color: #00275e;">
+                    <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">attach_money</i>
+                    Thông tin giá
+                </h5>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">local_atm</i>
+                        <input asp-for="DailyBasePrice" type="number" class="validate" min="0" step="1000" required>
+                        <label asp-for="DailyBasePrice"></label>
+                        <span asp-validation-for="DailyBasePrice" class="red-text"></span>
+                        <span class="helper-text">VNĐ / ngày (giá cơ sở)</span>
+                    </div>
+
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">schedule</i>
+                        <input asp-for="OvertimeHourlyPrice" type="number" class="validate" min="0" step="1000" required>
+                        <label asp-for="OvertimeHourlyPrice"></label>
+                        <span asp-validation-for="OvertimeHourlyPrice" class="red-text"></span>
+                        <span class="helper-text">VNĐ / giờ quá hạn</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12 m4">
+                        <i class="material-icons prefix">trending_up</i>
+                        <input asp-for="MonthlyMultiplier" type="number" class="validate" min="0" max="1" step="0.01" required>
+                        <label asp-for="MonthlyMultiplier"></label>
+                        <span asp-validation-for="MonthlyMultiplier" class="red-text"></span>
+                        <span class="helper-text">Hệ số giảm giá thuê tháng (0.85 = -15%)</span>
+                    </div>
+
+                    <div class="input-field col s12 m4">
+                        <i class="material-icons prefix">event</i>
+                        <input asp-for="HolidayMultiplier" type="number" class="validate" min="1" step="0.01" required>
+                        <label asp-for="HolidayMultiplier"></label>
+                        <span asp-validation-for="HolidayMultiplier" class="red-text"></span>
+                        <span class="helper-text">Hệ số tăng giá ngày lễ (1.30 = +30%)</span>
+                    </div>
+
+                    <div class="input-field col s12 m4">
+                        <i class="material-icons prefix">weekend</i>
+                        <input asp-for="WeekendMultiplier" type="number" class="validate" min="1" step="0.01" required>
+                        <label asp-for="WeekendMultiplier"></label>
+                        <span asp-validation-for="WeekendMultiplier" class="red-text"></span>
+                        <span class="helper-text">Hệ số tăng giá cuối tuần (1.15 = +15%)</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">account_balance_wallet</i>
+                        <input asp-for="DepositSuggest" type="number" class="validate" min="0" step="1000" required>
+                        <label asp-for="DepositSuggest"></label>
+                        <span asp-validation-for="DepositSuggest" class="red-text"></span>
+                        <span class="helper-text">VNĐ (đề xuất)</span>
+                    </div>
+                </div>
+
+                <div class="divider" style="margin: 2rem 0;"></div>
+
+                <!-- Price Calculator Preview -->
+                <div class="card blue lighten-5" style="margin-bottom: 2rem;">
+                    <div class="card-content">
+                        <h5 style="font-weight: 600; margin-bottom: 1rem; color: #00275e;">
+                            <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">calculate</i>
+                            Xem trước giá tính toán
+                        </h5>
+                        <p class="grey-text" style="font-size: 0.9rem; margin-bottom: 1.5rem;">
+                            Giá sẽ tự động cập nhật khi bạn thay đổi giá cơ sở hoặc hệ số
+                        </p>
+                        <div class="row" style="margin-bottom: 0;">
+                            <div class="col s12 m6 l3">
+                                <div class="card white" style="margin: 0.5rem 0; border-left: 4px solid #1565c0;">
+                                    <div class="card-content" style="padding: 1rem;">
+                                        <span style="font-size: 0.85rem; color: #757575; display: block; margin-bottom: 0.5rem;">
+                                            <i class="material-icons tiny" style="vertical-align: middle; color: #1565c0;">wb_sunny</i>
+                                            Giá ngày thường
+                                        </span>
+                                        <p id="preview-daily" style="font-size: 1.4rem; font-weight: 700; color: #1565c0; margin: 0;">
+                                            0 đ
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col s12 m6 l3">
+                                <div class="card white" style="margin: 0.5rem 0; border-left: 4px solid #7b1fa2;">
+                                    <div class="card-content" style="padding: 1rem;">
+                                        <span style="font-size: 0.85rem; color: #757575; display: block; margin-bottom: 0.5rem;">
+                                            <i class="material-icons tiny" style="vertical-align: middle; color: #7b1fa2;">calendar_month</i>
+                                            Giá tháng (30 ngày)
+                                        </span>
+                                        <p id="preview-monthly" style="font-size: 1.4rem; font-weight: 700; color: #7b1fa2; margin: 0;">
+                                            0 đ
+                                        </p>
+                                        @* <span id="preview-monthly-formula" style="font-size: 0.7rem; color: #9e9e9e;"></span> *@
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col s12 m6 l3">
+                                <div class="card white" style="margin: 0.5rem 0; border-left: 4px solid #c62828;">
+                                    <div class="card-content" style="padding: 1rem;">
+                                        <span style="font-size: 0.85rem; color: #757575; display: block; margin-bottom: 0.5rem;">
+                                            <i class="material-icons tiny" style="vertical-align: middle; color: #c62828;">event</i>
+                                            Giá ngày lễ
+                                        </span>
+                                        <p id="preview-holiday" style="font-size: 1.4rem; font-weight: 700; color: #c62828; margin: 0;">
+                                            0 đ
+                                        </p>
+                                        @* <span id="preview-holiday-formula" style="font-size: 0.7rem; color: #9e9e9e;"></span> *@
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col s12 m6 l3">
+                                <div class="card white" style="margin: 0.5rem 0; border-left: 4px solid #00838f;">
+                                    <div class="card-content" style="padding: 1rem;">
+                                        <span style="font-size: 0.85rem; color: #757575; display: block; margin-bottom: 0.5rem;">
+                                            <i class="material-icons tiny" style="vertical-align: middle; color: #00838f;">weekend</i>
+                                            Giá cuối tuần
+                                        </span>
+                                        <p id="preview-weekend" style="font-size: 1.4rem; font-weight: 700; color: #00838f; margin: 0;">
+                                            0 đ
+                                        </p>
+                                        @* <span id="preview-weekend-formula" style="font-size: 0.7rem; color: #9e9e9e;"></span> *@
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divider" style="margin: 2rem 0;"></div>
+
+                <div class="divider" style="margin: 2rem 0;"></div>
+
+                <!-- Status Section -->
+                <h5 style="font-weight: 600; margin-bottom: 1.5rem; color: #00275e;">
+                    <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">toggle_on</i>
+                    Trạng thái
+                </h5>
+
+                <div class="row">
+                    <div class="col s12">
+                        <p>
+                            <label>
+                                <input asp-for="IsActive" type="checkbox" />
+                                <span>Áp dụng ngay bảng giá này</span>
+                            </label>
+                        </p>
+                        <span class="helper-text">
+                            <i class="material-icons tiny" style="vertical-align: middle;">info</i>
+                            Nếu tích chọn, bảng giá sẽ được sử dụng cho các hợp đồng mới
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem;">
+                    <a asp-action="Index" class="btn waves-effect waves-light grey">
+                        <i class="material-icons left">arrow_back</i>Quay lại
+                    </a>
+                    <button type="submit" class="btn waves-effect waves-light blue">
+                        <i class="material-icons left">save</i>Lưu bảng giá
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize select dropdowns
+            var selects = document.querySelectorAll('select');
+            M.FormSelect.init(selects);
+
+            // Initialize datepicker with default values
+            var today = new Date();
+            var nextYear = new Date();
+            nextYear.setFullYear(today.getFullYear() + 1);
+
+            // Set default ValidFrom to today if empty
+            var validFromInput = document.querySelector('input[name="ValidFrom"]');
+            if (validFromInput && !validFromInput.value) {
+                validFromInput.value = today.toISOString().split('T')[0];
+            }
+
+            // Set default ValidTo to next year if empty
+            var validToInput = document.querySelector('input[name="ValidTo"]');
+            if (validToInput && !validToInput.value) {
+                validToInput.value = nextYear.toISOString().split('T')[0];
+            }
+
+            // Custom validation: ValidTo must be >= ValidFrom
+            validToInput.addEventListener('change', function() {
+                var validFrom = new Date(validFromInput.value);
+                var validTo = new Date(validToInput.value);
+
+                if (validTo < validFrom) {
+                    validToInput.setCustomValidity('Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu');
+                    M.toast({html: 'Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu', classes: 'red'});
+                } else {
+                    validToInput.setCustomValidity('');
+                }
+            });
+
+            // Custom validation for Multipliers
+            var monthlyMultiplierInput = document.querySelector('input[name="MonthlyMultiplier"]');
+            var holidayMultiplierInput = document.querySelector('input[name="HolidayMultiplier"]');
+            var weekendMultiplierInput = document.querySelector('input[name="WeekendMultiplier"]');
+
+            monthlyMultiplierInput.addEventListener('input', function() {
+                var value = parseFloat(this.value);
+                if (isNaN(value) || value < 0.01 || value >= 1) {
+                    this.setCustomValidity('Hệ số tháng phải từ 0.01 đến 0.99 (giảm giá 1%-99%)');
+                } else {
+                    this.setCustomValidity('');
+                }
+            });
+
+            holidayMultiplierInput.addEventListener('input', function() {
+                var value = parseFloat(this.value);
+                if (isNaN(value) || value <= 1 || value > 3) {
+                    this.setCustomValidity('Hệ số lễ phải từ 1.01 đến 3.0 (tăng giá 1%-200%)');
+                } else {
+                    this.setCustomValidity('');
+                }
+            });
+
+            weekendMultiplierInput.addEventListener('input', function() {
+                var value = parseFloat(this.value);
+                if (isNaN(value) || value <= 1 || value > 2) {
+                    this.setCustomValidity('Hệ số cuối tuần phải từ 1.01 đến 2.0 (tăng giá 1%-100%)');
+                } else {
+                    this.setCustomValidity('');
+                }
+            });
+
+            // Price Calculator - Real-time updates
+            function calculatePrices() {
+                var basePrice = parseFloat(document.querySelector('input[name="DailyBasePrice"]').value) || 0;
+                var monthlyMultiplier = parseFloat(document.querySelector('input[name="MonthlyMultiplier"]').value) || 0.85;
+                var holidayMultiplier = parseFloat(document.querySelector('input[name="HolidayMultiplier"]').value) || 1.30;
+                var weekendMultiplier = parseFloat(document.querySelector('input[name="WeekendMultiplier"]').value) || 1.15;
+
+                // Calculate prices
+                var dailyPrice = basePrice;
+                var monthlyPrice = basePrice * 30 * monthlyMultiplier;
+                var holidayPrice = basePrice * holidayMultiplier;
+                var weekendPrice = basePrice * weekendMultiplier;
+
+                // Format number with thousand separators
+                function formatNumber(num) {
+                    return Math.round(num).toLocaleString('vi-VN');
+                }
+
+                // Update preview
+                document.getElementById('preview-daily').textContent = formatNumber(dailyPrice) + ' đ';
+                document.getElementById('preview-monthly').textContent = formatNumber(monthlyPrice) + ' đ';
+                document.getElementById('preview-holiday').textContent = formatNumber(holidayPrice) + ' đ';
+                document.getElementById('preview-weekend').textContent = formatNumber(weekendPrice) + ' đ';
+
+                // Update formulas
+                document.getElementById('preview-monthly-formula').textContent = 
+                    formatNumber(basePrice) + ' × 30 × ' + monthlyMultiplier.toFixed(2);
+                document.getElementById('preview-holiday-formula').textContent = 
+                    formatNumber(basePrice) + ' × ' + holidayMultiplier.toFixed(2);
+                document.getElementById('preview-weekend-formula').textContent = 
+                    formatNumber(basePrice) + ' × ' + weekendMultiplier.toFixed(2);
+            }
+
+            // Attach event listeners for real-time calculation
+            document.querySelector('input[name="DailyBasePrice"]').addEventListener('input', calculatePrices);
+            document.querySelector('input[name="MonthlyMultiplier"]').addEventListener('input', calculatePrices);
+            document.querySelector('input[name="HolidayMultiplier"]').addEventListener('input', calculatePrices);
+            document.querySelector('input[name="WeekendMultiplier"]').addEventListener('input', calculatePrices);
+
+            // Initial calculation
+            calculatePrices();
+        });
+    </script>
+}

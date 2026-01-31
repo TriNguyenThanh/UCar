@@ -383,30 +383,18 @@ public static class Tri_seed
         );
         await context.SaveChangesAsync();
 
-        // Seed Prices
+        // Seed Prices - Flexible Pricing Model
         var priceSedanDaily = new Price
         {
             PriceId = Guid.NewGuid(),
             VehicleTypeId = vehicleTypeSedan.VehicleTypeId,
-            Name = "Sedan Daily Rate",
-            Unit = PriceUnit.Day,
-            UnitPrice = 500000,
+            Name = "Bảng giá Sedan",
+            DailyBasePrice = 500000,
+            MonthlyMultiplier = 0.85m,
+            HolidayMultiplier = 1.30m,
+            WeekendMultiplier = 1.15m,
             OvertimeHourlyPrice = 50000,
             DepositSuggest = 5000000,
-            ValidFrom = DateTime.UtcNow.AddMonths(-6),
-            IsActive = true
-        };
-
-        var priceSedanMonthly = new Price
-        {
-            PriceId = Guid.NewGuid(),
-            VehicleTypeId = vehicleTypeSedan.VehicleTypeId,
-            Name = "Sedan Monthly Rate",
-            Unit = PriceUnit.Month,
-            UnitPrice = 12000000,
-            OvertimeHourlyPrice = 50000,
-            DepositSuggest = 5000000,
-            ValidFrom = DateTime.UtcNow.AddMonths(-6),
             IsActive = true
         };
 
@@ -414,12 +402,13 @@ public static class Tri_seed
         {
             PriceId = Guid.NewGuid(),
             VehicleTypeId = vehicleTypeSUV.VehicleTypeId,
-            Name = "SUV Daily Rate",
-            Unit = PriceUnit.Day,
-            UnitPrice = 900000,
+            Name = "Bảng giá SUV",
+            DailyBasePrice = 900000,
+            MonthlyMultiplier = 0.85m,
+            HolidayMultiplier = 1.30m,
+            WeekendMultiplier = 1.15m,
             OvertimeHourlyPrice = 90000,
             DepositSuggest = 10000000,
-            ValidFrom = DateTime.UtcNow.AddMonths(-6),
             IsActive = true
         };
 
@@ -427,17 +416,18 @@ public static class Tri_seed
         {
             PriceId = Guid.NewGuid(),
             VehicleTypeId = vehicleTypeMotorbike.VehicleTypeId,
-            Name = "Motorbike Daily Rate",
-            Unit = PriceUnit.Day,
-            UnitPrice = 150000,
+            Name = "Bảng giá Motorbike",
+            DailyBasePrice = 150000,
+            MonthlyMultiplier = 0.85m,
+            HolidayMultiplier = 1.30m,
+            WeekendMultiplier = 1.15m,
             OvertimeHourlyPrice = 15000,
             DepositSuggest = 2000000,
-            ValidFrom = DateTime.UtcNow.AddMonths(-6),
             IsActive = true
         };
 
         await context.Prices.AddRangeAsync(
-            priceSedanDaily, priceSedanMonthly, priceSUVDaily, priceMotorbikeDaily
+            priceSedanDaily, priceSUVDaily, priceMotorbikeDaily
         );
         await context.SaveChangesAsync();
     }

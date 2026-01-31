@@ -81,6 +81,14 @@
                             </a>
                         </li>
 
+                        <!-- 3.0 Bảng giá & Chính sách Dropdown -->
+                        <li>
+                            <a class="dropdown-trigger" href="#!" data-target="pricing-dropdown">
+                                <i class="material-icons left">attach_money</i>Bảng giá<i
+                                    class="material-icons right">arrow_drop_down</i>
+                            </a>
+                        </li>
+
                         <!-- 6.0 Giao nhận xe Dropdown -->
                         <li>
                             <a class="dropdown-trigger" href="#!" data-target="handover-dropdown">
@@ -149,6 +157,15 @@
                 xe</a></li>
         <li><a asp-controller="VehicleCatalog" asp-action="VehicleModels"><i
                     class="material-icons">directions_car</i>Dòng xe</a></li>
+    </ul>
+
+    <!-- Pricing & Policies Dropdown Structure (Module 3.0) -->
+    <ul id="pricing-dropdown" class="dropdown-content">
+        <li><a asp-controller="Pricing" asp-action="Index"><i class="material-icons">monetization_on</i>Bảng giá thuê</a></li>
+        <li><a asp-controller="Holiday" asp-action="Index"><i class="material-icons">event</i>Cấu hình ngày lễ</a></li>
+        <li class="divider"></li>
+        <li><a asp-controller="DepositPolicy" asp-action="Index"><i class="material-icons">account_balance_wallet</i>Chính sách đặt cọc</a></li>
+        <li><a asp-controller="SurchargePolicy" asp-action="Index"><i class="material-icons">add_circle</i>Chính sách phụ thu</a></li>
     </ul>
 
     <!-- Handover Management Dropdown Structure -->
@@ -237,6 +254,25 @@
                                     <li><a asp-controller="Vehicle" asp-action="Create">Thêm xe mới</a></li>
                                     <li><a asp-controller="VehicleCatalog" asp-action="VehicleTypes">Loại xe</a></li>
                                     <li><a asp-controller="VehicleCatalog" asp-action="VehicleModels">Dòng xe</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Bảng giá & Chính sách - Collapsible (Module 3.0) -->
+                <li class="no-padding">
+                    <ul class="collapsible collapsible-accordion">
+                        <li>
+                            <a class="collapsible-header"><i class="material-icons">attach_money</i>Bảng giá<i
+                                    class="material-icons right">arrow_drop_down</i></a>
+                            <div class="collapsible-body">
+                                <ul>
+                                    <li><a asp-controller="Pricing" asp-action="Index">Bảng giá thuê</a></li>
+                                    <li><a asp-controller="Holiday" asp-action="Index">Cấu hình ngày lễ</a></li>
+                                    <li class="divider"></li>
+                                    <li><a asp-controller="DepositPolicy" asp-action="Index">Chính sách đặt cọc</a></li>
+                                    <li><a asp-controller="SurchargePolicy" asp-action="Index">Chính sách phụ thu</a></li>
                                 </ul>
                             </div>
                         </li>

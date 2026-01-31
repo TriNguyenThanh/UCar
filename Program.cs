@@ -34,6 +34,11 @@ builder.Services.AddScoped<IVehicleStatusService, VehicleStatusService>();
 builder.Services.AddScoped<IVehicleCatalogService, VehicleCatalogService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
 
+// Register Pricing & Policy services (Module 3.0)
+builder.Services.AddScoped<IPricingService, PricingService>();
+builder.Services.AddScoped<IDepositPolicyService, DepositPolicyService>();
+builder.Services.AddScoped<ISurchargePolicyService, SurchargePolicyService>();
+
 // Register Handover services
 builder.Services.AddScoped<IHandoverService, HandoverService>();
 builder.Services.AddScoped<IBookingService, BookingService>();

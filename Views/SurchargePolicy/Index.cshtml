@@ -1,0 +1,317 @@
+@model PaginatedList<SurchargePolicyListViewModel>
+@using UCar.ViewModels
+@using UCar.ViewModels.Pricing
+@using UCar.Models.Enums
+
+@{
+    ViewData["Title"] = "Quản lý chính sách phụ phí";
+    ViewData["Description"] = "Danh sách chính sách phụ phí - Quản lý phụ phí theo loại";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Page Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">add_circle</i>
+                Quản lý chính sách phụ phí
+            </h4>
+            <p class="grey-text text-darken-1" style="font-size: 1.125rem; margin: 0;">
+                Tổng số: <strong>@Model.TotalCount</strong> chính sách
+            </p>
+        </div>
+        <a asp-action="Create" class="btn waves-effect waves-light blue">
+            <i class="material-icons left">add</i>Thêm chính sách
+        </a>
+    </div>
+
+    <!-- Search & Filter Card -->
+    <div class="card">
+        <div class="card-content">
+            <form asp-action="Index" method="get">
+                <div class="row" style="margin-bottom: 0;">
+                    <!-- Type Filter -->
+                    <div class="input-field col s12 m3">
+                        <select id="typeFilter" name="Type">
+                            <option value="">Tất cả loại phụ phí</option>
+                            <option value="@SurchargeType.Overtime" selected="@(ViewData["CurrentType"]?.ToString() == SurchargeType.Overtime.ToString())">Quá giờ</option>
+                            <option value="@SurchargeType.ExtraKilometer" selected="@(ViewData["CurrentType"]?.ToString() == SurchargeType.ExtraKilometer.ToString())">Quá km</option>
+                            <option value="@SurchargeType.DeliveryService" selected="@(ViewData["CurrentType"]?.ToString() == SurchargeType.DeliveryService.ToString())">Giao xe</option>
+                            <option value="@SurchargeType.DriverService" selected="@(ViewData["CurrentType"]?.ToString() == SurchargeType.DriverService.ToString())">Thuê lái xe</option>
+                            <option value="@SurchargeType.HolidayWeekend" selected="@(ViewData["CurrentType"]?.ToString() == SurchargeType.HolidayWeekend.ToString())">Lễ/Cuối tuần</option>
+                            <option value="@SurchargeType.SeasonalPeak" selected="@(ViewData["CurrentType"]?.ToString() == SurchargeType.SeasonalPeak.ToString())">Cao điểm</option>
+                            <option value="@SurchargeType.CleaningFee" selected="@(ViewData["CurrentType"]?.ToString() == SurchargeType.CleaningFee.ToString())">Vệ sinh</option>
+                            <option value="@SurchargeType.LateReturn" selected="@(ViewData["CurrentType"]?.ToString() == SurchargeType.LateReturn.ToString())">Trả xe muộn</option>
+                            <option value="@SurchargeType.Other" selected="@(ViewData["CurrentType"]?.ToString() == SurchargeType.Other.ToString())">Khác</option>
+                        </select>
+                        <label for="typeFilter">Loại phụ phí</label>
+                    </div>
+
+                    <!-- Vehicle Type Filter -->
+                    <div class="input-field col s12 m3">
+                        <select id="vehicleTypeFilter" name="VehicleTypeId">
+                            <option value="">Tất cả loại xe</option>
+                            @if (ViewData["VehicleTypes"] != null)
+                            {
+                                var vehicleTypes = ViewData["VehicleTypes"] as IEnumerable<SelectListItem>;
+                                if (vehicleTypes != null)
+                                {
+                                    foreach (var vt in vehicleTypes)
+                                    {
+                                        <option value="@vt.Value" selected="@vt.Selected">@vt.Text</option>
+                                    }
+                                }
+                            }
+                        </select>
+                        <label for="vehicleTypeFilter">Loại xe</label>
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div class="input-field col s12 m2">
+                        <select id="isActiveFilter" name="IsActive">
+                            <option value="">Tất cả</option>
+                            <option value="true" selected="@(ViewData["CurrentIsActive"]?.ToString() == "true")">Đang áp dụng</option>
+                            <option value="false" selected="@(ViewData["CurrentIsActive"]?.ToString() == "false")">Ngừng</option>
+                        </select>
+                        <label for="isActiveFilter">Trạng thái</label>
+                    </div>
+
+                    <!-- Page Size -->
+                    <div class="input-field col s12 m2">
+                        <select id="pageSize" name="PageSize">
+                            <option value="10" selected="@(ViewData["CurrentPageSize"]?.ToString() == "10")">10</option>
+                            <option value="20" selected="@(ViewData["CurrentPageSize"]?.ToString() == "20")">20</option>
+                            <option value="50" selected="@(ViewData["CurrentPageSize"]?.ToString() == "50")">50</option>
+                        </select>
+                        <label for="pageSize">Số dòng</label>
+                    </div>
+
+                    <!-- Search Button -->
+                    <div class="col s12 m2" style="padding-top: 1rem;">
+                        <button type="submit" class="btn waves-effect waves-light blue" style="width: 100%;">
+                            <i class="material-icons left">search</i>Lọc
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Surcharge Policy List Table -->
+    <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-content" style="padding: 0;">
+            @if (Model.Any())
+            {
+                <table class="striped highlight responsive-table">
+                    <thead>
+                        <tr>
+                            <th>Tên chính sách</th>
+                            <th>Loại phụ phí</th>
+                            <th>Loại xe</th>
+                            <th>Phương thức</th>
+                            <th class="right-align">Giá trị</th>
+                            <th class="center-align">Ưu tiên</th>
+                            <th class="center-align">Trạng thái</th>
+                            <th class="center-align">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@item.PolicyName</strong>
+                                </td>
+                                <td>
+                                    @switch (item.Type)
+                                    {
+                                        case SurchargeType.Overtime:
+                                            <span class="badge orange white-text" style="border-radius: 12px;">Quá giờ</span>
+                                            break;
+                                        case SurchargeType.ExtraKilometer:
+                                            <span class="badge deep-orange white-text" style="border-radius: 12px;">Quá km</span>
+                                            break;
+                                        case SurchargeType.DeliveryService:
+                                            <span class="badge blue white-text" style="border-radius: 12px;">Giao xe</span>
+                                            break;
+                                        case SurchargeType.DriverService:
+                                            <span class="badge purple white-text" style="border-radius: 12px;">Thuê lái xe</span>
+                                            break;
+                                        case SurchargeType.HolidayWeekend:
+                                            <span class="badge red white-text" style="border-radius: 12px;">Lễ/Cuối tuần</span>
+                                            break;
+                                        case SurchargeType.SeasonalPeak:
+                                            <span class="badge pink white-text" style="border-radius: 12px;">Cao điểm</span>
+                                            break;
+                                        case SurchargeType.CleaningFee:
+                                            <span class="badge teal white-text" style="border-radius: 12px;">Vệ sinh</span>
+                                            break;
+                                        case SurchargeType.LateReturn:
+                                            <span class="badge brown white-text" style="border-radius: 12px;">Trả xe muộn</span>
+                                            break;
+                                        default:
+                                            <span class="badge grey white-text" style="border-radius: 12px;">Khác</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    @if (string.IsNullOrEmpty(item.VehicleTypeName))
+                                    {
+                                        <span class="grey-text"><i>Tất cả</i></span>
+                                    }
+                                    else
+                                    {
+                                        @item.VehicleTypeName
+                                    }
+                                </td>
+                                <td>
+                                    @(item.CalculationType == SurchargeCalculationType.Percentage ? "%" : 
+                                      item.CalculationType == SurchargeCalculationType.PerUnit ? "/đơn vị" : "Cố định")
+                                </td>
+                                <td class="right-align">
+                                    <strong style="color: #1565c0;">
+                                        @if (item.CalculationType == SurchargeCalculationType.Percentage)
+                                        {
+                                            @item.Value.ToString("N2") <text>%</text>
+                                        }
+                                        else
+                                        {
+                                            @item.Value.ToString("N0") <text>đ</text>
+                                        }
+                                    </strong>
+                                </td>
+                                <td class="center-align">
+                                    <span class="badge" style="background-color: #455a64; color: white; border-radius: 12px;">
+                                        @item.Priority
+                                    </span>
+                                </td>
+                                <td class="center-align">
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="badge green white-text" style="border-radius: 12px;">Đang áp dụng</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge grey white-text" style="border-radius: 12px;">Ngừng áp dụng</span>
+                                    }
+                                </td>
+                                <td class="center-align">
+                                    <a asp-action="Details" asp-route-id="@item.SurchargePolicyId" 
+                                       class="btn-small waves-effect waves-light blue" 
+                                       style="margin: 2px;">
+                                        <i class="material-icons">visibility</i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@item.SurchargePolicyId" 
+                                       class="btn-small waves-effect waves-light orange" 
+                                       style="margin: 2px;">
+                                        <i class="material-icons">edit</i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn-small waves-effect waves-light red modal-trigger" 
+                                            data-target="deleteModal-@item.SurchargePolicyId" 
+                                            style="margin: 2px;">
+                                        <i class="material-icons">delete</i>
+                                    </button>
+                                </td>
+                            </tr>
+
+                            <!-- Delete Modal -->
+                            <div id="deleteModal-@item.SurchargePolicyId" class="modal">
+                                <div class="modal-content">
+                                    <h5>Xác nhận xóa</h5>
+                                    <p>Bạn có chắc chắn muốn xóa chính sách <strong>@item.PolicyName</strong>?</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <a href="#!" class="modal-close waves-effect waves-light btn-flat">Hủy</a>
+                                    <form asp-action="Delete" asp-route-id="@item.SurchargePolicyId" method="post" style="display: inline;">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn waves-effect waves-light red">Xóa</button>
+                                    </form>
+                                </div>
+                            </div>
+                        }
+                    </tbody>
+                </table>
+
+                <!-- Pagination -->
+                <div style="padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    <div class="grey-text">
+                        Hiển thị @Model.Count() / @Model.TotalCount bản ghi (Trang @Model.PageIndex / @Model.TotalPages)
+                    </div>
+                    <ul class="pagination" style="margin: 0;">
+                        @if (Model.HasPreviousPage)
+                        {
+                            <li class="waves-effect">
+                                <a asp-action="Index" 
+                                   asp-route-pageNumber="@(Model.PageIndex - 1)" 
+                                   asp-route-type="@ViewData["CurrentType"]"
+                                   asp-route-vehicleTypeId="@ViewData["CurrentVehicleTypeId"]"
+                                   asp-route-isActive="@ViewData["CurrentIsActive"]"
+                                   asp-route-pageSize="@ViewData["CurrentPageSize"]">
+                                    <i class="material-icons">chevron_left</i>
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="disabled"><a><i class="material-icons">chevron_left</i></a></li>
+                        }
+
+                        @for (int i = Math.Max(1, Model.PageIndex - 2); i <= Math.Min(Model.TotalPages, Model.PageIndex + 2); i++)
+                        {
+                            <li class="@(i == Model.PageIndex ? "active blue" : "waves-effect")">
+                                <a asp-action="Index" 
+                                   asp-route-pageNumber="@i"
+                                   asp-route-type="@ViewData["CurrentType"]"
+                                   asp-route-vehicleTypeId="@ViewData["CurrentVehicleTypeId"]"
+                                   asp-route-isActive="@ViewData["CurrentIsActive"]"
+                                   asp-route-pageSize="@ViewData["CurrentPageSize"]">@i</a>
+                            </li>
+                        }
+
+                        @if (Model.HasNextPage)
+                        {
+                            <li class="waves-effect">
+                                <a asp-action="Index" 
+                                   asp-route-pageNumber="@(Model.PageIndex + 1)"
+                                   asp-route-type="@ViewData["CurrentType"]"
+                                   asp-route-vehicleTypeId="@ViewData["CurrentVehicleTypeId"]"
+                                   asp-route-isActive="@ViewData["CurrentIsActive"]"
+                                   asp-route-pageSize="@ViewData["CurrentPageSize"]">
+                                    <i class="material-icons">chevron_right</i>
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="disabled"><a><i class="material-icons">chevron_right</i></a></li>
+                        }
+                    </ul>
+                </div>
+            }
+            else
+            {
+                <div style="padding: 3rem; text-align: center;">
+                    <i class="material-icons grey-text" style="font-size: 4rem;">inbox</i>
+                    <p class="grey-text" style="font-size: 1.2rem; margin-top: 1rem;">
+                        Không tìm thấy chính sách phụ phí nào
+                    </p>
+                    <a asp-action="Create" class="btn waves-effect waves-light blue" style="margin-top: 1rem;">
+                        <i class="material-icons left">add</i>Thêm chính sách đầu tiên
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var selects = document.querySelectorAll('select');
+            M.FormSelect.init(selects);
+            var modals = document.querySelectorAll('.modal');
+            M.Modal.init(modals);
+        });
+    </script>
+}

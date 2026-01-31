@@ -318,7 +318,7 @@ public class ContractService : IContractService
             EndAt = booking.EndAt,
             EstimatedTotal = booking.EstimatedTotal,
             PriceId = price?.PriceId ?? Guid.Empty,
-            UnitPrice = price?.UnitPrice ?? 0,
+            UnitPrice = price?.DailyBasePrice ?? 0,
             DepositSuggest = price?.DepositSuggest ?? 0
         };
     }
@@ -363,7 +363,7 @@ public class ContractService : IContractService
                 PriceId = p.PriceId,
                 Name = p.Name,
                 VehicleTypeId = p.VehicleTypeId,
-                UnitPrice = p.UnitPrice,
+                UnitPrice = p.DailyBasePrice,
                 DepositSuggest = p.DepositSuggest
             })
             .ToListAsync();

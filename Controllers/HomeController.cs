@@ -71,8 +71,8 @@ public class HomeController : Controller
                 Status = v.CurrentStatus,
                 PlateNo = v.PlateNo,
                 DailyPrice = v.Model.VehicleType.Prices
-                    .Where(p => p.IsActive && p.Unit == PriceUnit.Day)
-                    .Select(p => p.UnitPrice)
+                    .Where(p => p.IsActive)
+                    .Select(p => p.DailyBasePrice)
                     .FirstOrDefault()
             })
             .ToListAsync();

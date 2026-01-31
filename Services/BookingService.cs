@@ -76,7 +76,7 @@ public class BookingService : IBookingService
             {
                 // Calculate Price
                 var priceEntity = v.Model.VehicleType.Prices.FirstOrDefault(p => p.IsActive);
-                decimal dailyPrice = priceEntity?.UnitPrice ?? 0;
+                decimal dailyPrice = priceEntity?.DailyBasePrice ?? 0;
                 var days = (end - start).TotalDays;
                 if (days < 1) days = 1;
 
@@ -113,7 +113,7 @@ public class BookingService : IBookingService
         if (v == null) return null;
 
         var priceEntity = v.Model.VehicleType.Prices.FirstOrDefault(p => p.IsActive);
-        decimal dailyPrice = priceEntity?.UnitPrice ?? 0;
+        decimal dailyPrice = priceEntity?.DailyBasePrice ?? 0;
         var days = (int)Math.Ceiling((end - start).TotalDays);
         if (days < 1) days = 1;
 

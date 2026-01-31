@@ -1,0 +1,291 @@
+@model DepositPolicyDetailsViewModel
+@using UCar.ViewModels.Pricing
+@using UCar.Models.Enums
+
+@{
+    ViewData["Title"] = "Chi tiết chính sách đặt cọc";
+    ViewData["Description"] = "Thông tin chi tiết chính sách đặt cọc";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Page Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">visibility</i>
+                Chi tiết chính sách đặt cọc
+            </h4>
+            <p class="grey-text text-darken-1" style="font-size: 1.125rem; margin: 0;">
+                @Model.PolicyName
+            </p>
+        </div>
+        <div>
+            @if (Model.IsActive)
+            {
+                <form asp-action="ToggleActive" asp-route-id="@Model.DepositPolicyId" asp-route-isActive="false" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn waves-effect waves-light orange">
+                        <i class="material-icons left">pause</i>Ngừng áp dụng
+                    </button>
+                </form>
+            }
+            else
+            {
+                <form asp-action="ToggleActive" asp-route-id="@Model.DepositPolicyId" asp-route-isActive="true" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn waves-effect waves-light green">
+                        <i class="material-icons left">play_arrow</i>Kích hoạt
+                    </button>
+                </form>
+            }
+            <a asp-action="Edit" asp-route-id="@Model.DepositPolicyId" class="btn waves-effect waves-light blue">
+                <i class="material-icons left">edit</i>Chỉnh sửa
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Basic Info -->
+        <div class="col s12 m6">
+            <!-- Basic Information Card -->
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title" style="font-weight: 600; color: #00275e;">
+                        <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">info</i>
+                        Thông tin cơ bản
+                    </span>
+                    <div class="divider" style="margin: 1rem 0;"></div>
+
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="padding: 0.5rem 0; color: #757575;">Loại xe:</td>
+                            <td style="padding: 0.5rem 0; text-align: right;">
+                                <strong>@Model.VehicleTypeName</strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.5rem 0; color: #757575;">Phương thức tính:</td>
+                            <td style="padding: 0.5rem 0; text-align: right;">
+                                @if (Model.CalculationType == DepositCalculationType.Percentage)
+                                {
+                                    <span class="badge blue white-text" style="border-radius: 12px;">Phần trăm</span>
+                                }
+                                else
+                                {
+                                    <span class="badge teal white-text" style="border-radius: 12px;">Cố định</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.5rem 0; color: #757575;">Giá trị:</td>
+                            <td style="padding: 0.5rem 0; text-align: right;">
+                                <strong style="color: #1565c0; font-size: 1.2rem;">
+                                    @if (Model.CalculationType == DepositCalculationType.Percentage)
+                                    {
+                                        @(Model.Value.ToString("N2")) <text>%</text>
+                                    }
+                                    else
+                                    {
+                                        @(Model.Value.ToString("N0")) <text>đ</text>
+                                    }
+                                </strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.5rem 0; color: #757575;">Giới hạn:</td>
+                            <td style="padding: 0.5rem 0; text-align: right;">
+                                @if (Model.MinimumAmount > 0 || Model.MaximumAmount > 0)
+                                {
+                                    <div>
+                                        @(Model.MinimumAmount.ToString("N0")) đ
+                                        <span class="grey-text"> → </span>
+                                        @(Model.MaximumAmount > 0 ? Model.MaximumAmount.ToString("N0") + " đ" : "∞")
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="grey-text">Không giới hạn</span>
+                                }
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Validity Period Card -->
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title" style="font-weight: 600; color: #00275e;">
+                        <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">date_range</i>
+                        Thời gian hiệu lực
+                    </span>
+                    <div class="divider" style="margin: 1rem 0;"></div>
+
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="padding: 0.5rem 0; color: #757575;">Bắt đầu:</td>
+                            <td style="padding: 0.5rem 0; text-align: right;">
+                                <strong>@Model.ValidFrom.ToString("dd/MM/yyyy")</strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.5rem 0; color: #757575;">Kết thúc:</td>
+                            <td style="padding: 0.5rem 0; text-align: right;">
+                                <strong>@(Model.ValidTo?.ToString("dd/MM/yyyy") ?? "Không giới hạn")</strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.5rem 0; color: #757575;">Trạng thái:</td>
+                            <td style="padding: 0.5rem 0; text-align: right;">
+                                @if (Model.IsActive)
+                                {
+                                    <span class="badge green white-text" style="border-radius: 12px;">Đang áp dụng</span>
+                                }
+                                else
+                                {
+                                    <span class="badge grey white-text" style="border-radius: 12px;">Ngừng áp dụng</span>
+                                }
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Refund Conditions -->
+        <div class="col s12 m6">
+            <!-- Refund Conditions Card -->
+            <div class="card green lighten-5">
+                <div class="card-content">
+                    <span class="card-title" style="font-weight: 600; color: #00275e;">
+                        <i class="material-icons green-text" style="vertical-align: middle; margin-right: 8px;">assignment_return</i>
+                        Điều kiện hoàn trả
+                    </span>
+                    <div class="divider" style="margin: 1rem 0;"></div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <p style="font-weight: 600; color: #2e7d32; margin-bottom: 0.5rem;">
+                            <i class="material-icons tiny" style="vertical-align: middle;">check_circle</i>
+                            Hoàn 100%:
+                        </p>
+                        <p style="margin: 0; padding-left: 1.5rem;">
+                            @(Model.FullRefundCondition ?? "Chưa cấu hình")
+                        </p>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <p style="font-weight: 600; color: #f57c00; margin-bottom: 0.5rem;">
+                            <i class="material-icons tiny" style="vertical-align: middle;">warning</i>
+                            Hoàn 50%:
+                        </p>
+                        <p style="margin: 0; padding-left: 1.5rem;">
+                            @(Model.PartialRefundCondition ?? "Chưa cấu hình")
+                        </p>
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <p style="font-weight: 600; color: #c62828; margin-bottom: 0.5rem;">
+                            <i class="material-icons tiny" style="vertical-align: middle;">cancel</i>
+                            Không hoàn:
+                        </p>
+                        <p style="margin: 0; padding-left: 1.5rem;">
+                            @(Model.NoRefundCondition ?? "Chưa cấu hình")
+                        </p>
+                    </div>
+
+                    <div class="divider" style="margin: 1rem 0;"></div>
+
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="padding: 0.5rem 0; color: #757575;">Thời gian xử lý:</td>
+                            <td style="padding: 0.5rem 0; text-align: right;">
+                                <strong>@Model.RefundProcessingDays ngày</strong>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Metadata Card -->
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title" style="font-weight: 600; color: #00275e;">
+                        <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">info</i>
+                        Thông tin hệ thống
+                    </span>
+                    <div class="divider" style="margin: 1rem 0;"></div>
+
+                    <table style="width: 100%;">
+                        <tr>
+                            <td style="padding: 0.5rem 0; color: #757575;">Ngày tạo:</td>
+                            <td style="padding: 0.5rem 0; text-align: right;">
+                                <strong>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</strong>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.5rem 0; color: #757575;">Cập nhật lần cuối:</td>
+                            <td style="padding: 0.5rem 0; text-align: right;">
+                                <strong>@Model.UpdatedAt?.ToString("dd/MM/yyyy HH:mm")</strong>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Description))
+    {
+        <div class="card" style="margin-top: 1.5rem;">
+            <div class="card-content">
+                <span class="card-title" style="font-weight: 600; color: #00275e;">
+                    <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">description</i>
+                    Mô tả
+                </span>
+                <div class="divider" style="margin: 1rem 0;"></div>
+                <p>@Model.Description</p>
+            </div>
+        </div>
+    }
+
+    <!-- Action Buttons -->
+    <div style="margin-top: 2rem; display: flex; justify-content: space-between;">
+        <a asp-action="Index" class="btn waves-effect waves-light grey">
+            <i class="material-icons left">arrow_back</i>Quay lại danh sách
+        </a>
+
+        <button type="button" class="btn waves-effect waves-light red modal-trigger" data-target="deleteModal">
+            <i class="material-icons left">delete</i>Xóa chính sách
+        </button>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <h5>Xác nhận xóa</h5>
+        <p>Bạn có chắc chắn muốn xóa chính sách <strong>@Model.PolicyName</strong>?</p>
+        <p class="red-text">
+            <i class="material-icons tiny" style="vertical-align: middle;">warning</i>
+            Hành động này không thể hoàn tác!
+        </p>
+    </div>
+    <div class="modal-footer">
+        <a href="#!" class="modal-close waves-effect waves-light btn-flat">Hủy</a>
+        <form asp-action="Delete" asp-route-id="@Model.DepositPolicyId" method="post" style="display: inline;">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn waves-effect waves-light red">
+                Xóa
+            </button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var modals = document.querySelectorAll('.modal');
+            M.Modal.init(modals);
+        });
+    </script>
+}

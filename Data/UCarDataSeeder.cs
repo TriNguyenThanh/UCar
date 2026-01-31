@@ -33,6 +33,7 @@ public static class UCarDataSeeder
         var (staffList, customers) = await SeedStaffAndCustomersAsync(context, users, branches, roles.staff);
         var (vehicleTypes, vehicleModels, vehicles) = await SeedVehiclesAsync(context, branches);
         await SeedPricesAsync(context, vehicleTypes);
+        await PricingPolicyDataSeeder.SeedAsync(context); // Seed deposit & surcharge policies
         await SeedContractsAndHandoversAsync(context, customers, vehicles, vehicleTypes, users.staffUser);
         await SeedShiftsAndTasksAsync(context, staffList, branches, vehicles);
 
@@ -71,6 +72,8 @@ public static class UCarDataSeeder
         context.VehicleStatusHistories.RemoveRange(context.VehicleStatusHistories);
         context.Vehicles.RemoveRange(context.Vehicles);
         context.Prices.RemoveRange(context.Prices);
+        context.DepositPolicies.RemoveRange(context.DepositPolicies);
+        context.SurchargePolicies.RemoveRange(context.SurchargePolicies);
         context.VehicleModels.RemoveRange(context.VehicleModels);
         context.VehicleTypes.RemoveRange(context.VehicleTypes);
 
@@ -462,154 +465,88 @@ public static class UCarDataSeeder
 
         var prices = new List<Price>
         {
-            // Sedan
+            // Sedan - Single record with flexible pricing
             new()
             {
                 PriceId = Guid.NewGuid(),
                 VehicleTypeId = sedanType.VehicleTypeId,
-                Name = "Sedan - Thuê ngày",
-                Unit = PriceUnit.Day,
-                UnitPrice = 800000,
+                Name = "Bảng giá Sedan",
+                DailyBasePrice = 800000,
+                MonthlyMultiplier = 0.85m,  // 800k * 30 * 0.85 = 20.4M/tháng
+                HolidayMultiplier = 1.30m,  // 800k * 1.30 = 1.04M/ngày lễ
+                WeekendMultiplier = 1.15m,  // 800k * 1.15 = 920k/ngày cuối tuần
                 OvertimeHourlyPrice = 50000,
                 DepositSuggest = 5000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
-            new()
-            {
-                PriceId = Guid.NewGuid(),
-                VehicleTypeId = sedanType.VehicleTypeId,
-                Name = "Sedan - Thuê tháng",
-                Unit = PriceUnit.Month,
-                UnitPrice = 15000000,
-                OvertimeHourlyPrice = 50000,
-                DepositSuggest = 5000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-6),
-                IsActive = true
-            },
-            // SUV
+            // SUV - Single record with flexible pricing
             new()
             {
                 PriceId = Guid.NewGuid(),
                 VehicleTypeId = suvType.VehicleTypeId,
-                Name = "SUV - Thuê ngày",
-                Unit = PriceUnit.Day,
-                UnitPrice = 1200000,
+                Name = "Bảng giá SUV",
+                DailyBasePrice = 1200000,
+                MonthlyMultiplier = 0.85m,  // 1.2M * 30 * 0.85 = 30.6M/tháng
+                HolidayMultiplier = 1.30m,  // 1.2M * 1.30 = 1.56M/ngày lễ
+                WeekendMultiplier = 1.15m,  // 1.2M * 1.15 = 1.38M/ngày cuối tuần
                 OvertimeHourlyPrice = 80000,
                 DepositSuggest = 10000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
-            new()
-            {
-                PriceId = Guid.NewGuid(),
-                VehicleTypeId = suvType.VehicleTypeId,
-                Name = "SUV - Thuê tháng",
-                Unit = PriceUnit.Month,
-                UnitPrice = 25000000,
-                OvertimeHourlyPrice = 80000,
-                DepositSuggest = 10000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-6),
-                IsActive = true
-            },
-            // Hatchback
+            // Hatchback - Single record with flexible pricing
             new()
             {
                 PriceId = Guid.NewGuid(),
                 VehicleTypeId = hatchbackType.VehicleTypeId,
-                Name = "Hatchback - Thuê ngày",
-                Unit = PriceUnit.Day,
-                UnitPrice = 600000,
+                Name = "Bảng giá Hatchback",
+                DailyBasePrice = 600000,
+                MonthlyMultiplier = 0.85m,  // 600k * 30 * 0.85 = 15.3M/tháng
+                HolidayMultiplier = 1.30m,  // 600k * 1.30 = 780k/ngày lễ
+                WeekendMultiplier = 1.15m,  // 600k * 1.15 = 690k/ngày cuối tuần
                 OvertimeHourlyPrice = 40000,
                 DepositSuggest = 3000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
-            new()
-            {
-                PriceId = Guid.NewGuid(),
-                VehicleTypeId = hatchbackType.VehicleTypeId,
-                Name = "Hatchback - Thuê tháng",
-                Unit = PriceUnit.Month,
-                UnitPrice = 12000000,
-                OvertimeHourlyPrice = 40000,
-                DepositSuggest = 3000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-6),
-                IsActive = true
-            },
-            // MPV
+            // MPV - Single record with flexible pricing
             new()
             {
                 PriceId = Guid.NewGuid(),
                 VehicleTypeId = mpvType.VehicleTypeId,
-                Name = "MPV - Thuê ngày",
-                Unit = PriceUnit.Day,
-                UnitPrice = 1000000,
+                Name = "Bảng giá MPV",
+                DailyBasePrice = 1000000,
+                MonthlyMultiplier = 0.85m,  // 1M * 30 * 0.85 = 25.5M/tháng
+                HolidayMultiplier = 1.30m,  // 1M * 1.30 = 1.3M/ngày lễ
+                WeekendMultiplier = 1.15m,  // 1M * 1.15 = 1.15M/ngày cuối tuần
                 OvertimeHourlyPrice = 65000,
                 DepositSuggest = 8000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
-            new()
-            {
-                PriceId = Guid.NewGuid(),
-                VehicleTypeId = mpvType.VehicleTypeId,
-                Name = "MPV - Thuê tháng",
-                Unit = PriceUnit.Month,
-                UnitPrice = 20000000,
-                OvertimeHourlyPrice = 65000,
-                DepositSuggest = 8000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-6),
-                IsActive = true
-            },
-            // Pickup
+            // Pickup - Single record with flexible pricing
             new()
             {
                 PriceId = Guid.NewGuid(),
                 VehicleTypeId = pickupType.VehicleTypeId,
-                Name = "Pickup - Thuê ngày",
-                Unit = PriceUnit.Day,
-                UnitPrice = 1100000,
+                Name = "Bảng giá Pickup",
+                DailyBasePrice = 1100000,
+                MonthlyMultiplier = 0.85m,  // 1.1M * 30 * 0.85 = 28.05M/tháng
+                HolidayMultiplier = 1.30m,  // 1.1M * 1.30 = 1.43M/ngày lễ
+                WeekendMultiplier = 1.15m,  // 1.1M * 1.15 = 1.265M/ngày cuối tuần
                 OvertimeHourlyPrice = 70000,
                 DepositSuggest = 10000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
-            new()
-            {
-                PriceId = Guid.NewGuid(),
-                VehicleTypeId = pickupType.VehicleTypeId,
-                Name = "Pickup - Thuê tháng",
-                Unit = PriceUnit.Month,
-                UnitPrice = 22000000,
-                OvertimeHourlyPrice = 70000,
-                DepositSuggest = 10000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-6),
-                IsActive = true
-            },
-            // Crossover
+            // Crossover - Single record with flexible pricing
             new()
             {
                 PriceId = Guid.NewGuid(),
                 VehicleTypeId = crossoverType.VehicleTypeId,
-                Name = "Crossover - Thuê ngày",
-                Unit = PriceUnit.Day,
-                UnitPrice = 900000,
+                Name = "Bảng giá Crossover",
+                DailyBasePrice = 900000,
+                MonthlyMultiplier = 0.85m,  // 900k * 30 * 0.85 = 22.95M/tháng
+                HolidayMultiplier = 1.30m,  // 900k * 1.30 = 1.17M/ngày lễ
+                WeekendMultiplier = 1.15m,  // 900k * 1.15 = 1.035M/ngày cuối tuần
                 OvertimeHourlyPrice = 60000,
                 DepositSuggest = 7000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-6),
-                IsActive = true
-            },
-            new()
-            {
-                PriceId = Guid.NewGuid(),
-                VehicleTypeId = crossoverType.VehicleTypeId,
-                Name = "Crossover - Thuê tháng",
-                Unit = PriceUnit.Month,
-                UnitPrice = 18000000,
-                OvertimeHourlyPrice = 60000,
-                DepositSuggest = 7000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             }
         };
