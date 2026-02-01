@@ -25,6 +25,62 @@ public class RentalContract
     [Required]
     public Guid PriceId { get; set; }
 
+    // ===== SNAPSHOT PRICING (Bảo toàn giá tại thời điểm ký) =====
+    
+    /// <summary>Snapshot: Giá ngày thường tại thời điểm ký</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal SnapshotBaseDailyPrice { get; set; }
+
+    /// <summary>Snapshot: Hệ số tháng tại thời điểm ký</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal SnapshotMonthMultiplier { get; set; }
+
+    /// <summary>Snapshot: Hệ số lễ tại thời điểm ký</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal SnapshotPeakMultiplier { get; set; }
+
+    /// <summary>Snapshot: Giá vượt giờ tại thời điểm ký</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal SnapshotOvertimeHourlyPrice { get; set; }
+
+    // ===== PRICE BREAKDOWN (Chi tiết tính giá) =====
+    
+    /// <summary>Số ngày thường</summary>
+    public int NormalDays { get; set; }
+
+    /// <summary>Số ngày lễ</summary>
+    public int PeakDays { get; set; }
+
+    /// <summary>Tiền ngày thường</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal NormalDaysAmount { get; set; }
+
+    /// <summary>Tiền ngày lễ</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal PeakDaysAmount { get; set; }
+
+    /// <summary>Có áp dụng giá tháng không (>=30 ngày)</summary>
+    public bool IsMonthlyRate { get; set; }
+
+    /// <summary>Tiền thuê theo tháng (nếu IsMonthlyRate = true)</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal MonthlyAmount { get; set; }
+
+    // ===== DEPOSIT BREAKDOWN (Chi tiết đặt cọc) =====
+    
+    /// <summary>Cọc trách nhiệm (cố định 2M)</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal ResponsibilityDeposit { get; set; }
+
+    /// <summary>Cọc thuê xe (50% giá trị hợp đồng)</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal RentalDeposit { get; set; }
+
+    /// <summary>Ngày dự kiến hoàn cọc (sau 15-30 ngày)</summary>
+    public DateTime? DepositRefundDueDate { get; set; }
+
+    // ===== LEGACY FIELDS (Keep for compatibility) =====
+    
     [Column(TypeName = "decimal(18,2)")]
     public decimal SnapshotUnitPrice { get; set; }
 
@@ -140,4 +196,5 @@ public class RentalContract
     public ICollection<ContractCharge> Charges { get; set; } = new List<ContractCharge>();
     public ICollection<PaymentTransaction> PaymentTransactions { get; set; } = new List<PaymentTransaction>();
     public ICollection<CollateralItem> CollateralItems { get; set; } = new List<CollateralItem>();
+    public ICollection<ContractPriceBreakdown> PriceBreakdown { get; set; } = new List<ContractPriceBreakdown>();
 }

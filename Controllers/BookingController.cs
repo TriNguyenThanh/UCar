@@ -13,15 +13,18 @@ public class BookingController : Controller
 {
     private readonly IBookingService _bookingService;
     private readonly IVehicleCatalogService _vehicleCatalogService;
+    private readonly IPriceCalculationService _priceCalculationService;
     private readonly ILogger<BookingController> _logger;
 
     public BookingController(
         IBookingService bookingService, 
         IVehicleCatalogService vehicleCatalogService,
+        IPriceCalculationService priceCalculationService,
         ILogger<BookingController> logger)
     {
         _bookingService = bookingService;
         _vehicleCatalogService = vehicleCatalogService;
+        _priceCalculationService = priceCalculationService;
         _logger = logger;
     }
 
@@ -211,5 +214,32 @@ public class BookingController : Controller
 
         // Seats dropdown (common values)
         ViewBag.SeatsList = new SelectList(new[] { 4, 5, 7, 8, 16 });
+    }
+
+    // POST: /Booking/CalculatePrice
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<JsonResult> CalculatePrice(Guid vehicleModelId, DateTime startDate, DateTime endDate)
+    {
+        try
+        {
+            var estimate = await _priceCalculationService.CalculateEstimateAsync(
+                vehicleModelId, 
+                startDate, 
+                endDate
+            );
+
+            if (estimate == null)
+            {
+                return Json(new { success = false, message = "Không thể tính giá cho xe này" });
+            }
+
+            return Json(new { success = true, data = estimate });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calculating price for vehicleModelId {VehicleModelId}", vehicleModelId);
+            return Json(new { success = false, message = "Lỗi khi tính giá: " + ex.Message });
+        }
     }
 }

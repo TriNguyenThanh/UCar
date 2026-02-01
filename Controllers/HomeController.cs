@@ -70,9 +70,9 @@ public class HomeController : Controller
                 Transmission = v.Model.Transmission != null ? v.Model.Transmission.ToString() : "Tự động",
                 Status = v.CurrentStatus,
                 PlateNo = v.PlateNo,
-                DailyPrice = v.Model.VehicleType.Prices
-                    .Where(p => p.IsActive && p.Unit == PriceUnit.Day)
-                    .Select(p => p.UnitPrice)
+                DailyPrice = _context.Prices
+                    .Where(p => p.IsActive && p.VehicleModelId == v.ModelId)
+                    .Select(p => p.BaseDailyPrice)
                     .FirstOrDefault()
             })
             .ToListAsync();

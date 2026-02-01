@@ -32,7 +32,10 @@ public static class UCarDataSeeder
         var (users, branches) = await SeedUsersAndBranchesAsync(context, roles);
         var (staffList, customers) = await SeedStaffAndCustomersAsync(context, users, branches, roles.staff);
         var (vehicleTypes, vehicleModels, vehicles) = await SeedVehiclesAsync(context, branches);
-        await SeedPricesAsync(context, vehicleTypes);
+        await SeedPricesAsync(context, vehicleTypes, vehicleModels);
+        await SeedHolidaysAsync(context, users.adminUser);
+        await SeedDepositPoliciesAsync(context, vehicleTypes, users.adminUser);
+        await SeedSurchargePoliciesAsync(context, vehicleTypes, users.adminUser);
         await SeedContractsAndHandoversAsync(context, customers, vehicles, vehicleTypes, users.staffUser);
         await SeedShiftsAndTasksAsync(context, staffList, branches, vehicles);
 
@@ -73,6 +76,11 @@ public static class UCarDataSeeder
         context.Prices.RemoveRange(context.Prices);
         context.VehicleModels.RemoveRange(context.VehicleModels);
         context.VehicleTypes.RemoveRange(context.VehicleTypes);
+
+        // Pricing & Policy related (Module 3.0)
+        context.HolidayConfigs.RemoveRange(context.HolidayConfigs);
+        context.DepositPolicies.RemoveRange(context.DepositPolicies);
+        context.SurchargePolicies.RemoveRange(context.SurchargePolicies);
 
         // User related
         context.CustomerDocuments.RemoveRange(context.CustomerDocuments);
@@ -449,166 +457,152 @@ public static class UCarDataSeeder
     #endregion
 
     #region 5. Prices
-    private static async Task SeedPricesAsync(UCarDbContext context, List<VehicleType> vehicleTypes)
+    private static async Task SeedPricesAsync(UCarDbContext context, List<VehicleType> vehicleTypes, List<VehicleModel> vehicleModels)
     {
         Console.WriteLine("Seeding Prices...");
 
-        var sedanType = vehicleTypes.First(t => t.TypeName == "Sedan");
-        var suvType = vehicleTypes.First(t => t.TypeName == "SUV");
-        var hatchbackType = vehicleTypes.First(t => t.TypeName == "Hatchback");
-        var mpvType = vehicleTypes.First(t => t.TypeName == "MPV");
-        var pickupType = vehicleTypes.First(t => t.TypeName == "Pickup");
-        var crossoverType = vehicleTypes.First(t => t.TypeName == "Crossover");
+        // Price now based on VehicleModel, not VehicleType
+        // Get representative models from each type
+        var toyotaVios = vehicleModels.First(m => m.Make == "Toyota" && m.ModelName == "Vios");
+        var toyotaCamry = vehicleModels.First(m => m.Make == "Toyota" && m.ModelName == "Camry");
+        var toyotaFortuner = vehicleModels.First(m => m.Make == "Toyota" && m.ModelName == "Fortuner");
+        var toyotaInnova = vehicleModels.First(m => m.Make == "Toyota" && m.ModelName == "Innova");
+        var hondaCity = vehicleModels.First(m => m.Make == "Honda" && m.ModelName == "City");
+        var hondaCRV = vehicleModels.First(m => m.Make == "Honda" && m.ModelName == "CR-V");
+        var hyundaii10 = vehicleModels.First(m => m.Make == "Hyundai" && m.ModelName == "i10");
+        var fordRanger = vehicleModels.First(m => m.Make == "Ford" && m.ModelName == "Ranger");
+        var mazda3 = vehicleModels.First(m => m.Make == "Mazda" && m.ModelName == "Mazda 3");
+        var mazdaCX5 = vehicleModels.First(m => m.Make == "Mazda" && m.ModelName == "CX-5");
 
         var prices = new List<Price>
         {
-            // Sedan
+            // Toyota Vios - Sedan phổ thông
             new()
             {
                 PriceId = Guid.NewGuid(),
-                VehicleTypeId = sedanType.VehicleTypeId,
-                Name = "Sedan - Thuê ngày",
-                Unit = PriceUnit.Day,
-                UnitPrice = 800000,
+                VehicleModelId = toyotaVios.ModelId,
+                Name = "Toyota Vios - Giá chuẩn",
+                BaseDailyPrice = 500000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
                 OvertimeHourlyPrice = 50000,
-                DepositSuggest = 5000000,
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
+            // Toyota Camry - Sedan cao cấp
             new()
             {
                 PriceId = Guid.NewGuid(),
-                VehicleTypeId = sedanType.VehicleTypeId,
-                Name = "Sedan - Thuê tháng",
-                Unit = PriceUnit.Month,
-                UnitPrice = 15000000,
+                VehicleModelId = toyotaCamry.ModelId,
+                Name = "Toyota Camry - Giá chuẩn",
+                BaseDailyPrice = 900000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
+                OvertimeHourlyPrice = 70000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            // Toyota Fortuner - SUV
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = toyotaFortuner.ModelId,
+                Name = "Toyota Fortuner - Giá chuẩn",
+                BaseDailyPrice = 1200000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.6m,
+                OvertimeHourlyPrice = 100000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            // Toyota Innova - MPV
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = toyotaInnova.ModelId,
+                Name = "Toyota Innova - Giá chuẩn",
+                BaseDailyPrice = 800000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
+                OvertimeHourlyPrice = 70000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            // Honda City - Sedan phổ thông
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = hondaCity.ModelId,
+                Name = "Honda City - Giá chuẩn",
+                BaseDailyPrice = 480000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
                 OvertimeHourlyPrice = 50000,
-                DepositSuggest = 5000000,
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
-            // SUV
+            // Honda CR-V - SUV
             new()
             {
                 PriceId = Guid.NewGuid(),
-                VehicleTypeId = suvType.VehicleTypeId,
-                Name = "SUV - Thuê ngày",
-                Unit = PriceUnit.Day,
-                UnitPrice = 1200000,
-                OvertimeHourlyPrice = 80000,
-                DepositSuggest = 10000000,
+                VehicleModelId = hondaCRV.ModelId,
+                Name = "Honda CR-V - Giá chuẩn",
+                BaseDailyPrice = 1100000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.6m,
+                OvertimeHourlyPrice = 90000,
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
+            // Hyundai i10 - Hatchback
             new()
             {
                 PriceId = Guid.NewGuid(),
-                VehicleTypeId = suvType.VehicleTypeId,
-                Name = "SUV - Thuê tháng",
-                Unit = PriceUnit.Month,
-                UnitPrice = 25000000,
-                OvertimeHourlyPrice = 80000,
-                DepositSuggest = 10000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-6),
-                IsActive = true
-            },
-            // Hatchback
-            new()
-            {
-                PriceId = Guid.NewGuid(),
-                VehicleTypeId = hatchbackType.VehicleTypeId,
-                Name = "Hatchback - Thuê ngày",
-                Unit = PriceUnit.Day,
-                UnitPrice = 600000,
+                VehicleModelId = hyundaii10.ModelId,
+                Name = "Hyundai i10 - Giá chuẩn",
+                BaseDailyPrice = 400000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.4m,
                 OvertimeHourlyPrice = 40000,
-                DepositSuggest = 3000000,
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
+            // Ford Ranger - Pickup
             new()
             {
                 PriceId = Guid.NewGuid(),
-                VehicleTypeId = hatchbackType.VehicleTypeId,
-                Name = "Hatchback - Thuê tháng",
-                Unit = PriceUnit.Month,
-                UnitPrice = 12000000,
-                OvertimeHourlyPrice = 40000,
-                DepositSuggest = 3000000,
+                VehicleModelId = fordRanger.ModelId,
+                Name = "Ford Ranger - Giá chuẩn",
+                BaseDailyPrice = 1300000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.6m,
+                OvertimeHourlyPrice = 110000,
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
-            // MPV
+            // Mazda 3 - Sedan
             new()
             {
                 PriceId = Guid.NewGuid(),
-                VehicleTypeId = mpvType.VehicleTypeId,
-                Name = "MPV - Thuê ngày",
-                Unit = PriceUnit.Day,
-                UnitPrice = 1000000,
-                OvertimeHourlyPrice = 65000,
-                DepositSuggest = 8000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-6),
-                IsActive = true
-            },
-            new()
-            {
-                PriceId = Guid.NewGuid(),
-                VehicleTypeId = mpvType.VehicleTypeId,
-                Name = "MPV - Thuê tháng",
-                Unit = PriceUnit.Month,
-                UnitPrice = 20000000,
-                OvertimeHourlyPrice = 65000,
-                DepositSuggest = 8000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-6),
-                IsActive = true
-            },
-            // Pickup
-            new()
-            {
-                PriceId = Guid.NewGuid(),
-                VehicleTypeId = pickupType.VehicleTypeId,
-                Name = "Pickup - Thuê ngày",
-                Unit = PriceUnit.Day,
-                UnitPrice = 1100000,
-                OvertimeHourlyPrice = 70000,
-                DepositSuggest = 10000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-6),
-                IsActive = true
-            },
-            new()
-            {
-                PriceId = Guid.NewGuid(),
-                VehicleTypeId = pickupType.VehicleTypeId,
-                Name = "Pickup - Thuê tháng",
-                Unit = PriceUnit.Month,
-                UnitPrice = 22000000,
-                OvertimeHourlyPrice = 70000,
-                DepositSuggest = 10000000,
-                ValidFrom = DateTime.UtcNow.AddMonths(-6),
-                IsActive = true
-            },
-            // Crossover
-            new()
-            {
-                PriceId = Guid.NewGuid(),
-                VehicleTypeId = crossoverType.VehicleTypeId,
-                Name = "Crossover - Thuê ngày",
-                Unit = PriceUnit.Day,
-                UnitPrice = 900000,
+                VehicleModelId = mazda3.ModelId,
+                Name = "Mazda 3 - Giá chuẩn",
+                BaseDailyPrice = 700000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
                 OvertimeHourlyPrice = 60000,
-                DepositSuggest = 7000000,
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
+            // Mazda CX-5 - Crossover
             new()
             {
                 PriceId = Guid.NewGuid(),
-                VehicleTypeId = crossoverType.VehicleTypeId,
-                Name = "Crossover - Thuê tháng",
-                Unit = PriceUnit.Month,
-                UnitPrice = 18000000,
-                OvertimeHourlyPrice = 60000,
-                DepositSuggest = 7000000,
+                VehicleModelId = mazdaCX5.ModelId,
+                Name = "Mazda CX-5 - Giá chuẩn",
+                BaseDailyPrice = 1000000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
+                OvertimeHourlyPrice = 80000,
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             }
@@ -617,7 +611,83 @@ public static class UCarDataSeeder
         await context.Prices.AddRangeAsync(prices);
         await context.SaveChangesAsync();
 
-        Console.WriteLine($"  ✓ Created {prices.Count} price entries");
+        Console.WriteLine($"  ✓ Created {prices.Count} price entries for vehicle models");
+    }
+    #endregion
+
+    #region 5.5. Holiday Configuration
+    private static async Task SeedHolidaysAsync(UCarDbContext context, UserAccount adminUser)
+    {
+        Console.WriteLine("Seeding Holiday Configuration...");
+
+        var holidays = new List<HolidayConfig>
+        {
+            // Tết Nguyên Đán 2026
+            new()
+            {
+                HolidayId = Guid.NewGuid(),
+                HolidayName = "Tết Nguyên Đán 2026",
+                StartDate = new DateTime(2026, 1, 29),
+                EndDate = new DateTime(2026, 2, 6),
+                Year = 2026,
+                IsActive = true,
+                CreatedBy = adminUser.UserId,
+                CreatedAt = DateTime.UtcNow
+            },
+            // Giỗ tổ Hùng Vương 2026
+            new()
+            {
+                HolidayId = Guid.NewGuid(),
+                HolidayName = "Giỗ tổ Hùng Vương 2026",
+                StartDate = new DateTime(2026, 4, 18),
+                EndDate = new DateTime(2026, 4, 18),
+                Year = 2026,
+                IsActive = true,
+                CreatedBy = adminUser.UserId,
+                CreatedAt = DateTime.UtcNow
+            },
+            // 30/4 - Giải phóng miền Nam
+            new()
+            {
+                HolidayId = Guid.NewGuid(),
+                HolidayName = "Ngày Giải phóng miền Nam",
+                StartDate = new DateTime(2026, 4, 30),
+                EndDate = new DateTime(2026, 5, 3),
+                Year = 2026,
+                IsActive = true,
+                CreatedBy = adminUser.UserId,
+                CreatedAt = DateTime.UtcNow
+            },
+            // Quốc khánh 2/9
+            new()
+            {
+                HolidayId = Guid.NewGuid(),
+                HolidayName = "Quốc khánh 2/9",
+                StartDate = new DateTime(2026, 9, 2),
+                EndDate = new DateTime(2026, 9, 2),
+                Year = 2026,
+                IsActive = true,
+                CreatedBy = adminUser.UserId,
+                CreatedAt = DateTime.UtcNow
+            },
+            // Tết Dương lịch 2027 (để test cross-year)
+            new()
+            {
+                HolidayId = Guid.NewGuid(),
+                HolidayName = "Tết Dương lịch 2027",
+                StartDate = new DateTime(2027, 1, 1),
+                EndDate = new DateTime(2027, 1, 3),
+                Year = 2027,
+                IsActive = true,
+                CreatedBy = adminUser.UserId,
+                CreatedAt = DateTime.UtcNow
+            }
+        };
+
+        await context.HolidayConfigs.AddRangeAsync(holidays);
+        await context.SaveChangesAsync();
+
+        Console.WriteLine($"  ✓ Created {holidays.Count} holiday configurations");
     }
     #endregion
 
@@ -937,6 +1007,178 @@ public static class UCarDataSeeder
 
         Console.WriteLine($"  ✓ Created {shifts.Count} shifts, {shiftAssignments.Count} shift assignments");
         Console.WriteLine($"  ✓ Created {operationalTasks.Count} operational tasks");
+    }
+    #endregion
+
+    #region 8. Deposit Policies
+    private static async Task SeedDepositPoliciesAsync(UCarDbContext context, List<VehicleType> vehicleTypes, UserAccount adminUser)
+    {
+        Console.WriteLine("Seeding Deposit Policies...");
+
+        var depositPolicies = new List<DepositPolicy>();
+
+        foreach (var vehicleType in vehicleTypes)
+        {
+            // Standard deposit policy for each vehicle type
+            depositPolicies.Add(new DepositPolicy
+            {
+                DepositPolicyId = Guid.NewGuid(),
+                PolicyName = $"Chính sách cọc chuẩn - {vehicleType.TypeName}",
+                VehicleTypeId = vehicleType.VehicleTypeId,
+                CalculationType = DepositCalculationType.Percentage,
+                Value = 50, // 50% of rental amount
+                MinimumAmount = 2_000_000, // Min 2M VND
+                MaximumAmount = vehicleType.TypeName == "Sedan" ? 5_000_000 : 
+                                vehicleType.TypeName == "SUV" ? 10_000_000 : 
+                                vehicleType.TypeName == "MPV" ? 8_000_000 : 
+                                vehicleType.TypeName == "Hatchback" ? 3_000_000 : 
+                                vehicleType.TypeName == "Pickup" ? 8_000_000 : 5_000_000,
+                FullRefundCondition = "Trả xe đúng hạn, không hư hỏng, không vi phạm giao thông",
+                PartialRefundCondition = "Vi phạm nhẹ, trả xe trễ dưới 24h, hư hỏng nhỏ",
+                NoRefundCondition = "Vi phạm nghiêm trọng, mất xe, hư hỏng lớn, trả xe trễ quá 3 ngày",
+                RefundProcessingDays = 7,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                ValidTo = null,
+                IsActive = true,
+                Description = $"Chính sách cọc tiêu chuẩn cho loại xe {vehicleType.TypeName}",
+                CreatedAt = DateTime.UtcNow
+            });
+
+            // Premium deposit policy (lower deposit for loyal customers - future use)
+            depositPolicies.Add(new DepositPolicy
+            {
+                DepositPolicyId = Guid.NewGuid(),
+                PolicyName = $"Chính sách cọc ưu đãi - {vehicleType.TypeName}",
+                VehicleTypeId = vehicleType.VehicleTypeId,
+                CalculationType = DepositCalculationType.Percentage,
+                Value = 30, // 30% of rental amount for loyal customers
+                MinimumAmount = 1_500_000, // Min 1.5M VND
+                MaximumAmount = vehicleType.TypeName == "Sedan" ? 3_000_000 : 
+                                vehicleType.TypeName == "SUV" ? 7_000_000 : 
+                                vehicleType.TypeName == "MPV" ? 5_000_000 : 
+                                vehicleType.TypeName == "Hatchback" ? 2_000_000 : 
+                                vehicleType.TypeName == "Pickup" ? 5_000_000 : 3_000_000,
+                FullRefundCondition = "Trả xe đúng hạn, không hư hỏng, không vi phạm giao thông",
+                PartialRefundCondition = "Vi phạm nhẹ, trả xe trễ dưới 12h",
+                NoRefundCondition = "Vi phạm nghiêm trọng, mất xe, hư hỏng lớn",
+                RefundProcessingDays = 5,
+                ValidFrom = DateTime.UtcNow.AddMonths(-3),
+                ValidTo = null,
+                IsActive = false, // Not active yet - for future use
+                Description = $"Chính sách cọc ưu đãi cho khách hàng thân thiết - {vehicleType.TypeName}",
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        await context.DepositPolicies.AddRangeAsync(depositPolicies);
+        await context.SaveChangesAsync();
+
+        Console.WriteLine($"  ✓ Created {depositPolicies.Count} deposit policies ({vehicleTypes.Count} vehicle types × 2 policies)");
+    }
+    #endregion
+
+    #region 9. Surcharge Policies
+    private static async Task SeedSurchargePoliciesAsync(UCarDbContext context, List<VehicleType> vehicleTypes, UserAccount adminUser)
+    {
+        Console.WriteLine("Seeding Surcharge Policies...");
+
+        var surchargePolicies = new List<SurchargePolicy>();
+
+        foreach (var vehicleType in vehicleTypes)
+        {
+            // Overtime surcharge - per hour
+            surchargePolicies.Add(new SurchargePolicy
+            {
+                SurchargePolicyId = Guid.NewGuid(),
+                PolicyName = $"Phụ phí quá giờ - {vehicleType.TypeName}",
+                VehicleTypeId = vehicleType.VehicleTypeId,
+                SurchargeType = SurchargeType.Overtime,
+                CalculationType = SurchargeCalculationType.FixedAmount,
+                Value = vehicleType.TypeName == "Sedan" ? 50_000 : 
+                        vehicleType.TypeName == "SUV" ? 100_000 : 
+                        vehicleType.TypeName == "MPV" ? 80_000 : 
+                        vehicleType.TypeName == "Hatchback" ? 40_000 : 
+                        vehicleType.TypeName == "Pickup" ? 80_000 : 50_000,
+                AppliesTo = "Rental",
+                Unit = "VND/giờ",
+                Description = $"Phụ phí áp dụng khi trả xe muộn hơn giờ quy định - {vehicleType.TypeName}",
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                ValidUntil = null,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = adminUser.UserId
+            });
+
+            // Extra kilometer surcharge
+            surchargePolicies.Add(new SurchargePolicy
+            {
+                SurchargePolicyId = Guid.NewGuid(),
+                PolicyName = $"Phụ phí vượt quá km - {vehicleType.TypeName}",
+                VehicleTypeId = vehicleType.VehicleTypeId,
+                SurchargeType = SurchargeType.ExtraKilometer,
+                CalculationType = SurchargeCalculationType.FixedAmount,
+                Value = vehicleType.TypeName == "Sedan" ? 3_000 : 
+                        vehicleType.TypeName == "SUV" ? 5_000 : 
+                        vehicleType.TypeName == "MPV" ? 4_000 : 
+                        vehicleType.TypeName == "Hatchback" ? 2_500 : 
+                        vehicleType.TypeName == "Pickup" ? 4_000 : 3_000,
+                AppliesTo = "Rental",
+                Unit = "VND/km",
+                Description = $"Phụ phí áp dụng khi vượt quá số km cho phép trong hợp đồng - {vehicleType.TypeName}",
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                ValidUntil = null,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = adminUser.UserId
+            });
+
+            // Cleaning surcharge (for dirty vehicle)
+            surchargePolicies.Add(new SurchargePolicy
+            {
+                SurchargePolicyId = Guid.NewGuid(),
+                PolicyName = $"Phụ phí vệ sinh - {vehicleType.TypeName}",
+                VehicleTypeId = vehicleType.VehicleTypeId,
+                SurchargeType = SurchargeType.CleaningFee,
+                CalculationType = SurchargeCalculationType.FixedAmount,
+                Value = 200_000, // Fixed 200k for all vehicle types
+                AppliesTo = "Return",
+                Unit = "VND/lần",
+                Description = $"Phụ phí vệ sinh khi xe trả lại quá bẩn - {vehicleType.TypeName}",
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                ValidUntil = null,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = adminUser.UserId
+            });
+
+            // Fuel shortage surcharge
+            surchargePolicies.Add(new SurchargePolicy
+            {
+                SurchargePolicyId = Guid.NewGuid(),
+                PolicyName = $"Phụ phí nhiên liệu - {vehicleType.TypeName}",
+                VehicleTypeId = vehicleType.VehicleTypeId,
+                SurchargeType = SurchargeType.FuelShortage,
+                CalculationType = SurchargeCalculationType.FixedAmount,
+                Value = vehicleType.TypeName == "Sedan" ? 30_000 : 
+                        vehicleType.TypeName == "SUV" ? 50_000 : 
+                        vehicleType.TypeName == "MPV" ? 40_000 : 
+                        vehicleType.TypeName == "Hatchback" ? 25_000 : 
+                        vehicleType.TypeName == "Pickup" ? 45_000 : 30_000,
+                AppliesTo = "Return",
+                Unit = "VND/lít",
+                Description = $"Phụ phí khi trả xe thiếu nhiên liệu so với khi nhận - {vehicleType.TypeName}",
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                ValidUntil = null,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                CreatedBy = adminUser.UserId
+            });
+        }
+
+        await context.SurchargePolicies.AddRangeAsync(surchargePolicies);
+        await context.SaveChangesAsync();
+
+        Console.WriteLine($"  ✓ Created {surchargePolicies.Count} surcharge policies ({vehicleTypes.Count} vehicle types × 4 policies)");
     }
     #endregion
 }

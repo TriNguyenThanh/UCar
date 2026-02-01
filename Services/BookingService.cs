@@ -74,9 +74,11 @@ public class BookingService : IBookingService
 
             if (!isBusy)
             {
-                // Calculate Price
-                var priceEntity = v.Model.VehicleType.Prices.FirstOrDefault(p => p.IsActive);
-                decimal dailyPrice = priceEntity?.UnitPrice ?? 0;
+                // Calculate Price - temporarily use first active price from any model
+                // TODO: Implement proper price lookup by VehicleModel
+                var priceEntity = await _context.Prices
+                    .FirstOrDefaultAsync(p => p.VehicleModelId == v.ModelId && p.IsActive);
+                decimal dailyPrice = priceEntity?.BaseDailyPrice ?? 0;
                 var days = (end - start).TotalDays;
                 if (days < 1) days = 1;
 
@@ -112,8 +114,9 @@ public class BookingService : IBookingService
 
         if (v == null) return null;
 
-        var priceEntity = v.Model.VehicleType.Prices.FirstOrDefault(p => p.IsActive);
-        decimal dailyPrice = priceEntity?.UnitPrice ?? 0;
+        var priceEntity = await _context.Prices
+            .FirstOrDefaultAsync(p => p.VehicleModelId == v.ModelId && p.IsActive);
+        decimal dailyPrice = priceEntity?.BaseDailyPrice ?? 0;
         var days = (int)Math.Ceiling((end - start).TotalDays);
         if (days < 1) days = 1;
 
