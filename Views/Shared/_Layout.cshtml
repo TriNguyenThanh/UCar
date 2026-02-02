@@ -126,8 +126,8 @@
                 }
                 else
                 {
-                    <li><a asp-controller="Account" asp-action="Login"><i class="material-icons left">login</i>Đăng nhập</a>
-                    </li>
+                    <li><a asp-controller="Account" asp-action="Register"><i class="material-icons left">person_add</i>Đăng ký</a></li>
+                    <li><a asp-controller="Account" asp-action="Login"><i class="material-icons left">login</i>Đăng nhập</a></li>
                 }
             </ul>
         </div>
@@ -308,7 +308,6 @@
 
             <li class="divider"></li>
             <li><a asp-controller="Account" asp-action="Profile"><i class="material-icons">person</i>Hồ sơ</a></li>
-            <li><a href="#!"><i class="material-icons">settings</i>Cài đặt</a></li>
             <li>
                 <a href="#" onclick="document.getElementById('logoutForm').submit(); return false;" class="red-text">
                     <i class="material-icons">exit_to_app</i>Đăng xuất
@@ -317,6 +316,7 @@
         }
         else
         {
+            <li><a asp-controller="Account" asp-action="Register"><i class="material-icons">person_add</i>Đăng ký</a></li>
             <li><a asp-controller="Account" asp-action="Login"><i class="material-icons">login</i>Đăng nhập</a></li>
         }
     </ul>

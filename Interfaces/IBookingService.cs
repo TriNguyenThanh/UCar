@@ -1,5 +1,7 @@
 using UCar.ViewModels.Booking;
 using UCar.Models.Enums;
+using UCar.Models;
+using UCar.Models.DTOs.Operations;
 
 namespace UCar.Interfaces;
 
@@ -7,11 +9,12 @@ public interface IBookingService
 {
     // 4.1 Tra cứu & Chọn xe
     Task<List<VehicleSearchResultVM>> SearchVehiclesAsync(
-        DateTime start, 
-        DateTime end, 
-        Guid? vehicleTypeId = null, 
-        string? make = null, 
-        int? seats = null);
+        DateTime start,
+        DateTime end,
+        Guid? vehicleTypeId = null,
+        string? make = null,
+        int? seats = null,
+        Guid? branchId = null);
     Task<VehicleSearchResultVM?> GetVehicleForBookingAsync(Guid vehicleId, DateTime start, DateTime end);
 
     // 4.2 Tạo đặt xe
@@ -31,4 +34,5 @@ public interface IBookingService
     
     // Helpers
     Task<bool> CheckAvailabilityAsync(Guid vehicleId, DateTime start, DateTime end, Guid? excludeBookingId = null);
+    Task<List<BranchDto>> GetAllBranches();
 }

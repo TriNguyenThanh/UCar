@@ -1,17 +1,17 @@
 1. chỉnh màu sắc panel xe (Hiếu)
-2. Thêm thông tin vị trí giao nhận xe trong lúc đặt xe của khách hàng
+2. Thêm thông tin vị trí giao nhận xe trong lúc đặt xe của khách hàng (Trí - done)
     Khách hàng nhận xe tại chi nhánh đã chọn
     Khách hàng trả xe tại chi nhánh đã chọn
-3. Thêm filter vị trí theo chi nhánh lúc đặt xe
+3. Thêm filter vị trí theo chi nhánh lúc đặt xe (Trí - done)
 4. Comment lại chức năng nhiệm vụ vận hành (Hiếu)
-5. Tạo tài khoản
+5. Tạo tài khoản (Trí - done)
 6. Verify xác nhận đặt xe trước khi tạo hợp đồng
 7. Không sửa ngày tháng khi tạo hợp đồng, không đổi bảng giá thuê xe
 8. Chưa có redict menu quản lý hợp đồng thuê xe 
 10. dòng 397 contract service 
 11. chỉnh lại redict trong contract/create
 12. Chưa có chức năng chuyển hợp đồng từ bản nháp thành bản chính
-13. Ẩn số điện thoại lúc đặt xe
+13. Ẩn số điện thoại lúc đặt xe (Trí - done)
 14. Tự điền odo trong giao diện bàn giao xe (Hiếu)
 15. Chỉnh sửa lại biên bản giao xe: Thiếu tổng giá trị tài sản kèm theo (Hiếu)
 16. Phân quyền giao diện chờ bàn giao xe (kiểm tra toàn bộ quyền) (Hiếu)

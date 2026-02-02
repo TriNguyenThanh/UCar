@@ -219,6 +219,15 @@ public class CustomerService : ICustomerService
 
     #region DFD 2.1: Đăng ký thông tin khách - Create
 
+    public Task<string?> GetPhoneNumberAsync(Guid customerId)
+    {
+        return _context.Customers
+            .Include(c => c.UserAccount)
+            .Where(c => c.UserId == customerId)
+            .Select(c => c.UserAccount.Phone)
+            .FirstOrDefaultAsync();
+    }
+
     public async Task<(bool Success, string Message, Guid? CustomerId)> CreateCustomerAsync(CustomerCreateViewModel model)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
@@ -415,6 +424,53 @@ public class CustomerService : ICustomerService
         {
             _logger.LogError(ex, "Error updating customer: {CustomerId}", model.CustomerId);
             return (false, $"Lỗi cập nhật khách hàng: {ex.Message}");
+        }
+    }
+
+    public async Task<(bool Success, string Message)> UpdateCustomerProfileAsync(CustomerProfileEditViewModel model)
+    {
+        try
+        {
+            _logger.LogInformation("Updating customer profile: {CustomerId}", model.CustomerId);
+
+            var customer = await _context.Customers
+                .Include(c => c.UserAccount)
+                .FirstOrDefaultAsync(c => c.CustomerId == model.CustomerId);
+
+            if (customer == null)
+            {
+                return (false, "Không tìm thấy khách hàng");
+            }
+
+            // Validate unique constraints (excluding current customer)
+            if (await IsEmailExistsAsync(model.Email, model.CustomerId))
+            {
+                return (false, "Email đã được sử dụng bởi khách hàng khác");
+            }
+
+            if (await IsPhoneExistsAsync(model.Phone, model.CustomerId))
+            {
+                return (false, "Số điện thoại đã được sử dụng bởi khách hàng khác");
+            }
+
+            // Update Customer info
+            customer.FullName = model.FullName;
+            customer.Dob = model.Dob;
+            customer.AddressText = model.AddressText;
+
+            // Update UserAccount info
+            customer.UserAccount.Email = model.Email;
+            customer.UserAccount.Phone = model.Phone;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Customer profile updated successfully: {CustomerId}", model.CustomerId);
+            return (true, "Cập nhật thông tin thành công");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating customer profile: {CustomerId}", model.CustomerId);
+            return (false, $"Lỗi cập nhật thông tin: {ex.Message}");
         }
     }
 
@@ -893,6 +949,8 @@ public class CustomerService : ICustomerService
             throw;
         }
     }
+
+
 
     #endregion
 }

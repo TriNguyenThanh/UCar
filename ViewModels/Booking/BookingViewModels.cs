@@ -30,6 +30,8 @@ public class BookingSearchCheckVM
     
     [Display(Name = "Số ghế")]
     public int? Seats { get; set; }
+    [Display(Name = "Chi nhánh")]
+    public Guid? BranchId { get; set; }
 }
 
 public class VehicleSearchResultVM
@@ -47,6 +49,7 @@ public class VehicleSearchResultVM
     public string Transmission { get; set; } = string.Empty; // "Tự động"
     public int Seats { get; set; }
     public bool IsAvailable { get; set; }
+    public Guid BranchId { get; set; } = Guid.Empty;
 }
 
 public class BookingCreateVM
@@ -58,6 +61,7 @@ public class BookingCreateVM
     public string ModelName { get; set; } = string.Empty;
     public string PlateNo { get; set; } = string.Empty;
     public string ImageUrl { get; set; } = string.Empty;
+    public Guid BranchId { get; set; } = Guid.Empty;
 
     [Required]
     public DateTime StartAt { get; set; }
@@ -72,11 +76,14 @@ public class BookingCreateVM
     [Display(Name = "Họ và tên")]
     public string CustomerName { get; set; } = string.Empty;
     
-    [Display(Name = "Số điện thoại")]
-    public string Phone { get; set; } = string.Empty;
+    [Display(Name = "Nơi nhận xe")]
+    public string PickUpLocation { get; set; } = string.Empty;
     
-    [Display(Name = "Ghi chú")]
-    public string? Note { get; set; }
+    [Display(Name = "Nơi trả xe")]
+    public string? DropOffLocation { get; set; }
+
+    [Display(Name = "Số điện thoại")]
+    public string CustomerPhone { get; set; } = string.Empty;
 }
 
 public class BookingListVM

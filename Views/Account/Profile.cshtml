@@ -2,7 +2,57 @@
 @{
     ViewData["Title"] = "Thông tin tài khoản";
 }
+@section Styles {
+    <style>
+        .ucar-header-section {
+            background: linear-gradient(135deg, #70b2e7 0%, #116eb9 100%);
+            padding-top: 40px;
+            padding-bottom: 40px;
+        }
 
+        .ucar-avatar-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #70b2e7 0%, #116eb9 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+
+        .ucar-avatar-large i {
+            font-size: 64px;
+            color: white;
+        }
+
+        .mt-3 {
+            margin-top: 1rem;
+        }
+
+        .mt-4 {
+            margin-top: 1.5rem;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .chip i.tiny {
+            font-size: 16px;
+        }
+
+        code {
+            background-color: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+    </style>
+}
 <!-- Page Header -->
 <div class="section ucar-header-section">
     <div class="container">
@@ -43,8 +93,7 @@
                                 @Model.Username
                             }
                         </h5>
-                        <p class="grey-text">@@@Model.Username</p>
-                        
+
                         @if (Model.RoleCode == "Admin")
                         {
                             <span class="chip red white-text">
@@ -88,7 +137,7 @@
                         <span class="card-title">Hành động</span>
                         <ul class="collection">
                             <li class="collection-item">
-                                <a href="#!" class="black-text">
+                                <a asp-action="EditProfile" class="black-text">
                                     <i class="material-icons left">edit</i>Chỉnh sửa thông tin
                                 </a>
                             </li>
@@ -101,13 +150,8 @@
                                 </li>
                             }
                             <li class="collection-item">
-                                <a href="#!" class="black-text">
+                                <a asp-action="ChangePassword" class="black-text">
                                     <i class="material-icons left">lock</i>Đổi mật khẩu
-                                </a>
-                            </li>
-                            <li class="collection-item">
-                                <a href="#!" class="black-text">
-                                    <i class="material-icons left">notifications</i>Cài đặt thông báo
                                 </a>
                             </li>
                         </ul>
@@ -126,14 +170,6 @@
                         </span>
                         <table class="striped">
                             <tbody>
-                                <tr>
-                                    <td><strong>User ID:</strong></td>
-                                    <td><code>@Model.UserId</code></td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Tên đăng nhập:</strong></td>
-                                    <td>@Model.Username</td>
-                                </tr>
                                 <tr>
                                     <td><strong>Email:</strong></td>
                                     <td>
@@ -161,10 +197,6 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Vai trò:</strong></td>
-                                    <td>@Model.RoleName (@Model.RoleCode)</td>
-                                </tr>
-                                <tr>
                                     <td><strong>Ngày tạo:</strong></td>
                                     <td>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
                                 </tr>
@@ -188,7 +220,6 @@
 
                 @if (Model.CustomerId.HasValue)
                 {
-                    <!-- Customer Information -->
                     <div class="card">
                         <div class="card-content">
                             <span class="card-title">
@@ -197,10 +228,6 @@
                             </span>
                             <table class="striped">
                                 <tbody>
-                                    <tr>
-                                        <td><strong>Mã khách hàng:</strong></td>
-                                        <td><code>@Model.CustomerId</code></td>
-                                    </tr>
                                     <tr>
                                         <td><strong>Họ và tên:</strong></td>
                                         <td>@Model.CustomerFullName</td>
@@ -337,47 +364,3 @@
         </div>
     </div>
 </div>
-
-<style>
-    .ucar-avatar-large {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 20px;
-    }
-
-    .ucar-avatar-large i {
-        font-size: 64px;
-        color: white;
-    }
-
-    .mt-3 {
-        margin-top: 1rem;
-    }
-
-    .mt-4 {
-        margin-top: 1.5rem;
-    }
-
-    .chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .chip i.tiny {
-        font-size: 16px;
-    }
-
-    code {
-        background-color: #f5f5f5;
-        padding: 2px 6px;
-        border-radius: 3px;
-        font-family: 'Courier New', monospace;
-        font-size: 0.9em;
-    }
-</style>
