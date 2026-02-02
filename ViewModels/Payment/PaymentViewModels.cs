@@ -98,10 +98,12 @@ public class PaymentTransactionViewModel
     public TransactionType TxnType { get; set; }
     public string TxnTypeName => TxnType switch
     {
-        TransactionType.Deposit => "Đặt cọc",
+        TransactionType.ResponsibilityDeposit => "Cọc trách nhiệm",
+        TransactionType.RentalDeposit => "Cọc thuê xe",
         TransactionType.RentalFee => "Phí thuê xe",
         TransactionType.Penalty => "Phí phạt",
-        TransactionType.Refund => "Hoàn tiền",
+        TransactionType.RefundResponsibility => "Hoàn cọc trách nhiệm",
+        TransactionType.RefundRental => "Hoàn cọc thuê xe",
         _ => TxnType.ToString()
     };
     public decimal Amount { get; set; }
