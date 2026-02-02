@@ -14,6 +14,7 @@ namespace UCar.Services;
 public class ShiftService : IShiftService
 {
     private readonly UCarDbContext _context;
+    private readonly IBranchAccessService _branchAccess;
 
     // Colors for calendar events
     private static readonly string[] ShiftColors =
@@ -26,9 +27,10 @@ public class ShiftService : IShiftService
         "#00BCD4", // Cyan
     };
 
-    public ShiftService(UCarDbContext context)
+    public ShiftService(UCarDbContext context, IBranchAccessService branchAccess)
     {
         _context = context;
+        _branchAccess = branchAccess;
     }
 
     #region Shift CRUD

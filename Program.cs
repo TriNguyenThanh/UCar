@@ -31,6 +31,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 // Register application services
+builder.Services.AddHttpContextAccessor(); // Required for IBranchAccessService
+builder.Services.AddScoped<IBranchAccessService, BranchAccessService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 
@@ -45,6 +47,9 @@ builder.Services.AddScoped<IBookingService, BookingService>();
 
 // Register Contract services
 builder.Services.AddScoped<IContractService, ContractService>();
+
+// Register Payment services
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 // Register Operations & HR services (Module 8.0)
 builder.Services.AddScoped<IBranchService, BranchService>();

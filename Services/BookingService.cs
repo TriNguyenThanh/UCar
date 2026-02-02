@@ -11,11 +11,13 @@ public class BookingService : IBookingService
 {
     private readonly UCarDbContext _context;
     private readonly ILogger<BookingService> _logger;
+    private readonly IBranchAccessService _branchAccess;
 
-    public BookingService(UCarDbContext context, ILogger<BookingService> logger)
+    public BookingService(UCarDbContext context, ILogger<BookingService> logger, IBranchAccessService branchAccess)
     {
         _context = context;
         _logger = logger;
+        _branchAccess = branchAccess;
     }
 
     public async Task<List<VehicleSearchResultVM>> SearchVehiclesAsync(
@@ -36,6 +38,14 @@ public class BookingService : IBookingService
             .Include(v => v.Model.VehicleType.Prices)
             .Where(v => v.CurrentStatus == VehicleStatus.Available || 
                         v.CurrentStatus == VehicleStatus.Reserved);
+
+        // *** BRANCH ACCESS FILTER ***
+        // BranchManager và Staff chỉ thấy xe thuộc chi nhánh mình
+        var userBranchId = _branchAccess.GetCurrentUserBranchId();
+        if (userBranchId.HasValue)
+        {
+            query = query.Where(v => v.BranchId == userBranchId.Value);
+        }
 
         // Apply filters
         if (vehicleTypeId.HasValue)
@@ -202,6 +212,15 @@ public class BookingService : IBookingService
             .Include(b => b.AssignedVehicle)
             .ThenInclude(v => v.Model)
             .AsQueryable();
+
+        // *** BRANCH ACCESS FILTER ***
+        // BranchManager và Staff chỉ thấy booking của xe thuộc chi nhánh mình
+        var userBranchId = _branchAccess.GetCurrentUserBranchId();
+        if (userBranchId.HasValue)
+        {
+            query = query.Where(b => b.AssignedVehicle != null && 
+                                    b.AssignedVehicle.BranchId == userBranchId.Value);
+        }
 
         if (status.HasValue) query = query.Where(b => b.Status == status.Value);
         if (fromDate.HasValue) query = query.Where(b => b.StartAt >= fromDate.Value);

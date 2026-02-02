@@ -15,9 +15,31 @@
                 Biên bản nhận xe - @Model.ContractCode
             </h4>
         </div>
-        <button class="btn waves-effect waves-light" onclick="window.print()">
-            <i class="material-icons left">print</i>In biên bản
-        </button>
+        <div>
+            <button class="btn waves-effect waves-light" onclick="window.print()">
+                <i class="material-icons left">print</i>In biên bản
+            </button>
+            @if (!Model.IsPaid && Model.AmountDue > 0)
+            {
+                <a href="@Url.Action("Payment", "Payment", new { contractId = Model.ContractId })" 
+                   class="btn waves-effect waves-light green" style="margin-left: 0.5rem;">
+                    <i class="material-icons left">payment</i>Thanh toán (@Model.RemainingAmount.ToString("N0")đ)
+                </a>
+            }
+            else if (Model.IsPaid)
+            {
+                <span class="btn disabled green lighten-2" style="margin-left: 0.5rem;">
+                    <i class="material-icons left">check_circle</i>Đã thanh toán
+                </span>
+            }
+            else if (Model.AmountDue < 0)
+            {
+                <a href="@Url.Action("Refund", "Payment", new { contractId = Model.ContractId })" 
+                   class="btn waves-effect waves-light orange" style="margin-left: 0.5rem;">
+                    <i class="material-icons left">money_off</i>Hoàn tiền (@Math.Abs(Model.AmountDue).ToString("N0")đ)
+                </a>
+            }
+        </div>
     </div>
 
     <!-- Document Content -->

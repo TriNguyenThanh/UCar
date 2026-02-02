@@ -15,11 +15,13 @@ public class StaffController : Controller
 {
     private readonly IStaffService _staffService;
     private readonly IBranchService _branchService;
+    private readonly IBranchAccessService _branchAccess;
 
-    public StaffController(IStaffService staffService, IBranchService branchService)
+    public StaffController(IStaffService staffService, IBranchService branchService, IBranchAccessService branchAccess)
     {
         _staffService = staffService;
         _branchService = branchService;
+        _branchAccess = branchAccess;
     }
 
     /// <summary>Lấy User ID từ authentication cookie</summary>
@@ -35,9 +37,17 @@ public class StaffController : Controller
     /// <summary>Danh sách nhân viên</summary>
     public async Task<IActionResult> Index(StaffFilterDto filter)
     {
+        // Auto-set BranchId for BranchManager
+        var userBranchId = _branchAccess.GetCurrentUserBranchId();
+        if (userBranchId.HasValue)
+        {
+            filter.BranchId = userBranchId.Value;
+        }
+
         var result = await _staffService.GetStaffListAsync(filter);
         ViewBag.Filter = filter;
         ViewBag.Branches = await _branchService.GetAllAsync();
+        ViewBag.IsBranchManager = userBranchId.HasValue;
         return View(result);
     }
 

@@ -17,11 +17,13 @@ public class HandoverService : IHandoverService
 {
     private readonly UCarDbContext _context;
     private readonly IVehicleStatusService _vehicleStatusService;
+    private readonly IBranchAccessService _branchAccess;
 
-    public HandoverService(UCarDbContext context, IVehicleStatusService vehicleStatusService)
+    public HandoverService(UCarDbContext context, IVehicleStatusService vehicleStatusService, IBranchAccessService branchAccess)
     {
         _context = context;
         _vehicleStatusService = vehicleStatusService;
+        _branchAccess = branchAccess;
     }
 
     #region Contract List for Handover
@@ -104,7 +106,7 @@ public class HandoverService : IHandoverService
 
     public async Task<IEnumerable<ContractForHandoverListDto>> GetOverdueContractsAsync()
     {
-        var contracts = await _context.RentalContracts
+        var query = _context.RentalContracts
             .Include(c => c.Customer)
                 .ThenInclude(cu => cu.UserAccount)
             .Include(c => c.Vehicle)
@@ -113,9 +115,18 @@ public class HandoverService : IHandoverService
             .Include(c => c.Vehicle)
                 .ThenInclude(v => v.Branch)
             .Where(c => c.Status == RentalContractStatus.InProgress)
-
             .Where(c => c.PlannedEnd < DateTime.UtcNow)
             .Where(c => c.ReturnRecord == null)
+            .AsQueryable();
+
+        // Branch filtering
+        var userBranchId = _branchAccess.GetCurrentUserBranchId();
+        if (userBranchId.HasValue)
+        {
+            query = query.Where(c => c.Vehicle.BranchId == userBranchId.Value);
+        }
+
+        var contracts = await query
             .OrderBy(c => c.PlannedEnd)
             .Take(50)
             .ToListAsync();
@@ -536,6 +547,8 @@ public class HandoverService : IHandoverService
                 .ThenInclude(c => c.HandoverRecord)
             .Include(r => r.RentalContract)
                 .ThenInclude(c => c.Charges)
+            .Include(r => r.RentalContract)
+                .ThenInclude(c => c.PaymentTransactions)
             .Include(r => r.ReceivedByUser)
             .Include(r => r.AccessoriesReturned)
             .FirstOrDefaultAsync(r => r.ContractId == contractId);
@@ -544,6 +557,11 @@ public class HandoverService : IHandoverService
 
         var contract = returnRecord.RentalContract;
         var handover = contract.HandoverRecord!;
+        
+        // Calculate payment info
+        var totalPaid = contract.PaymentTransactions
+            .Where(p => p.Status == Models.Enums.TransactionStatus.Success)
+            .Sum(p => p.Amount);
 
         return new ReturnRecordDetailDto
         {
@@ -587,6 +605,8 @@ public class HandoverService : IHandoverService
             RentalUnitPrice = contract.SnapshotUnitPrice,
             RentalAmount = contract.RentalAmount,
             DepositAmount = contract.SnapshotDepositAmount,
+            AmountPaid = totalPaid,
+            IsPaid = totalPaid >= (contract.RentalAmount + contract.ExtraCharges - contract.SnapshotDepositAmount),
             Note = returnRecord.Note,
             ReceivedByName = returnRecord.ReceivedByUser.StaffProfile?.FullName ?? returnRecord.ReceivedByUser.Username,
             BranchName = contract.Vehicle.Branch.Name
@@ -688,6 +708,14 @@ public class HandoverService : IHandoverService
 
     private IQueryable<RentalContract> ApplyFilters(IQueryable<RentalContract> query, HandoverFilterDto filter)
     {
+        // *** BRANCH ACCESS FILTER ***
+        // BranchManager và Staff chỉ thấy hợp đồng của xe thuộc chi nhánh mình
+        var userBranchId = _branchAccess.GetCurrentUserBranchId();
+        if (userBranchId.HasValue)
+        {
+            query = query.Where(c => c.Vehicle.BranchId == userBranchId.Value);
+        }
+
         if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
         {
             var term = filter.SearchTerm.Trim().ToLower();
@@ -696,7 +724,8 @@ public class HandoverService : IHandoverService
                                     c.Customer.UserAccount.Phone!.Contains(term));
         }
 
-        if (filter.BranchId.HasValue)
+        // Chỉ filter thêm theo BranchId nếu Admin muốn lọc theo chi nhánh cụ thể
+        if (filter.BranchId.HasValue && !userBranchId.HasValue)
             query = query.Where(c => c.Vehicle.BranchId == filter.BranchId.Value);
 
         if (filter.Status.HasValue)

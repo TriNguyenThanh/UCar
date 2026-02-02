@@ -15,11 +15,13 @@ public class VehicleService : IVehicleService
 {
     private readonly UCarDbContext _context;
     private readonly IVehicleStatusService _statusService;
+    private readonly IBranchAccessService _branchAccess;
 
-    public VehicleService(UCarDbContext context, IVehicleStatusService statusService)
+    public VehicleService(UCarDbContext context, IVehicleStatusService statusService, IBranchAccessService branchAccess)
     {
         _context = context;
         _statusService = statusService;
+        _branchAccess = branchAccess;
     }
 
     public async Task<PagedResult<VehicleListDto>> GetAllVehiclesAsync(VehicleFilterDto? filter = null)
@@ -31,6 +33,14 @@ public class VehicleService : IVehicleService
                 .ThenInclude(m => m.VehicleType)
             .Include(v => v.Branch)
             .AsQueryable();
+
+        // *** BRANCH ACCESS FILTER ***
+        // BranchManager và Staff chỉ thấy xe thuộc chi nhánh của mình
+        var userBranchId = _branchAccess.GetCurrentUserBranchId();
+        if (userBranchId.HasValue)
+        {
+            query = query.Where(v => v.BranchId == userBranchId.Value);
+        }
 
         // Apply filters
         if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
@@ -57,7 +67,8 @@ public class VehicleService : IVehicleService
             query = query.Where(v => v.CurrentStatus == filter.Status.Value);
         }
 
-        if (filter.BranchId.HasValue)
+        // Chỉ filter thêm theo BranchId nếu Admin muốn lọc theo chi nhánh cụ thể
+        if (filter.BranchId.HasValue && !userBranchId.HasValue)
         {
             query = query.Where(v => v.BranchId == filter.BranchId.Value);
         }
@@ -385,6 +396,14 @@ public class VehicleService : IVehicleService
     {
         var query = _context.Vehicles.AsQueryable();
 
+        // *** BRANCH ACCESS FILTER ***
+        // BranchManager và Staff chỉ thấy stats của xe thuộc chi nhánh mình
+        var userBranchId = _branchAccess.GetCurrentUserBranchId();
+        if (userBranchId.HasValue)
+        {
+            query = query.Where(v => v.BranchId == userBranchId.Value);
+        }
+
         // Apply same filters as GetAllVehiclesAsync (except status filter for stats)
         if (filter != null)
         {
@@ -407,7 +426,8 @@ public class VehicleService : IVehicleService
                 query = query.Where(v => v.Model.Make == filter.Make);
             }
 
-            if (filter.BranchId.HasValue)
+            // Chỉ filter thêm theo BranchId nếu Admin muốn lọc theo chi nhánh cụ thể
+            if (filter.BranchId.HasValue && !userBranchId.HasValue)
             {
                 query = query.Where(v => v.BranchId == filter.BranchId.Value);
             }

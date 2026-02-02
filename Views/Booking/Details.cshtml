@@ -120,7 +120,7 @@
             }
 
             <!-- Card Hợp đồng -->
-            @if (User.IsInRole("Admin") || User.IsInRole("Staff") ||
+            @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff") ||
                 Model.Status == UCar.Models.Enums.BookingStatus.Confirmed || 
                  Model.Status == UCar.Models.Enums.BookingStatus.Deposited ||
                  Model.Status == UCar.Models.Enums.BookingStatus.InProgress ||

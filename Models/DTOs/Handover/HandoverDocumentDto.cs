@@ -108,6 +108,11 @@ public class ReturnRecordDetailDto
     public decimal GrandTotal => RentalAmount + TotalCharges + AccessoryDamageCost;
     public decimal AmountDue => GrandTotal - DepositAmount;
     
+    // Payment status
+    public bool IsPaid { get; set; }
+    public decimal AmountPaid { get; set; }
+    public decimal RemainingAmount => AmountDue - AmountPaid;
+    
     public string? Note { get; set; }
     
     // Staff
