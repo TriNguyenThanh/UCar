@@ -31,7 +31,7 @@
     <!-- Navigation -->
     <nav class="ucar-navbar">
         <div class="nav-wrapper container">
-            @if (User.IsInRole("Admin") || User.IsInRole("Staff"))
+            @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff"))
             {
                 <!-- Brand -->
                 <a asp-controller="Home" asp-action="Index" class="brand-logo">
@@ -60,7 +60,7 @@
             <ul class="right hide-on-med-and-down">
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    @if (User.IsInRole("Admin") || User.IsInRole("Staff"))
+                    @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff"))
                     {
                         <li><a asp-controller="Home" asp-action="Index"><i class="material-icons left">home</i>Trang chủ</a>
                         </li>
@@ -153,8 +153,6 @@
 
     <!-- Handover Management Dropdown Structure -->
     <ul id="handover-dropdown" class="dropdown-content">
-        <li><a asp-controller="Contract" asp-action="Status"><i class="material-icons">fact_check</i>Kiểm tra HĐ</a></li>
-        <li class="divider"></li>
         <li><a asp-controller="Handover" asp-action="Index"><i class="material-icons">exit_to_app</i>Chờ giao xe</a>
         </li>
         <li><a asp-controller="Handover" asp-action="Return"><i class="material-icons">login</i>Chờ nhận xe</a></li>
@@ -167,10 +165,16 @@
     <!-- Operations & HR Dropdown Structure (Module 8.0) -->
     <ul id="operations-dropdown" class="dropdown-content">
         <li><a asp-controller="Staff" asp-action="Index"><i class="material-icons">people</i>Nhân viên</a></li>
-        <li><a asp-controller="Operations" asp-action="Branches"><i class="material-icons">business</i>Chi nhánh</a></li>
+        @if (User.IsInRole("Admin"))
+        {
+            <li><a asp-controller="Operations" asp-action="Branches"><i class="material-icons">business</i>Chi nhánh</a></li>
+        }
         <li class="divider"></li>
         <li><a asp-controller="Operations" asp-action="Tasks"><i class="material-icons">assignment</i>Nhiệm vụ</a></li>
-        <li><a asp-controller="Operations" asp-action="Shifts"><i class="material-icons">schedule</i>Ca làm việc</a></li>
+        @if (User.IsInRole("Admin"))
+        {
+            <li><a asp-controller="Operations" asp-action="Shifts"><i class="material-icons">schedule</i>Ca làm việc</a></li>
+        }
         <li><a asp-controller="Operations" asp-action="ShiftSchedule"><i class="material-icons">calendar_month</i>Lịch xếp ca</a></li>
     </ul>
     
@@ -205,7 +209,7 @@
                 </div>
             </li>
 
-            @if (User.IsInRole("Admin") || User.IsInRole("Staff"))
+            @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff"))
             {
                 <li><a asp-controller="Home" asp-action="Index"><i class="material-icons">home</i>Trang chủ</a></li>
                 
@@ -269,9 +273,15 @@
                             <div class="collapsible-body">
                                 <ul>
                                     <li><a asp-controller="Staff" asp-action="Index">Nhân viên</a></li>
-                                    <li><a asp-controller="Operations" asp-action="Branches">Chi nhánh</a></li>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <li><a asp-controller="Operations" asp-action="Branches">Chi nhánh</a></li>
+                                    }
                                     <li><a asp-controller="Operations" asp-action="Tasks">Nhiệm vụ</a></li>
-                                    <li><a asp-controller="Operations" asp-action="Shifts">Ca làm việc</a></li>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <li><a asp-controller="Operations" asp-action="Shifts">Ca làm việc</a></li>
+                                    }
                                     <li><a asp-controller="Operations" asp-action="ShiftSchedule">Lịch xếp ca</a></li>
                                 </ul>
                             </div>

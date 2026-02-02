@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using UCar.Interfaces;
@@ -10,6 +11,7 @@ namespace UCar.Controllers;
 /// Controller quản lý vận hành (chi nhánh, nhiệm vụ, ca làm)
 /// Tương ứng DFD 8.1, 8.2, 8.3
 /// </summary>
+[Authorize(Roles = "Admin,BranchManager")]
 public class OperationsController : Controller
 {
     private readonly IBranchService _branchService;
@@ -17,19 +19,22 @@ public class OperationsController : Controller
     private readonly IShiftService _shiftService;
     private readonly IStaffService _staffService;
     private readonly IVehicleService _vehicleService;
+    private readonly IBranchAccessService _branchAccess;
 
     public OperationsController(
         IBranchService branchService,
         IOperationalTaskService taskService,
         IShiftService shiftService,
         IStaffService staffService,
-        IVehicleService vehicleService)
+        IVehicleService vehicleService,
+        IBranchAccessService branchAccess)
     {
         _branchService = branchService;
         _taskService = taskService;
         _shiftService = shiftService;
         _staffService = staffService;
         _vehicleService = vehicleService;
+        _branchAccess = branchAccess;
     }
 
     /// <summary>Lấy User ID từ authentication cookie</summary>
@@ -43,12 +48,14 @@ public class OperationsController : Controller
 
     #region Branches (8.1)
 
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Branches()
     {
         var branches = await _branchService.GetAllAsync();
         return View(branches);
     }
 
+    [Authorize(Roles = "Admin")]
     public IActionResult CreateBranch()
     {
         return View(new BranchCreateDto());
@@ -56,6 +63,7 @@ public class OperationsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateBranch(BranchCreateDto dto)
     {
         if (!ModelState.IsValid)
@@ -72,6 +80,7 @@ public class OperationsController : Controller
         return RedirectToAction(nameof(Branches));
     }
 
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> EditBranch(Guid id)
     {
         var branch = await _branchService.GetByIdAsync(id);
@@ -130,10 +139,18 @@ public class OperationsController : Controller
 
     public async Task<IActionResult> Tasks(TaskFilterDto filter)
     {
+        // Auto-set BranchId for BranchManager
+        var userBranchId = _branchAccess.GetCurrentUserBranchId();
+        if (userBranchId.HasValue)
+        {
+            filter.BranchId = userBranchId.Value;
+        }
+
         var result = await _taskService.GetTasksAsync(filter);
         ViewBag.Filter = filter;
         ViewBag.Branches = await _branchService.GetAllAsync();
-        ViewBag.Staff = await _staffService.GetAvailableStaffAsync();
+        ViewBag.Staff = await _staffService.GetAvailableStaffAsync(filter.BranchId);
+        ViewBag.IsBranchManager = userBranchId.HasValue;
         return View(result);
     }
 
@@ -216,6 +233,7 @@ public class OperationsController : Controller
 
     #region Shifts (8.3)
 
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Shifts(Guid? branchId = null)
     {
         var shifts = await _shiftService.GetShiftsAsync(branchId);
@@ -224,6 +242,7 @@ public class OperationsController : Controller
         return View(shifts);
     }
 
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateShift()
     {
         ViewBag.Branches = await _branchService.GetAllAsync();
@@ -232,6 +251,7 @@ public class OperationsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CreateShift(ShiftCreateDto dto)
     {
         if (!ModelState.IsValid)
@@ -252,6 +272,7 @@ public class OperationsController : Controller
         return RedirectToAction(nameof(Shifts));
     }
 
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> EditShift(Guid id)
     {
         var shift = await _shiftService.GetByIdAsync(id);
@@ -275,6 +296,7 @@ public class OperationsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> EditShift(Guid id, ShiftUpdateDto dto)
     {
         if (!ModelState.IsValid)
@@ -299,6 +321,7 @@ public class OperationsController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteShift(Guid id)
     {
         var result = await _shiftService.DeleteShiftAsync(id);
@@ -319,10 +342,18 @@ public class OperationsController : Controller
         filter.DateFrom ??= DateOnly.FromDateTime(DateTime.Today);
         filter.DateTo ??= filter.DateFrom.Value.AddDays(13);
 
+        // Auto-set BranchId for BranchManager
+        var userBranchId = _branchAccess.GetCurrentUserBranchId();
+        if (userBranchId.HasValue)
+        {
+            filter.BranchId = userBranchId.Value;
+        }
+
         ViewBag.Branches = await _branchService.GetAllAsync();
         ViewBag.Shifts = await _shiftService.GetShiftsAsync(filter.BranchId);
         ViewBag.Staff = await _staffService.GetAvailableStaffAsync(filter.BranchId);
         ViewBag.Filter = filter;
+        ViewBag.IsBranchManager = userBranchId.HasValue;
 
         return View();
     }

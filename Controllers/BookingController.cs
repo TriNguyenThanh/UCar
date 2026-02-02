@@ -42,7 +42,8 @@ public class BookingController : Controller
     public async Task<IActionResult> Index()
     {
         ViewBag.Branches = await _bookingService.GetAllBranches();
-        if (User.IsInRole("Admin") || User.IsInRole("Staff"))
+  
+        if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff"))
         {
             return RedirectToAction(nameof(Manage));
         }
@@ -144,8 +145,9 @@ public class BookingController : Controller
         return View(list);
     }
 
-    // GET: /Booking/Manage
-    [Authorize(Roles = "Admin,Staff")]
+    // GET: /Booking/
+    
+    [Authorize(Roles = "Admin,BranchManager,Staff")]
     public async Task<IActionResult> Manage(BookingStatus? status)
     {
         var list = await _bookingService.GetAllBookingsAsync(status);
@@ -155,7 +157,7 @@ public class BookingController : Controller
     // GET: /Booking/Details/5
     public async Task<IActionResult> Details(Guid id)
     {
-        bool isAdmin = User.IsInRole("Admin") || User.IsInRole("Staff");
+        bool isAdmin = User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff");
         var vm = await _bookingService.GetBookingDetailAsync(id, GetCurrentUserId(), isAdmin);
         
         if (vm == null) return NotFound();
@@ -164,7 +166,7 @@ public class BookingController : Controller
 
     // POST: /Booking/Confirm
     [HttpPost]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,BranchManager,Staff")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Confirm(Guid bookingId)
     {
@@ -199,7 +201,7 @@ public class BookingController : Controller
     
     // POST: /Booking/Reject
     [HttpPost]
-    [Authorize(Roles = "Admin,Staff")]
+    [Authorize(Roles = "Admin,BranchManager,Staff")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Reject(BookingActionVM model)
     {

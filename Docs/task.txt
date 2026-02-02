@@ -16,8 +16,8 @@
 15. Chỉnh sửa lại biên bản giao xe: Thiếu tổng giá trị tài sản kèm theo (Hiếu)
 16. Phân quyền giao diện chờ bàn giao xe (kiểm tra toàn bộ quyền) (Hiếu)
 17. Bỏ navigate kiểm tra hợp đồng (Hiếu)
-18. Sửa biên bản nhận xe: (Hiếu)
+18. Sửa biên bản nhận xe: (Hiếu) (Done)
     Thêm tổng chi phí mà khách hàng phải trả (bao gồm phí thuê xe, hư hỏng thiết bị)
 19. Chức năng thanh toán: (Hiếu)
     - Tạo nút thanh toán trong giao diện biên bản nhận xe
-    - Thêm trang thanh toán tương tự hotel management
+    - Thêm trang thanh toán 

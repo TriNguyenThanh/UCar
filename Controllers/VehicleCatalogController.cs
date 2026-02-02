@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using UCar.Interfaces;
@@ -9,6 +10,7 @@ namespace UCar.Controllers;
 /// <summary>
 /// Controller quản lý danh mục xe (loại xe, dòng xe)
 /// </summary>
+[Authorize(Roles = "Admin,BranchManager,Staff")]
 public class VehicleCatalogController : Controller
 {
     private readonly IVehicleCatalogService _catalogService;

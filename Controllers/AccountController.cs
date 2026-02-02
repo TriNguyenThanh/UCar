@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using UCar.Interfaces;
+using UCar.Services;
 using UCar.ViewModels;
 using UCar.Models;
 
@@ -62,7 +63,8 @@ public class AccountController : Controller
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim(ClaimTypes.Name, fullName),
                 new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-                new Claim(ClaimTypes.Role, user.Role.Code.ToString())
+                new Claim(ClaimTypes.Role, user.Role.Code.ToString()),
+                new Claim(BranchAccessService.RoleCodeClaimType, user.Role.Code.ToString())
             };
 
             if (user.Customer != null)
@@ -74,6 +76,8 @@ public class AccountController : Controller
             {
                 claims.Add(new Claim("StaffId", user.StaffProfile.StaffId.ToString()));
                 claims.Add(new Claim("FullName", fullName));
+                // Thêm BranchId claim cho Staff và BranchManager
+                claims.Add(new Claim(BranchAccessService.BranchIdClaimType, user.StaffProfile.BranchId.ToString()));
             }
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -102,6 +106,7 @@ public class AccountController : Controller
             return user.Role.Code switch
             {
                 Models.Enums.RoleCode.Admin => RedirectToAction("Index", "Home"),
+                Models.Enums.RoleCode.BranchManager => RedirectToAction("Index", "Home"),
                 Models.Enums.RoleCode.Staff => RedirectToAction("Index", "Home"),
                 Models.Enums.RoleCode.Customer => RedirectToAction("Index", "Home"),
                 _ => RedirectToAction("Index", "Home")

@@ -15,6 +15,7 @@ public class ContractService : IContractService
 {
     private readonly UCarDbContext _context;
     private readonly ILogger<ContractService> _logger;
+    private readonly IBranchAccessService _branchAccess;
 
     // Điều khoản mặc định
     private const string DefaultTerms = @"ĐIỀU KHOẢN HỢP ĐỒNG THUÊ XE
@@ -28,10 +29,11 @@ public class ContractService : IContractService
 7. Tiền cọc sẽ được hoàn trả sau khi đối soát và xe không có vấn đề.
 8. BÊN CHO THUÊ có quyền thu hồi xe nếu BÊN THUÊ vi phạm điều khoản.";
 
-    public ContractService(UCarDbContext context, ILogger<ContractService> logger)
+    public ContractService(UCarDbContext context, ILogger<ContractService> logger, IBranchAccessService branchAccess)
     {
         _context = context;
         _logger = logger;
+        _branchAccess = branchAccess;
     }
 
     #region 5.1 Tạo và quản lý hợp đồng thuê
@@ -46,6 +48,14 @@ public class ContractService : IContractService
             .Include(c => c.Handler)
             .Include(c => c.Booking)
             .AsQueryable();
+
+        // *** BRANCH ACCESS FILTER ***
+        // BranchManager và Staff chỉ thấy hợp đồng của xe thuộc chi nhánh mình
+        var userBranchId = _branchAccess.GetCurrentUserBranchId();
+        if (userBranchId.HasValue)
+        {
+            query = query.Where(c => c.Vehicle.BranchId == userBranchId.Value);
+        }
 
         // Apply filters
         if (!string.IsNullOrWhiteSpace(filter.Keyword))

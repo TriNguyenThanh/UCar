@@ -1,13 +1,18 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using UCar.Data;
+using UCar.Infrastructure;
 using UCar.Interfaces;
 using UCar.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    // Register custom DateTime model binder for all DateTime properties
+    options.ModelBinderProviders.Insert(0, new DateTimeModelBinderProvider());
+});
 builder.Services.AddDbContext<UCarDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -26,6 +31,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 // Register application services
+builder.Services.AddHttpContextAccessor(); // Required for IBranchAccessService
+builder.Services.AddScoped<IBranchAccessService, BranchAccessService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 
@@ -40,6 +47,9 @@ builder.Services.AddScoped<IBookingService, BookingService>();
 
 // Register Contract services
 builder.Services.AddScoped<IContractService, ContractService>();
+
+// Register Payment services
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 // Register Operations & HR services (Module 8.0)
 builder.Services.AddScoped<IBranchService, BranchService>();
