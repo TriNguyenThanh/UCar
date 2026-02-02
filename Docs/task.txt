@@ -5,6 +5,9 @@
 3. Thêm filter vị trí theo chi nhánh lúc đặt xe (Trí - done)
 4. Comment lại chức năng nhiệm vụ vận hành (Hiếu)
 5. Tạo tài khoản (Trí - done)
+5. Bỏ button hủy khi đã xác nhận đơn đặt xe (Trí)
+5. Thêm nút xác nhận cho nhân viên không cần khách hàng xác nhận online
+5. 
 6. Verify xác nhận đặt xe trước khi tạo hợp đồng
 7. Không sửa ngày tháng khi tạo hợp đồng, không đổi bảng giá thuê xe
 8. Chưa có redict menu quản lý hợp đồng thuê xe 

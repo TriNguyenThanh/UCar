@@ -425,4 +425,4 @@ package-lock.json
 .vscode/*
 Migrations/*
 Migrations
-appsettings.json
+appsettings.dev.json
