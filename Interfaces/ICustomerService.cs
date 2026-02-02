@@ -17,8 +17,11 @@ public interface ICustomerService
     // DFD 2.1: Đăng ký thông tin khách - Tạo mới
     Task<(bool Success, string Message, Guid? CustomerId)> CreateCustomerAsync(CustomerCreateViewModel model);
     
-    // Bổ sung hợp lý: Cập nhật thông tin khách hàng
+    // Bổ sung hợp lý: Cập nhật thông tin khách hàng (Admin/Staff)
     Task<(bool Success, string Message)> UpdateCustomerAsync(CustomerEditViewModel model);
+
+    // Bổ sung hợp lý: Cập nhật thông tin cá nhân (Customer self-service)
+    Task<(bool Success, string Message)> UpdateCustomerProfileAsync(CustomerProfileEditViewModel model);
     
     // Bổ sung hợp lý: Lấy thông tin để edit
     Task<CustomerEditViewModel?> GetCustomerForEditAsync(Guid customerId);
