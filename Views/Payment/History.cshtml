@@ -84,10 +84,12 @@
                             <tbody>
                                 @foreach (var txn in Model.Transactions)
                                 {
+                                    var isRefund = txn.TxnType == UCar.Models.Enums.TransactionType.RefundResponsibility || 
+                                                   txn.TxnType == UCar.Models.Enums.TransactionType.RefundRental;
                                     <tr>
                                         <td>@txn.PaidAt.ToString("dd/MM/yyyy HH:mm")</td>
                                         <td>
-                                            @if (txn.TxnType == UCar.Models.Enums.TransactionType.Refund)
+                                            @if (isRefund)
                                             {
                                                 <span class="chip orange white-text">@txn.TxnTypeName</span>
                                             }
@@ -96,8 +98,8 @@
                                                 <span class="chip teal white-text">@txn.TxnTypeName</span>
                                             }
                                         </td>
-                                        <td class="@(txn.TxnType == UCar.Models.Enums.TransactionType.Refund ? "orange-text" : "green-text")">
-                                            @(txn.TxnType == UCar.Models.Enums.TransactionType.Refund ? "-" : "+")@txn.Amount.ToString("N0") đ
+                                        <td class="@(isRefund ? "orange-text" : "green-text")">
+                                            @(isRefund ? "-" : "+")@txn.Amount.ToString("N0") đ
                                         </td>
                                         <td>@txn.PaymentMethodName</td>
                                         <td>@(txn.BankRefCode ?? "-")</td>

@@ -36,7 +36,9 @@ public class PaymentService : IPaymentService
             return null;
 
         var totalPaid = contract.PaymentTransactions
-            .Where(p => p.Status == TransactionStatus.Success && p.TxnType != TransactionType.Refund)
+            .Where(p => p.Status == TransactionStatus.Success && 
+                        p.TxnType != TransactionType.RefundResponsibility && 
+                        p.TxnType != TransactionType.RefundRental)
             .Sum(p => p.Amount);
 
         var totalCharges = contract.Charges.Sum(c => c.Amount);
@@ -147,7 +149,7 @@ public class PaymentService : IPaymentService
             TxnId = Guid.NewGuid(),
             ContractId = model.ContractId,
             CustomerId = contract.CustomerId,
-            TxnType = TransactionType.Refund,
+            TxnType = TransactionType.RefundRental,
             Amount = model.RefundAmount,
             PaymentMethod = model.RefundMethod,
             BankRefCode = model.BankRefCode,
@@ -192,11 +194,15 @@ public class PaymentService : IPaymentService
             .ToList();
 
         var totalPaid = transactions
-            .Where(t => t.Status == TransactionStatus.Success && t.TxnType != TransactionType.Refund)
+            .Where(t => t.Status == TransactionStatus.Success && 
+                        t.TxnType != TransactionType.RefundResponsibility && 
+                        t.TxnType != TransactionType.RefundRental)
             .Sum(t => t.Amount);
 
         var totalRefunded = transactions
-            .Where(t => t.Status == TransactionStatus.Success && t.TxnType == TransactionType.Refund)
+            .Where(t => t.Status == TransactionStatus.Success && 
+                        (t.TxnType == TransactionType.RefundResponsibility || 
+                         t.TxnType == TransactionType.RefundRental))
             .Sum(t => t.Amount);
 
         return new PaymentHistoryViewModel
