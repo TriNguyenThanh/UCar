@@ -5,15 +5,15 @@ namespace UCar.ViewModels;
 public class LoginViewModel
 {
     [Required(ErrorMessage = "Username is required")]
-    [Display(Name = "Username")]
+    [Display(Name = "Tên đăng nhập")]
     public string Username { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Password is required")]
     [DataType(DataType.Password)]
-    [Display(Name = "Password")]
+    [Display(Name = "Mật khẩu")]
     public string Password { get; set; } = string.Empty;
 
-    [Display(Name = "Remember me")]
+    [Display(Name = "Ghi nhớ đăng nhập")]
     public bool RememberMe { get; set; }
 
     public string? ReturnUrl { get; set; }

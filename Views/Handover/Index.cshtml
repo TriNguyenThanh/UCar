@@ -63,15 +63,15 @@
                     <div class="col s12 m3">
                         <div class="input-field">
                             <i class="material-icons prefix">date_range</i>
-                            <input type="date" id="fromDate" name="FromDate"
-                                value="@filter.FromDate?.ToString("yyyy-MM-dd")" class="datepicker">
+                            <input type="text" id="fromDate" name="FromDate"
+                                value="@filter.FromDate?.ToString("dd/MM/yyyy")" class="datepicker">
                             <label for="fromDate" class="active">Từ ngày</label>
                         </div>
                     </div>
                     <div class="col s12 m3">
                         <div class="input-field">
                             <i class="material-icons prefix">date_range</i>
-                            <input type="date" id="toDate" name="ToDate" value="@filter.ToDate?.ToString("yyyy-MM-dd")"
+                            <input type="text" id="toDate" name="ToDate" value="@filter.ToDate?.ToString("dd/MM/yyyy")"
                                 class="datepicker">
                             <label for="toDate" class="active">Đến ngày</label>
                         </div>
@@ -205,6 +205,66 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            var i18nConfig = {
+                cancel: 'Hủy',
+                clear: 'Xóa',
+                done: 'Chọn',
+                months: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+                monthsShort: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'],
+                weekdays: ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'],
+                weekdaysShort: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+                weekdaysAbbrev: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+            };
+
+            // Initialize fromDate picker
+            var fromDateElem = document.getElementById('fromDate');
+            var fromDatePicker = M.Datepicker.init(fromDateElem, {
+                format: 'dd/mm/yyyy',
+                autoClose: true,
+                i18n: i18nConfig,
+                onSelect: function(date) {
+                    // Update toDate minDate when fromDate is selected
+                    if (toDatePicker) {
+                        toDatePicker.options.minDate = date;
+                        toDatePicker.gotoDate(date);
+                    }
+                }
+            });
+
+            // Initialize toDate picker
+            var toDateElem = document.getElementById('toDate');
+            var toDatePicker = M.Datepicker.init(toDateElem, {
+                format: 'dd/mm/yyyy',
+                autoClose: true,
+                i18n: i18nConfig,
+                onSelect: function(date) {
+                    // Update fromDate maxDate when toDate is selected
+                    if (fromDatePicker) {
+                        fromDatePicker.options.maxDate = date;
+                    }
+                }
+            });
+
+            // Set initial min/max dates if values exist
+            @if (filter.FromDate.HasValue)
+            {
+                <text>
+                var initialFromDate = new Date(@filter.FromDate.Value.Year, @(filter.FromDate.Value.Month - 1), @filter.FromDate.Value.Day);
+                if (toDatePicker) {
+                    toDatePicker.options.minDate = initialFromDate;
+                }
+                </text>
+            }
+            @if (filter.ToDate.HasValue)
+            {
+                <text>
+                var initialToDate = new Date(@filter.ToDate.Value.Year, @(filter.ToDate.Value.Month - 1), @filter.ToDate.Value.Day);
+                if (fromDatePicker) {
+                    fromDatePicker.options.maxDate = initialToDate;
+                }
+                </text>
+            }
+
             // Toast messages
         @if (TempData["SuccessMessage"] != null)
         {

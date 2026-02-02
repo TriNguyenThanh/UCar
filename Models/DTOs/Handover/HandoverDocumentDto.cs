@@ -99,6 +99,20 @@ public class ReturnRecordDetailDto
     public List<ChargeDto> AdditionalCharges { get; set; } = new();
     public decimal TotalCharges => AdditionalCharges.Sum(c => c.Amount);
     
+    // Rental cost info
+    public int RentalDays { get; set; }
+    public decimal RentalUnitPrice { get; set; }
+    public decimal RentalAmount { get; set; }
+    public decimal DepositAmount { get; set; }
+    public decimal AccessoryDamageCost => AccessoriesReturned.Where(a => !a.IsReturnedOk).Sum(a => a.EstimatedValue);
+    public decimal GrandTotal => RentalAmount + TotalCharges + AccessoryDamageCost;
+    public decimal AmountDue => GrandTotal - DepositAmount;
+    
+    // Payment status
+    public bool IsPaid { get; set; }
+    public decimal AmountPaid { get; set; }
+    public decimal RemainingAmount => AmountDue - AmountPaid;
+    
     public string? Note { get; set; }
     
     // Staff

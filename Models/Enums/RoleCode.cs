@@ -4,5 +4,6 @@ public enum RoleCode
 {
     Customer,
     Staff,
+    BranchManager,
     Admin
 }

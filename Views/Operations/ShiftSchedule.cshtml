@@ -6,6 +6,7 @@
     var branches = ViewBag.Branches as IEnumerable<BranchDto> ?? Enumerable.Empty<BranchDto>();
     var shifts = ViewBag.Shifts as IEnumerable<ShiftDto> ?? Enumerable.Empty<ShiftDto>();
     var staff = ViewBag.Staff as IEnumerable<StaffListDto> ?? Enumerable.Empty<StaffListDto>();
+    var isBranchManager = ViewBag.IsBranchManager as bool? ?? false;
 }
 
 <div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
@@ -19,11 +20,14 @@
             </h4>
             <p class="grey-text text-darken-1" style="margin: 0;">DFD 8.3 - Xếp lịch ca làm cho nhân viên</p>
         </div>
+        @if (User.IsInRole("Admin"))
+        {
         <div>
             <a asp-action="Shifts" class="btn waves-effect waves-light blue">
                 <i class="material-icons left">schedule</i>Quản lý ca
             </a>
         </div>
+        }
     </div>
 
     <!-- Stats Row - Demo.cshtml style -->
@@ -61,6 +65,8 @@
     <!-- Filter -->
     <div class="card">
         <div class="card-content" style="padding: 1rem 1.5rem;">
+            @if (!isBranchManager)
+            {
             <form method="get" asp-action="ShiftSchedule"
                 style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                 <div class="input-field" style="margin: 0; flex: 1; min-width: 200px;">
@@ -76,6 +82,14 @@
                     <i class="material-icons left">filter_list</i>Áp dụng
                 </button>
             </form>
+            }
+            else
+            {
+                <p class="grey-text" style="margin: 0;">
+                    <i class="material-icons tiny" style="vertical-align: middle;">info</i>
+                    Hiển thị lịch cho chi nhánh của bạn
+                </p>
+            }
         </div>
     </div>
 

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using UCar.Interfaces;
+using UCar.Services;
 using UCar.ViewModels;
 using UCar.Models;
 
@@ -62,7 +63,8 @@ public class AccountController : Controller
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim(ClaimTypes.Name, fullName),
                 new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-                new Claim(ClaimTypes.Role, user.Role.Code.ToString())
+                new Claim(ClaimTypes.Role, user.Role.Code.ToString()),
+                new Claim(BranchAccessService.RoleCodeClaimType, user.Role.Code.ToString())
             };
 
             if (user.Customer != null)
@@ -74,6 +76,8 @@ public class AccountController : Controller
             {
                 claims.Add(new Claim("StaffId", user.StaffProfile.StaffId.ToString()));
                 claims.Add(new Claim("FullName", fullName));
+                // Thêm BranchId claim cho Staff và BranchManager
+                claims.Add(new Claim(BranchAccessService.BranchIdClaimType, user.StaffProfile.BranchId.ToString()));
             }
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -102,6 +106,7 @@ public class AccountController : Controller
             return user.Role.Code switch
             {
                 Models.Enums.RoleCode.Admin => RedirectToAction("Index", "Home"),
+                Models.Enums.RoleCode.BranchManager => RedirectToAction("Index", "Home"),
                 Models.Enums.RoleCode.Staff => RedirectToAction("Index", "Home"),
                 Models.Enums.RoleCode.Customer => RedirectToAction("Index", "Home"),
                 _ => RedirectToAction("Index", "Home")
@@ -113,6 +118,43 @@ public class AccountController : Controller
             ModelState.AddModelError(string.Empty, "An error occurred during login. Please try again.");
             return View(model);
         }
+    }
+
+    [HttpGet]
+    public IActionResult Register()
+    {
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            return RedirectToAction("Index", "Home");
+        }
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Register(RegisterViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var (success, errorMessage, user) = await _authService.RegisterCustomerAsync(model);
+
+        if (!success)
+        {
+            ModelState.AddModelError(string.Empty, errorMessage);
+            return View(model);
+        }
+
+        // Login automatically
+        await Login(new LoginViewModel 
+        { 
+            Username = model.Username, 
+            Password = model.Password 
+        });
+
+        return RedirectToAction("Index", "Home");
     }
 
     [Authorize]
@@ -173,6 +215,108 @@ public class AccountController : Controller
         }
 
         return View(viewModel);
+    }
+
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> EditProfile()
+    {
+        var customerIdClaim = User.FindFirst("CustomerId");
+        if (customerIdClaim == null || !Guid.TryParse(customerIdClaim.Value, out var customerId))
+        {
+             // Staff profile editing not implemented yet
+            return RedirectToAction("Profile");
+        }
+
+        var customer = await _customerService.GetCustomerForEditAsync(customerId);
+        if (customer == null)
+        {
+            return NotFound();
+        }
+
+        var model = new CustomerProfileEditViewModel
+        {
+            CustomerId = customer.CustomerId,
+            FullName = customer.FullName,
+            Email = customer.Email,
+            Phone = customer.Phone,
+            Dob = customer.Dob,
+            AddressText = customer.AddressText
+        };
+
+        return View(model);
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditProfile(CustomerProfileEditViewModel model)
+    {
+        var customerIdClaim = User.FindFirst("CustomerId");
+        if (customerIdClaim == null || !Guid.TryParse(customerIdClaim.Value, out var customerId))
+        {
+            return RedirectToAction("Profile");
+        }
+
+        if (model.CustomerId != customerId)
+        {
+            return Forbid();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var (success, message) = await _customerService.UpdateCustomerProfileAsync(model);
+
+        if (success)
+        {
+            TempData["SuccessMessage"] = message;
+            return RedirectToAction("Profile");
+        }
+        else
+        {
+            ModelState.AddModelError("", message);
+            return View(model);
+        }
+    }
+
+    [Authorize]
+    [HttpGet]
+    public IActionResult ChangePassword()
+    {
+        return View();
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+        {
+            return RedirectToAction("Login");
+        }
+
+        var (success, message) = await _authService.ChangePasswordAsync(userId, model.CurrentPassword, model.NewPassword);
+
+        if (success)
+        {
+            TempData["SuccessMessage"] = message;
+            return RedirectToAction("Profile");
+        }
+        else
+        {
+            ModelState.AddModelError(string.Empty, message);
+            return View(model);
+        }
     }
 
     /// <summary>

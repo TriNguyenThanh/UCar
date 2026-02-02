@@ -24,7 +24,7 @@
             <span class="@Model.StatusClass" style="font-size: 1rem;">@Model.StatusDisplay</span>
         </div>
         <div>
-            @if (Model.CanEdit && (User.IsInRole("Admin") || User.IsInRole("Staff")))
+            @if (Model.CanEdit && (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff")))
             {
                 <a asp-action="Edit" asp-route-id="@Model.ContractId" class="btn waves-effect waves-light">
                     <i class="material-icons left">edit</i>Sửa
@@ -292,35 +292,35 @@
                             </a>
                         }
                         
-                        @if (Model.CanConfirm && (User.IsInRole("Admin") || User.IsInRole("Staff")))
+                        @if (Model.CanConfirm && (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff")))
                         {
                             <a asp-action="Confirm" asp-route-id="@Model.ContractId" class="btn waves-effect waves-light blue">
                                 <i class="material-icons left">check</i>Xác nhận
                             </a>
                         }
                         
-                        @if (Model.CanHandover && (User.IsInRole("Admin") || User.IsInRole("Staff")))
+                        @if (Model.CanHandover && (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff")))
                         {
                             <a asp-controller="Handover" asp-action="CheckOut" asp-route-contractId="@Model.ContractId" class="btn waves-effect waves-light teal">
                                 <i class="material-icons left">car_rental</i>Bàn giao xe
                             </a>
                         }
                         
-                        @if (Model.CanEdit && (User.IsInRole("Admin") || User.IsInRole("Staff")))
+                        @if (Model.CanEdit && (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff")))
                         {
                             <a asp-action="Edit" asp-route-id="@Model.ContractId" class="btn btn-secondary waves-effect waves-light">
                                 <i class="material-icons left">edit</i>Chỉnh sửa
                             </a>
                         }
                         
-                        @if (Model.Status == UCar.Models.Enums.RentalContractStatus.InProgress && (User.IsInRole("Admin") || User.IsInRole("Staff")))
+                        @if (Model.Status == UCar.Models.Enums.RentalContractStatus.InProgress && (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff")))
                         {
                             @* <a asp-action="Extend" asp-route-id="@Model.ContractId" class="btn btn-secondary waves-effect waves-light">
                                 <i class="material-icons left">update</i>Gia hạn
                             </a> *@
                         }
                         
-                        @if (Model.CanCancel && (User.IsInRole("Admin") || User.IsInRole("Staff")))
+                        @if (Model.CanCancel && (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff")))
                         {
                             <a asp-action="Cancel" asp-route-id="@Model.ContractId" class="btn waves-effect waves-light red">
                                 <i class="material-icons left">cancel</i>Hủy hợp đồng
@@ -459,7 +459,7 @@
                 </div>
             </div>
 
-            @if (!string.IsNullOrWhiteSpace(Model.InternalNote) && (User.IsInRole("Admin") || User.IsInRole("Staff")))
+            @if (!string.IsNullOrWhiteSpace(Model.InternalNote) && (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff")))
             {
                 <div class="card amber lighten-4">
                     <div class="card-content">

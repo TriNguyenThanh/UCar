@@ -15,10 +15,12 @@ namespace UCar.Services;
 public class StaffService : IStaffService
 {
     private readonly UCarDbContext _context;
+    private readonly IBranchAccessService _branchAccess;
 
-    public StaffService(UCarDbContext context)
+    public StaffService(UCarDbContext context, IBranchAccessService branchAccess)
     {
         _context = context;
+        _branchAccess = branchAccess;
     }
 
     public async Task<PagedResult<StaffListDto>> GetStaffListAsync(StaffFilterDto filter)
@@ -27,6 +29,14 @@ public class StaffService : IStaffService
             .Include(s => s.UserAccount)
             .Include(s => s.Branch)
             .AsQueryable();
+
+        // *** BRANCH ACCESS FILTER ***
+        // BranchManager chỉ thấy nhân viên thuộc chi nhánh mình
+        var userBranchId = _branchAccess.GetCurrentUserBranchId();
+        if (userBranchId.HasValue)
+        {
+            query = query.Where(s => s.BranchId == userBranchId.Value);
+        }
 
         // Apply filters
         if (!string.IsNullOrWhiteSpace(filter.Search))
@@ -38,7 +48,8 @@ public class StaffService : IStaffService
                 (s.UserAccount.Email != null && s.UserAccount.Email.ToLower().Contains(search)));
         }
 
-        if (filter.BranchId.HasValue)
+        // Chỉ filter thêm theo BranchId nếu Admin muốn lọc theo chi nhánh cụ thể
+        if (filter.BranchId.HasValue && !userBranchId.HasValue)
             query = query.Where(s => s.BranchId == filter.BranchId.Value);
 
         if (!string.IsNullOrWhiteSpace(filter.Position))

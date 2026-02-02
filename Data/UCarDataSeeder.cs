@@ -30,7 +30,7 @@ public static class UCarDataSeeder
         // Seed in dependency order
         var roles = await SeedRolesAsync(context);
         var (users, branches) = await SeedUsersAndBranchesAsync(context, roles);
-        var (staffList, customers) = await SeedStaffAndCustomersAsync(context, users, branches, roles.staff);
+        var (staffList, customers) = await SeedStaffAndCustomersAsync(context, users, branches, roles);
         var (vehicleTypes, vehicleModels, vehicles) = await SeedVehiclesAsync(context, branches);
         await SeedPricesAsync(context, vehicleTypes, vehicleModels);
         await SeedHolidaysAsync(context, users.adminUser);
@@ -95,7 +95,7 @@ public static class UCarDataSeeder
     }
 
     #region 1. Roles
-    private static async Task<(Role admin, Role staff, Role customer)> SeedRolesAsync(UCarDbContext context)
+    private static async Task<(Role admin, Role branchManager, Role staff, Role customer)> SeedRolesAsync(UCarDbContext context)
     {
         Console.WriteLine("Seeding Roles...");
 
@@ -104,6 +104,14 @@ public static class UCarDataSeeder
             RoleId = Guid.NewGuid(),
             Code = RoleCode.Admin,
             Name = "Quản trị viên",
+            IsActive = true
+        };
+
+        var branchManagerRole = new Role
+        {
+            RoleId = Guid.NewGuid(),
+            Code = RoleCode.BranchManager,
+            Name = "Quản lý chi nhánh",
             IsActive = true
         };
 
@@ -123,17 +131,17 @@ public static class UCarDataSeeder
             IsActive = true
         };
 
-        await context.Roles.AddRangeAsync(adminRole, staffRole, customerRole);
+        await context.Roles.AddRangeAsync(adminRole, branchManagerRole, staffRole, customerRole);
         await context.SaveChangesAsync();
 
-        Console.WriteLine("  ✓ Created 3 roles");
-        return (adminRole, staffRole, customerRole);
+        Console.WriteLine("  ✓ Created 4 roles (Admin, BranchManager, Staff, Customer)");
+        return (adminRole, branchManagerRole, staffRole, customerRole);
     }
     #endregion
 
     #region 2. Users & Branches
-    private static async Task<((UserAccount adminUser, UserAccount staffUser, List<UserAccount> customerUsers) users, List<Branch> branches)>
-        SeedUsersAndBranchesAsync(UCarDbContext context, (Role admin, Role staff, Role customer) roles)
+    private static async Task<((UserAccount adminUser, UserAccount staffUser, List<UserAccount> branchManagerUsers, List<UserAccount> customerUsers) users, List<Branch> branches)>
+        SeedUsersAndBranchesAsync(UCarDbContext context, (Role admin, Role branchManager, Role staff, Role customer) roles)
     {
         Console.WriteLine("Seeding Users and Branches...");
 
@@ -204,25 +212,60 @@ public static class UCarDataSeeder
         };
 
         await context.Branches.AddRangeAsync(branches);
+
+        // Branch Manager Users (one for each branch)
+        var branchManagerUsers = new List<UserAccount>();
+        var managerNames = new[] { "Nguyễn Quản Lý 1", "Trần Quản Lý 2", "Lê Quản Lý 3", "Phạm Quản Lý 4", "Hoàng Quản Lý 5" };
+        for (int i = 0; i < branches.Count; i++)
+        {
+            branchManagerUsers.Add(new UserAccount
+            {
+                UserId = Guid.NewGuid(),
+                RoleId = roles.branchManager.RoleId,
+                Username = $"manager{i + 1}",
+                Email = $"manager{i + 1}@ucar.com",
+                Phone = $"091{i + 1:D7}",
+                PasswordHash = HashPassword("manager123"),
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+        await context.UserAccounts.AddRangeAsync(branchManagerUsers);
         await context.SaveChangesAsync();
 
-        Console.WriteLine($"  ✓ Created {2 + customerUsers.Count} users, {branches.Count} branches");
-        return ((adminUser, staffUser, customerUsers), branches);
+        Console.WriteLine($"  ✓ Created {2 + branchManagerUsers.Count + customerUsers.Count} users, {branches.Count} branches");
+        return ((adminUser, staffUser, branchManagerUsers, customerUsers), branches);
     }
     #endregion
 
     #region 3. Staff & Customers
     private static async Task<(List<StaffProfile> staffList, List<Customer> customers)> SeedStaffAndCustomersAsync(
         UCarDbContext context,
-        (UserAccount adminUser, UserAccount staffUser, List<UserAccount> customerUsers) users,
+        (UserAccount adminUser, UserAccount staffUser, List<UserAccount> branchManagerUsers, List<UserAccount> customerUsers) users,
         List<Branch> branches,
-        Role staffRole)
+        (Role admin, Role branchManager, Role staff, Role customer) roles)
     {
         Console.WriteLine("Seeding Staff Profiles and Customers...");
 
         string HashPassword(string password) => BCrypt.Net.BCrypt.HashPassword(password);
 
         var staffList = new List<StaffProfile>();
+
+        // Create StaffProfile for each BranchManager (linked to their branch)
+        for (int i = 0; i < users.branchManagerUsers.Count && i < branches.Count; i++)
+        {
+            var managerProfile = new StaffProfile
+            {
+                StaffId = Guid.NewGuid(),
+                UserId = users.branchManagerUsers[i].UserId,
+                BranchId = branches[i].BranchId,
+                StaffCode = $"QL00{i + 1}",
+                FullName = $"Quản lý {branches[i].Name}",
+                Position = "Quản lý chi nhánh",
+                IsActive = true
+            };
+            staffList.Add(managerProfile);
+        }
 
         // Staff 1 - Existing from staffUser
         var staffProfile1 = new StaffProfile
@@ -247,7 +290,7 @@ public static class UCarDataSeeder
             var staffUser = new UserAccount
             {
                 UserId = Guid.NewGuid(),
-                RoleId = staffRole.RoleId,
+                RoleId = roles.staff.RoleId,
                 Username = $"staff{i + 2}",
                 Email = $"staff{i + 2}@ucar.com",
                 Phone = $"090{i + 2:D7}",

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using UCar.Data;
 using UCar.Interfaces;
 using UCar.Models;
+using UCar.Models.DTOs.Operations;
 using UCar.Models.Enums;
 using UCar.ViewModels.Booking;
 
@@ -11,19 +12,22 @@ public class BookingService : IBookingService
 {
     private readonly UCarDbContext _context;
     private readonly ILogger<BookingService> _logger;
+    private readonly IBranchAccessService _branchAccess;
 
-    public BookingService(UCarDbContext context, ILogger<BookingService> logger)
+    public BookingService(UCarDbContext context, ILogger<BookingService> logger, IBranchAccessService branchAccess)
     {
         _context = context;
         _logger = logger;
+        _branchAccess = branchAccess;
     }
 
     public async Task<List<VehicleSearchResultVM>> SearchVehiclesAsync(
-        DateTime start, 
-        DateTime end, 
-        Guid? vehicleTypeId = null, 
-        string? make = null, 
-        int? seats = null)
+        DateTime start,
+        DateTime end,
+        Guid? vehicleTypeId = null,
+        string? make = null,
+        int? seats = null,
+        Guid? branchId = null)
     {
         // Validate dates
         if (start < DateTime.Now.Date || end <= start) return new List<VehicleSearchResultVM>();
@@ -36,6 +40,14 @@ public class BookingService : IBookingService
             .Include(v => v.Model.VehicleType.Prices)
             .Where(v => v.CurrentStatus == VehicleStatus.Available || 
                         v.CurrentStatus == VehicleStatus.Reserved);
+
+        // *** BRANCH ACCESS FILTER ***
+        // BranchManager và Staff chỉ thấy xe thuộc chi nhánh mình
+        var userBranchId = _branchAccess.GetCurrentUserBranchId();
+        if (userBranchId.HasValue)
+        {
+            query = query.Where(v => v.BranchId == userBranchId.Value);
+        }
 
         // Apply filters
         if (vehicleTypeId.HasValue)
@@ -50,7 +62,10 @@ public class BookingService : IBookingService
         {
             query = query.Where(v => v.Model.Seats == seats.Value);
         }
-
+        if (branchId.HasValue)
+        {
+            query = query.Where(v => v.BranchId == branchId.Value);
+        }
         var candidates = await query.ToListAsync();
         var results = new List<VehicleSearchResultVM>();
 
@@ -96,7 +111,8 @@ public class BookingService : IBookingService
                     EstimatedTotal = dailyPrice * (decimal)days,
                     Seats = v.Model.Seats, 
                     Transmission = v.Model.Transmission?.ToString() ?? "N/A",
-                    ImageUrl = "https://placehold.co/600x400?text=" + v.Model.ModelName.Replace(" ", "+")
+                    ImageUrl = "https://placehold.co/600x400?text=" + v.Model.ModelName.Replace(" ", "+"),
+                    BranchId = v.BranchId
                 });
             }
         }
@@ -131,7 +147,8 @@ public class BookingService : IBookingService
             Year = v.ManufactureYear,
             DailyPrice = dailyPrice,
             EstimatedTotal = dailyPrice * days,
-            IsAvailable = true
+            IsAvailable = true,
+            BranchId = v.BranchId,
         };
     }
 
@@ -205,6 +222,15 @@ public class BookingService : IBookingService
             .Include(b => b.AssignedVehicle)
             .ThenInclude(v => v.Model)
             .AsQueryable();
+
+        // *** BRANCH ACCESS FILTER ***
+        // BranchManager và Staff chỉ thấy booking của xe thuộc chi nhánh mình
+        var userBranchId = _branchAccess.GetCurrentUserBranchId();
+        if (userBranchId.HasValue)
+        {
+            query = query.Where(b => b.AssignedVehicle != null && 
+                                    b.AssignedVehicle.BranchId == userBranchId.Value);
+        }
 
         if (status.HasValue) query = query.Where(b => b.Status == status.Value);
         if (fromDate.HasValue) query = query.Where(b => b.StartAt >= fromDate.Value);
@@ -343,22 +369,37 @@ public class BookingService : IBookingService
     public async Task<bool> CheckAvailabilityAsync(Guid vehicleId, DateTime start, DateTime end, Guid? excludeBookingId = null)
     {
         // Các trạng thái đang chiếm xe: Pending, Confirmed, Deposited, InProgress
-        var blockingStatuses = new[] 
-        { 
-            BookingStatus.Pending, 
-            BookingStatus.Confirmed, 
+        var blockingStatuses = new[]
+        {
+            BookingStatus.Pending,
+            BookingStatus.Confirmed,
             BookingStatus.Deposited,
-            BookingStatus.InProgress 
+            BookingStatus.InProgress
         };
-        
+
         // Overlap formula: (StartA < EndB) && (EndA > StartB)
-        bool overlap = await _context.Bookings.AnyAsync(b => 
+        bool overlap = await _context.Bookings.AnyAsync(b =>
             b.AssignedVehicleId == vehicleId &&
             blockingStatuses.Contains(b.Status) &&
             b.StartAt < end && b.EndAt > start &&
             (!excludeBookingId.HasValue || b.BookingId != excludeBookingId.Value)
         );
-        
+
         return !overlap;
+    }
+    
+    public async Task<List<BranchDto>> GetAllBranches()
+    {
+        List<BranchDto> branches = new List<BranchDto>();
+        branches = await _context.Branches
+            .Select(b => new BranchDto
+            {
+                BranchId = b.BranchId,
+                Name = b.Name,
+                Address = b.Address
+            })
+            .ToListAsync();
+
+        return branches;
     }
 }

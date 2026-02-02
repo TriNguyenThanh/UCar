@@ -84,7 +84,7 @@
         <p class="grey-text text-darken-1" style="font-size: 1.125rem; margin: 0;">@(User.IsInRole("Customer") ? "Thuê xe UCar - Nhanh chóng, tiện lợi" : "Quản lý hệ thống thuê xe UCar")</p>
     </div> *@
 
-    @if (User.IsInRole("Admin") || User.IsInRole("Staff"))
+    @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff"))
     {
     <!-- Stats Cards Row -->
     <div class="row">
@@ -109,7 +109,7 @@
                 <div class="stats-label">Đơn hôm nay</div>
             </div>
         </div>
-        @if (User.IsInRole("Admin"))
+        @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff"))
         {
         <div class="col s12 m6 l3">
             <div class="card stats-card">
@@ -122,7 +122,7 @@
     </div>
     }
 
-    @if (User.IsInRole("Admin") || User.IsInRole("Staff"))
+    @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff"))
     {
     <!-- Secondary Stats -->
     <div class="row">
@@ -232,7 +232,7 @@
             <i class="material-icons orange-text" style="vertical-align: middle; margin-right: 8px;">history</i>
             @(User.IsInRole("Customer") ? "Lịch sử thuê xe của tôi" : "Đơn đặt xe gần đây")
         </h5>
-        @if (User.IsInRole("Admin") || User.IsInRole("Staff"))
+        @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff"))
         {
             @if (Model.NewBookingsCount > 0)
             {
