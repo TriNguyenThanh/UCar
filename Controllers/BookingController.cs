@@ -13,17 +13,20 @@ public class BookingController : Controller
 {
     private readonly IBookingService _bookingService;
     private readonly IVehicleCatalogService _vehicleCatalogService;
+    private readonly IPriceCalculationService _priceCalculationService;
     private readonly ILogger<BookingController> _logger;
     private readonly ICustomerService _customerService;
 
     public BookingController(
         IBookingService bookingService, 
         IVehicleCatalogService vehicleCatalogService,
+        IPriceCalculationService priceCalculationService,
         ICustomerService customerService,
         ILogger<BookingController> logger)
     {
         _bookingService = bookingService;
         _vehicleCatalogService = vehicleCatalogService;
+        _priceCalculationService = priceCalculationService;
         _logger = logger;
         _customerService = customerService;
     }
@@ -233,6 +236,33 @@ public class BookingController : Controller
         // Branches dropdown
         var branches = await _bookingService.GetAllBranches();
         ViewBag.BranchesList = new SelectList(branches, "BranchId", "Name");
+    }
+
+    // POST: /Booking/CalculatePrice
+    [HttpPost]
+    [AllowAnonymous]
+    public async Task<JsonResult> CalculatePrice(Guid vehicleModelId, DateTime startDate, DateTime endDate)
+    {
+        try
+        {
+            var estimate = await _priceCalculationService.CalculateEstimateAsync(
+                vehicleModelId, 
+                startDate, 
+                endDate
+            );
+
+            if (estimate == null)
+            {
+                return Json(new { success = false, message = "Không thể tính giá cho xe này" });
+            }
+
+            return Json(new { success = true, data = estimate });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calculating price for vehicleModelId {VehicleModelId}", vehicleModelId);
+            return Json(new { success = false, message = "Lỗi khi tính giá: " + ex.Message });
+        }
     }
 }
     

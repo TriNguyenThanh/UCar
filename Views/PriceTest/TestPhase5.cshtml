@@ -1,0 +1,263 @@
+@{
+    ViewData["Title"] = "Phase 5 Testing - Controllers & APIs";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4">
+        <i class="fas fa-flask"></i> Phase 5 Testing
+        <small class="text-muted">Controllers & API Integration</small>
+    </h2>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Test Suite Status</h5>
+                </div>
+                <div class="card-body">
+                    <div id="testResults">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                            <p class="mt-2">Running Phase 5 tests...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Manual Price Calculator</h5>
+                </div>
+                <div class="card-body">
+                    <form id="priceCalcForm">
+                        <div class="form-group">
+                            <label>Vehicle Model</label>
+                            <select id="vehicleModelId" class="form-control" required>
+                                <option value="">-- Select Vehicle Model --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Pickup Date</label>
+                            <input type="date" id="pickupDate" class="form-control" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Return Date</label>
+                            <input type="date" id="returnDate" class="form-control" required />
+                        </div>
+                        <button type="submit" class="btn btn-info btn-block">
+                            <i class="fas fa-calculator"></i> Calculate Price
+                        </button>
+                    </form>
+                    <div id="calcResult" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Booking API Test</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Test the public <code>POST /Booking/CalculatePrice</code> API endpoint
+                    </p>
+                    <button id="btnTestBookingAPI" class="btn btn-success btn-block">
+                        <i class="fas fa-rocket"></i> Test Booking API
+                    </button>
+                    <div id="bookingApiResult" class="mt-3"></div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">Holiday Service Test</h5>
+                </div>
+                <div class="card-body">
+                    <button id="btnTestHolidays" class="btn btn-warning btn-block">
+                        <i class="fas fa-calendar"></i> Test Holiday Counting
+                    </button>
+                    <div id="holidayResult" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Load test results on page load
+            loadTestResults();
+            loadVehicleModels();
+
+            // Set default dates
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            $('#pickupDate').val(tomorrow.toISOString().split('T')[0]);
+
+            const nextWeek = new Date();
+            nextWeek.setDate(nextWeek.getDate() + 6);
+            $('#returnDate').val(nextWeek.toISOString().split('T')[0]);
+        });
+
+        // Load automatic test results
+        function loadTestResults() {
+            $.getJSON('/PriceTest/TestPhase5', function (data) {
+                let html = '<h6>Test Results at ' + data.timestamp + '</h6>';
+                html += '<table class="table table-sm">';
+                html += '<thead><tr><th>Test</th><th>Status</th><th>Details</th></tr></thead>';
+                html += '<tbody>';
+
+                data.results.forEach(function (result) {
+                    const statusBadge = result.success
+                        ? '<span class="badge badge-success">PASS</span>'
+                        : '<span class="badge badge-danger">FAIL</span>';
+
+                    let details = '';
+                    if (result.totalCount !== undefined) {
+                        details = `Total: ${result.totalCount}, Items: ${result.priceCount}`;
+                    } else if (result.dailyPrice !== undefined) {
+                        details = `Price: ${result.dailyPrice}`;
+                    } else if (result.totalAmount !== undefined) {
+                        details = `Days: ${result.totalDays} (${result.normalDays}N + ${result.peakDays}P)<br>`;
+                        details += `Total: ${result.totalAmount}, Deposit: ${result.totalDeposit}`;
+                    } else if (result.isMonthlyRate !== undefined) {
+                        details = `Monthly Rate: ${result.isMonthlyRate ? 'Yes' : 'No'}<br>`;
+                        details += `Monthly: ${result.monthlyAmount}, Total: ${result.totalAmount}`;
+                    } else if (result.holidayDays !== undefined) {
+                        details = `Range: ${result.dateRange}<br>`;
+                        details += `Holiday days: ${result.holidayDays}/${result.totalDays}`;
+                    } else if (result.error !== undefined) {
+                        details = `<span class="text-danger">${result.error}</span>`;
+                    }
+
+                    html += `<tr><td>${result.test}</td><td>${statusBadge}</td><td>${details}</td></tr>`;
+                });
+
+                html += '</tbody></table>';
+                $('#testResults').html(html);
+            }).fail(function () {
+                $('#testResults').html('<div class="alert alert-danger">Failed to load test results</div>');
+            });
+        }
+
+        // Load vehicle models for dropdown
+        function loadVehicleModels() {
+            $.getJSON('/PriceTest/Calculate', function () { }).fail(function (xhr) {
+                // Even if fails, try to get from context
+            });
+
+            // Hardcode some models for now (will be replaced with API call)
+            // In production, you'd call a dedicated API endpoint
+            const models = [
+                { id: '00000000-0000-0000-0000-000000000001', name: 'Test Model 1' },
+                { id: '00000000-0000-0000-0000-000000000002', name: 'Test Model 2' }
+            ];
+
+            // Better approach: Load from a dedicated endpoint
+            // For now, we'll populate after first calculation
+        }
+
+        // Manual price calculation
+        $('#priceCalcForm').submit(function (e) {
+            e.preventDefault();
+
+            const vehicleModelId = $('#vehicleModelId').val();
+            const pickupDate = $('#pickupDate').val();
+            const returnDate = $('#returnDate').val();
+
+            if (!vehicleModelId) {
+                alert('Please select a vehicle model');
+                return;
+            }
+
+            $('#calcResult').html('<div class="spinner-border spinner-border-sm"></div> Calculating...');
+
+            $.post('/PriceTest/Calculate', {
+                vehicleModelId: vehicleModelId,
+                pickupDate: pickupDate,
+                returnDate: returnDate
+            }, function (data) {
+                if (data.success) {
+                    let html = '<div class="alert alert-success">';
+                    html += `<h6>${data.vehicleModelName}</h6>`;
+                    html += `<p><strong>Period:</strong> ${data.pickupDate} - ${data.returnDate} (${data.totalDays} days)</p>`;
+                    html += `<p><strong>Days:</strong> ${data.normalDays} normal + ${data.peakDays} peak</p>`;
+                    html += `<p><strong>Total Amount:</strong> ${Number(data.totalAmount).toLocaleString()} VND</p>`;
+                    html += `<p><strong>Total Deposit:</strong> ${Number(data.totalDeposit).toLocaleString()} VND</p>`;
+                    html += '</div>';
+                    $('#calcResult').html(html);
+                } else {
+                    $('#calcResult').html('<div class="alert alert-danger">' + (data.error || 'Calculation failed') + '</div>');
+                }
+            }).fail(function () {
+                $('#calcResult').html('<div class="alert alert-danger">API call failed</div>');
+            });
+        });
+
+        // Test Booking API endpoint
+        $('#btnTestBookingAPI').click(function () {
+            $('#bookingApiResult').html('<div class="spinner-border spinner-border-sm"></div> Testing...');
+
+            // Get first available model from the test
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const nextWeek = new Date();
+            nextWeek.setDate(nextWeek.getDate() + 6);
+
+            // This will need a valid vehicleModelId from your database
+            // For now, we'll show the expected response format
+            const testData = {
+                vehicleModelId: '00000000-0000-0000-0000-000000000001',
+                startDate: tomorrow.toISOString(),
+                endDate: nextWeek.toISOString()
+            };
+
+            let html = '<div class="alert alert-info">';
+            html += '<h6>Booking API Endpoint</h6>';
+            html += '<p><code>POST /Booking/CalculatePrice</code></p>';
+            html += '<p><strong>Parameters:</strong></p>';
+            html += '<pre>' + JSON.stringify(testData, null, 2) + '</pre>';
+            html += '<p class="text-muted">Note: You need to provide a valid vehicleModelId from your database to test this endpoint.</p>';
+            html += '</div>';
+
+            $('#bookingApiResult').html(html);
+        });
+
+        // Test Holiday Service
+        $('#btnTestHolidays').click(function () {
+            $('#holidayResult').html('<div class="spinner-border spinner-border-sm"></div> Testing...');
+
+            // Test Tết period
+            const start = '2026-01-28';
+            const end = '2026-02-03';
+
+            $.getJSON('/PriceTest/CountHolidays', { start: start, end: end }, function (data) {
+                let html = '<div class="alert alert-success">';
+                html += `<p><strong>Date Range:</strong> ${data.startDate} - ${data.endDate}</p>`;
+                html += `<p><strong>Total Days:</strong> ${data.totalDays}</p>`;
+                html += `<p><strong>Holiday Days:</strong> ${data.holidayDays}</p>`;
+                html += `<p><strong>Normal Days:</strong> ${data.normalDays}</p>`;
+                
+                if (data.overlappingHolidays && data.overlappingHolidays.length > 0) {
+                    html += '<p><strong>Overlapping Holidays:</strong></p><ul>';
+                    data.overlappingHolidays.forEach(function (h) {
+                        html += `<li>${h.name} (${h.start} - ${h.end})</li>`;
+                    });
+                    html += '</ul>';
+                }
+                html += '</div>';
+                $('#holidayResult').html(html);
+            }).fail(function () {
+                $('#holidayResult').html('<div class="alert alert-danger">Failed to test holidays</div>');
+            });
+        });
+    </script>
+}

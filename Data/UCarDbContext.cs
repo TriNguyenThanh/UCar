@@ -24,6 +24,11 @@ public class UCarDbContext : DbContext
     public DbSet<Price> Prices { get; set; }
     public DbSet<VehicleStatusHistory> VehicleStatusHistories { get; set; }
     public DbSet<MaintenanceOrder> MaintenanceOrders { get; set; }
+    
+    // Pricing Configuration
+    public DbSet<HolidayConfig> HolidayConfigs { get; set; }
+    public DbSet<DepositPolicy> DepositPolicies { get; set; }
+    public DbSet<SurchargePolicy> SurchargePolicies { get; set; }
 
     // Booking & Contracts
     public DbSet<Booking> Bookings { get; set; }
@@ -88,11 +93,6 @@ public class UCarDbContext : DbContext
         // VehicleModel
         modelBuilder.Entity<VehicleModel>()
             .Property(vm => vm.Transmission)
-            .HasConversion<string>();
-
-        // Price
-        modelBuilder.Entity<Price>()
-            .Property(p => p.Unit)
             .HasConversion<string>();
 
         // Booking
@@ -279,11 +279,11 @@ public class UCarDbContext : DbContext
             .HasForeignKey(vm => vm.VehicleTypeId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Price -> VehicleType
+        // Price -> VehicleModel (FK already in Price model)
         modelBuilder.Entity<Price>()
-            .HasOne(p => p.VehicleType)
-            .WithMany(vt => vt.Prices)
-            .HasForeignKey(p => p.VehicleTypeId)
+            .HasOne(p => p.VehicleModel)
+            .WithMany()
+            .HasForeignKey(p => p.VehicleModelId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // VehicleStatusHistory -> Vehicle
