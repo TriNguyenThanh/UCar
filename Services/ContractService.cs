@@ -191,7 +191,7 @@ public class ContractService : IContractService
 
         // Get ID number from documents
         var idDoc = contract.Customer.Documents
-            .FirstOrDefault(d => d.DocType == CustomerDocumentType.IdCard || d.DocType == CustomerDocumentType.Passport);
+            .FirstOrDefault(d => d.DocType == CustomerDocumentType.IdCard);
 
         return new ContractDetailsViewModel
         {
@@ -345,7 +345,7 @@ public class ContractService : IContractService
                 FullName = c.FullName,
                 Phone = c.UserAccount.Phone ?? "",
                 IdNumber = c.Documents
-                    .Where(d => d.DocType == CustomerDocumentType.IdCard || d.DocType == CustomerDocumentType.Passport)
+                    .Where(d => d.DocType == CustomerDocumentType.IdCard)
                     .Select(d => d.DocNumber)
                     .FirstOrDefault(),
                 IsBlacklisted = c.IsBlacklisted
@@ -940,7 +940,7 @@ public class ContractService : IContractService
             return null;
 
         var idDoc = contract.Customer.Documents
-            .FirstOrDefault(d => d.DocType == CustomerDocumentType.IdCard || d.DocType == CustomerDocumentType.Passport);
+            .FirstOrDefault(d => d.DocType == CustomerDocumentType.IdCard);
 
         var dlDoc = contract.Customer.Documents
             .FirstOrDefault(d => d.DocType == CustomerDocumentType.License);
@@ -1111,8 +1111,7 @@ public class ContractService : IContractService
 
         // Check for ID document
         var hasId = customer.Documents.Any(d => 
-            d.DocType == CustomerDocumentType.IdCard || 
-            d.DocType == CustomerDocumentType.Passport);
+            d.DocType == CustomerDocumentType.IdCard);
 
         if (!hasId)
         {

@@ -37,7 +37,6 @@ public class PendingDocumentViewModel
     {
         CustomerDocumentType.IdCard => "CCCD/CMND",
         CustomerDocumentType.License => "Giấy phép lái xe",
-        CustomerDocumentType.Passport => "Hộ chiếu",
         _ => "Khác"
     };
 }

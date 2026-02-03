@@ -75,18 +75,39 @@
                                 <td>@(doc.IssuedDate?.ToString("dd/MM/yyyy") ?? "N/A")</td>
                                 <td>@(doc.IssuedPlace ?? "N/A")</td>
                                 <td>
-                                    @if (!string.IsNullOrEmpty(doc.ImageFrontUrl))
+                                    @if (!string.IsNullOrEmpty(doc.ImageFrontUrl) || !string.IsNullOrEmpty(doc.ImageBackUrl))
                                     {
-                                        <a href="@doc.ImageFrontUrl" target="_blank" class="btn-small waves-effect waves-light blue" title="Xem mặt trước">
+                                        <a href="#imageModal-@doc.DocId" class="btn-small waves-effect waves-light blue modal-trigger" title="Xem hình ảnh">
                                             <i class="material-icons">photo</i>
                                         </a>
                                     }
-                                    @if (!string.IsNullOrEmpty(doc.ImageBackUrl))
-                                    {
-                                        <a href="@doc.ImageBackUrl" target="_blank" class="btn-small waves-effect waves-light blue" title="Xem mặt sau">
-                                            <i class="material-icons">photo</i>
-                                        </a>
-                                    }
+                                    
+                                    <!-- Image Modal -->
+                                    <div id="imageModal-@doc.DocId" class="modal">
+                                        <div class="modal-content">
+                                            <h5>Hình ảnh giấy tờ - @doc.CustomerName</h5>
+                                            <p><strong>@doc.DocTypeName</strong> - Số: @doc.DocNumber</p>
+                                            <div class="row">
+                                                @if (!string.IsNullOrEmpty(doc.ImageFrontUrl))
+                                                {
+                                                    <div class="col s12 @(string.IsNullOrEmpty(doc.ImageBackUrl) ? "" : "m6")">
+                                                        <p class="grey-text"><strong>Mặt trước:</strong></p>
+                                                        <img src="/@doc.ImageFrontUrl.TrimStart('/')" alt="Mặt trước" class="responsive-img materialboxed" style="cursor: pointer;">
+                                                    </div>
+                                                }
+                                                @if (!string.IsNullOrEmpty(doc.ImageBackUrl))
+                                                {
+                                                    <div class="col s12 @(string.IsNullOrEmpty(doc.ImageFrontUrl) ? "" : "m6")">
+                                                        <p class="grey-text"><strong>Mặt sau:</strong></p>
+                                                        <img src="/@doc.ImageBackUrl.TrimStart('/')" alt="Mặt sau" class="responsive-img materialboxed" style="cursor: pointer;">
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <a href="#!" class="modal-close waves-effect btn-flat">Đóng</a>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td>@doc.CustomerCreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td>

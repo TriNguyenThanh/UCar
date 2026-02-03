@@ -14,7 +14,7 @@ builder.Services.AddControllersWithViews(options =>
     options.ModelBinderProviders.Insert(0, new DateTimeModelBinderProvider());
 });
 builder.Services.AddDbContext<UCarDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("HieuDb"))); //Anh em nhớ đổi chỗ này nhé
+    options.UseSqlServer(builder.Configuration.GetConnectionString(DbConstants.ConnectionStringName)));
 
 // Add authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

@@ -1,38 +1,20 @@
 using Microsoft.EntityFrameworkCore;
-using UCar.Data;
 using UCar.Models;
 using UCar.Models.Enums;
 
-namespace UCar.Data;
+namespace UCar.Data.Seeders;
 
 /// <summary>
-/// Seed data cho module Quản lý xe (2.0)
+/// Seeder for Vehicle Types, Models, and Vehicles
 /// </summary>
-public static class VehicleDataSeeder
+public static class VehicleCatalogSeeder
 {
-    public static async Task SeedVehicleDataAsync(UCarDbContext context, bool force = false)
+    public static async Task<(List<VehicleType> types, List<VehicleModel> models, List<Vehicle> vehicles)>
+        SeedVehiclesAsync(UCarDbContext context, List<Branch> branches)
     {
-        // Only seed if no data exists (or force is true)
-        if (await context.VehicleTypes.AnyAsync())
-        {
-            if (!force)
-            {
-                Console.WriteLine("VehicleDataSeeder: Data already exists. Skipping seed.");
-                return;
-            }
-            
-            // Clear existing data in reverse order of dependencies
-            Console.WriteLine("VehicleDataSeeder: Force mode - clearing existing data...");
-            context.VehicleStatusHistories.RemoveRange(context.VehicleStatusHistories);
-            context.Vehicles.RemoveRange(context.Vehicles);
-            context.VehicleModels.RemoveRange(context.VehicleModels);
-            context.VehicleTypes.RemoveRange(context.VehicleTypes);
-            await context.SaveChangesAsync();
-        }
-        
-        Console.WriteLine("VehicleDataSeeder: Seeding data...");
+        Console.WriteLine("Seeding Vehicle Types, Models, and Vehicles...");
 
-        // 1. Seed Vehicle Types
+        // Vehicle Types
         var vehicleTypes = new List<VehicleType>
         {
             new() { VehicleTypeId = Guid.NewGuid(), TypeName = "Sedan" },
@@ -53,7 +35,7 @@ public static class VehicleDataSeeder
         var pickupType = vehicleTypes[4];
         var crossoverType = vehicleTypes[5];
 
-        // 2. Seed Vehicle Models
+        // Vehicle Models
         var vehicleModels = new List<VehicleModel>
         {
             // Toyota
@@ -105,36 +87,18 @@ public static class VehicleDataSeeder
         await context.VehicleModels.AddRangeAsync(vehicleModels);
         await context.SaveChangesAsync();
 
-        // 3. Seed Branches (if not exists)
-        if (!await context.Branches.AnyAsync())
-        {
-            var branches = new List<Branch>
-            {
-                new() { BranchId = Guid.NewGuid(), Name = "Chi nhánh Quận 1", Address = "123 Nguyễn Huệ, Quận 1, TP.HCM", PhoneContact = "028-1234-5678" },
-                new() { BranchId = Guid.NewGuid(), Name = "Chi nhánh Quận 7", Address = "456 Nguyễn Văn Linh, Quận 7, TP.HCM", PhoneContact = "028-2345-6789" },
-                new() { BranchId = Guid.NewGuid(), Name = "Chi nhánh Thủ Đức", Address = "789 Võ Văn Ngân, TP. Thủ Đức, TP.HCM", PhoneContact = "028-3456-7890" },
-                new() { BranchId = Guid.NewGuid(), Name = "Chi nhánh Tân Bình", Address = "321 Cộng Hòa, Quận Tân Bình, TP.HCM", PhoneContact = "028-4567-8901" },
-                new() { BranchId = Guid.NewGuid(), Name = "Chi nhánh Bình Thạnh", Address = "654 Điện Biên Phủ, Quận Bình Thạnh, TP.HCM", PhoneContact = "028-5678-9012" }
-            };
-
-            await context.Branches.AddRangeAsync(branches);
-            await context.SaveChangesAsync();
-        }
-
-        var allBranches = await context.Branches.ToListAsync();
-        var random = new Random(42); // Fixed seed for reproducibility
-
-        // 4. Seed Vehicles
+        // Vehicles
         var vehicles = new List<Vehicle>();
         var plateNumbers = GeneratePlateNumbers(50);
         var colors = new[] { "Trắng", "Đen", "Bạc", "Xám", "Đỏ", "Xanh dương", "Xanh lá" };
-        var statuses = new[] { VehicleStatus.Available, VehicleStatus.Available, VehicleStatus.Available, 
+        var statuses = new[] { VehicleStatus.Available, VehicleStatus.Available, VehicleStatus.Available,
                                VehicleStatus.Renting, VehicleStatus.Maintenance, VehicleStatus.Reserved };
+        var random = new Random(42);
 
         for (int i = 0; i < 50; i++)
         {
             var model = vehicleModels[random.Next(vehicleModels.Count)];
-            var branch = allBranches[random.Next(allBranches.Count)];
+            var branch = branches[random.Next(branches.Count)];
             var status = statuses[random.Next(statuses.Length)];
             var year = random.Next(2019, 2025);
             var odo = random.Next(5000, 80000);
@@ -155,8 +119,7 @@ public static class VehicleDataSeeder
         await context.Vehicles.AddRangeAsync(vehicles);
         await context.SaveChangesAsync();
 
-        // 5. Seed Status History for each vehicle
-        var userId = Guid.Empty; // System user
+        // Vehicle Status Histories
         var statusHistories = vehicles.Select(v => new VehicleStatusHistory
         {
             VshId = Guid.NewGuid(),
@@ -164,14 +127,15 @@ public static class VehicleDataSeeder
             FromStatus = null,
             ToStatus = v.CurrentStatus.ToString(),
             ChangedAt = DateTime.UtcNow.AddDays(-random.Next(1, 30)),
-            ChangedBy = userId,
+            ChangedBy = Guid.Empty,
             Note = "Khởi tạo xe trong hệ thống"
         }).ToList();
 
         await context.VehicleStatusHistories.AddRangeAsync(statusHistories);
         await context.SaveChangesAsync();
-        
-        Console.WriteLine($"VehicleDataSeeder: Successfully seeded {vehicleTypes.Count} types, {vehicleModels.Count} models, {vehicles.Count} vehicles.");
+
+        Console.WriteLine($"  ✓ Created {vehicleTypes.Count} types, {vehicleModels.Count} models, {vehicles.Count} vehicles");
+        return (vehicleTypes, vehicleModels, vehicles);
     }
 
     private static List<string> GeneratePlateNumbers(int count)
@@ -186,7 +150,7 @@ public static class VehicleDataSeeder
             var prefix = prefixes[random.Next(prefixes.Length)];
             var number = random.Next(10000, 99999).ToString();
             var plate = $"{prefix}-{number}";
-            
+
             if (usedNumbers.Add(plate))
             {
                 plates.Add(plate);
