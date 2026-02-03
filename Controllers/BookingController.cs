@@ -235,7 +235,7 @@ public class BookingController : Controller
         ViewBag.SeatsList = new SelectList(new[] { 4, 5, 7, 8, 16 });
         // Branches dropdown
         var branches = await _bookingService.GetAllBranches();
-        ViewBag.BranchesList = new SelectList(branches, "BranchId", "Name");
+        ViewBag.Branches = branches; // Use List directly
     }
 
     // POST: /Booking/CalculatePrice

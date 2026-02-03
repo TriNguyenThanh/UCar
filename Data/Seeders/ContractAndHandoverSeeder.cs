@@ -67,6 +67,9 @@ public static class ContractAndHandoverSeeder
                 HandledBy = staffUserId,
                 CreatedAt = DateTime.UtcNow.AddDays(-1)
             });
+
+            // Update vehicle status to Reserved for Active contracts
+            availableVehicles[i].CurrentStatus = VehicleStatus.Reserved;
         }
 
         // Contracts in progress (waiting for check-in) - 3 contracts
@@ -112,6 +115,42 @@ public static class ContractAndHandoverSeeder
 
         await context.Bookings.AddRangeAsync(bookings);
         await context.RentalContracts.AddRangeAsync(contracts);
+        await context.SaveChangesAsync();
+
+        // Add VehicleStatusHistory records for status changes
+        var statusHistories = new List<VehicleStatusHistory>();
+        
+        // For Reserved vehicles (indices 0-2)
+        for (int i = 0; i < 3; i++)
+        {
+            statusHistories.Add(new VehicleStatusHistory
+            {
+                VshId = Guid.NewGuid(),
+                VehicleId = availableVehicles[i].VehicleId,
+                FromStatus = VehicleStatus.Available.ToString(),
+                ToStatus = VehicleStatus.Reserved.ToString(),
+                ChangedAt = DateTime.UtcNow.AddDays(-1),
+                ChangedBy = staffUserId,
+                Note = "Xe được đặt trước - hợp đồng chờ giao xe"
+            });
+        }
+        
+        // For Renting vehicles (indices 3-5)
+        for (int i = 3; i < 6; i++)
+        {
+            statusHistories.Add(new VehicleStatusHistory
+            {
+                VshId = Guid.NewGuid(),
+                VehicleId = availableVehicles[i].VehicleId,
+                FromStatus = VehicleStatus.Available.ToString(),
+                ToStatus = VehicleStatus.Renting.ToString(),
+                ChangedAt = DateTime.UtcNow.AddDays(-3),
+                ChangedBy = staffUserId,
+                Note = "Xe đã giao cho khách hàng - đang trong thời gian thuê"
+            });
+        }
+        
+        await context.VehicleStatusHistories.AddRangeAsync(statusHistories);
         await context.SaveChangesAsync();
 
         // Handover Records for in-progress contracts
@@ -179,10 +218,57 @@ public static class ContractAndHandoverSeeder
         await context.HandoverAccessories.AddRangeAsync(accessories);
         await context.SaveChangesAsync();
 
+        // Create MaintenanceOrder records for vehicles under maintenance
+        var availableForMaintenance = vehicles
+            .Where(v => v.CurrentStatus == VehicleStatus.Available)
+            .Skip(6) // Skip the 6 vehicles used for contracts
+            .Take(4) // Take 4 vehicles for maintenance
+            .ToList();
+
+        var maintenanceOrders = new List<MaintenanceOrder>();
+        var maintenanceHistories = new List<VehicleStatusHistory>();
+
+        foreach (var vehicle in availableForMaintenance)
+        {
+            var maintenanceOrder = new MaintenanceOrder
+            {
+                MoId = Guid.NewGuid(),
+                VehicleId = vehicle.VehicleId,
+                StartAt = DateTime.UtcNow.AddDays(-2),
+                Status = MaintenanceStatus.InProgress,
+                Description = "Bảo dưỡng định kỳ: Thay dầu máy, kiểm tra phanh, thay lọc gió",
+                TotalCost = 2500000,
+                ProviderName = "Garage Thành Công",
+                CreatedBy = staffUserId
+            };
+            
+            maintenanceOrders.Add(maintenanceOrder);
+
+            // Update vehicle status to UnderMaintenance
+            vehicle.CurrentStatus = VehicleStatus.Maintenance;
+
+            // Add status history
+            maintenanceHistories.Add(new VehicleStatusHistory
+            {
+                VshId = Guid.NewGuid(),
+                VehicleId = vehicle.VehicleId,
+                FromStatus = VehicleStatus.Available.ToString(),
+                ToStatus = VehicleStatus.Maintenance.ToString(),
+                ChangedAt = DateTime.UtcNow.AddDays(-2),
+                ChangedBy = staffUserId,
+                Note = "Xe vào bảo dưỡng định kỳ"
+            });
+        }
+
+        await context.MaintenanceOrders.AddRangeAsync(maintenanceOrders);
+        await context.VehicleStatusHistories.AddRangeAsync(maintenanceHistories);
+        await context.SaveChangesAsync();
+
         var activeCount = contracts.Count(c => c.Status == RentalContractStatus.Active);
         var inProgressCount = contracts.Count(c => c.Status == RentalContractStatus.InProgress);
         Console.WriteLine($"  ✓ Created {bookings.Count} bookings, {contracts.Count} contracts");
-        Console.WriteLine($"    - {activeCount} contracts waiting for check-out");
-        Console.WriteLine($"    - {inProgressCount} contracts waiting for check-in");
+        Console.WriteLine($"    - {activeCount} contracts waiting for check-out (Reserved status)");
+        Console.WriteLine($"    - {inProgressCount} contracts waiting for check-in (Renting status)");
+        Console.WriteLine($"    - {maintenanceOrders.Count} vehicles under maintenance");
     }
 }

@@ -1,3 +1,4 @@
+using System.Drawing;
 using Microsoft.EntityFrameworkCore;
 using UCar.Data;
 using UCar.Interfaces;
@@ -104,7 +105,7 @@ public class BookingService : IBookingService
                     ModelName = $"{v.Model.Make} {v.Model.ModelName}",
                     VehicleTypeName = v.Model.VehicleType.TypeName,
                     PlateNo = v.PlateNo,
-                    Color = v.Color ?? "N/A",
+                    Color = ColorTransfer.GetColorHexCode(v.Color ?? "N/A") ?? "#0000FF",
                     Year = v.ManufactureYear,
                     IsAvailable = true, // We filtered busy already
                     DailyPrice = dailyPrice,
@@ -143,7 +144,7 @@ public class BookingService : IBookingService
             ModelName = $"{v.Model.Make} {v.Model.ModelName}",
             VehicleTypeName = v.Model.VehicleType.TypeName,
             PlateNo = v.PlateNo,
-            Color = v.Color ?? "N/A",
+            Color = ColorTransfer.GetColorHexCode(v.Color ?? "N/A") ?? "#0000FF",
             Year = v.ManufactureYear,
             DailyPrice = dailyPrice,
             EstimatedTotal = dailyPrice * days,

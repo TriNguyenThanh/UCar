@@ -13,25 +13,16 @@ public static class PricingSeeder
         Console.WriteLine("Seeding Prices...");
 
         // Price now based on VehicleModel, not VehicleType
-        // Get representative models from each type
-        var toyotaVios = vehicleModels.First(m => m.Make == "Toyota" && m.ModelName == "Vios");
-        var toyotaCamry = vehicleModels.First(m => m.Make == "Toyota" && m.ModelName == "Camry");
-        var toyotaFortuner = vehicleModels.First(m => m.Make == "Toyota" && m.ModelName == "Fortuner");
-        var toyotaInnova = vehicleModels.First(m => m.Make == "Toyota" && m.ModelName == "Innova");
-        var hondaCity = vehicleModels.First(m => m.Make == "Honda" && m.ModelName == "City");
-        var hondaCRV = vehicleModels.First(m => m.Make == "Honda" && m.ModelName == "CR-V");
-        var hyundaii10 = vehicleModels.First(m => m.Make == "Hyundai" && m.ModelName == "i10");
-        var fordRanger = vehicleModels.First(m => m.Make == "Ford" && m.ModelName == "Ranger");
-        var mazda3 = vehicleModels.First(m => m.Make == "Mazda" && m.ModelName == "Mazda 3");
-        var mazdaCX5 = vehicleModels.First(m => m.Make == "Mazda" && m.ModelName == "CX-5");
+        // Get all vehicle models
+        var models = vehicleModels.ToDictionary(m => $"{m.Make}_{m.ModelName}", m => m);
 
         var prices = new List<Price>
         {
-            // Toyota Vios - Sedan phổ thông
+            // TOYOTA MODELS
             new()
             {
                 PriceId = Guid.NewGuid(),
-                VehicleModelId = toyotaVios.ModelId,
+                VehicleModelId = models["Toyota_Vios"].ModelId,
                 Name = "Toyota Vios - Giá chuẩn",
                 BaseDailyPrice = 500000,
                 MonthMultiplier = 0.85m,
@@ -40,11 +31,22 @@ public static class PricingSeeder
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
-            // Toyota Camry - Sedan cao cấp
             new()
             {
                 PriceId = Guid.NewGuid(),
-                VehicleModelId = toyotaCamry.ModelId,
+                VehicleModelId = models["Toyota_Corolla Altis"].ModelId,
+                Name = "Toyota Corolla Altis - Giá chuẩn",
+                BaseDailyPrice = 650000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
+                OvertimeHourlyPrice = 55000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Toyota_Camry"].ModelId,
                 Name = "Toyota Camry - Giá chuẩn",
                 BaseDailyPrice = 900000,
                 MonthMultiplier = 0.85m,
@@ -53,11 +55,10 @@ public static class PricingSeeder
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
-            // Toyota Fortuner - SUV
             new()
             {
                 PriceId = Guid.NewGuid(),
-                VehicleModelId = toyotaFortuner.ModelId,
+                VehicleModelId = models["Toyota_Fortuner"].ModelId,
                 Name = "Toyota Fortuner - Giá chuẩn",
                 BaseDailyPrice = 1200000,
                 MonthMultiplier = 0.85m,
@@ -66,11 +67,22 @@ public static class PricingSeeder
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
-            // Toyota Innova - MPV
             new()
             {
                 PriceId = Guid.NewGuid(),
-                VehicleModelId = toyotaInnova.ModelId,
+                VehicleModelId = models["Toyota_Cross"].ModelId,
+                Name = "Toyota Cross - Giá chuẩn",
+                BaseDailyPrice = 850000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
+                OvertimeHourlyPrice = 70000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Toyota_Innova"].ModelId,
                 Name = "Toyota Innova - Giá chuẩn",
                 BaseDailyPrice = 800000,
                 MonthMultiplier = 0.85m,
@@ -79,11 +91,12 @@ public static class PricingSeeder
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
-            // Honda City - Sedan phổ thông
+            
+            // HONDA MODELS
             new()
             {
                 PriceId = Guid.NewGuid(),
-                VehicleModelId = hondaCity.ModelId,
+                VehicleModelId = models["Honda_City"].ModelId,
                 Name = "Honda City - Giá chuẩn",
                 BaseDailyPrice = 480000,
                 MonthMultiplier = 0.85m,
@@ -92,11 +105,34 @@ public static class PricingSeeder
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
-            // Honda CR-V - SUV
             new()
             {
                 PriceId = Guid.NewGuid(),
-                VehicleModelId = hondaCRV.ModelId,
+                VehicleModelId = models["Honda_Civic"].ModelId,
+                Name = "Honda Civic - Giá chuẩn",
+                BaseDailyPrice = 700000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
+                OvertimeHourlyPrice = 60000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Honda_Accord"].ModelId,
+                Name = "Honda Accord - Giá chuẩn",
+                BaseDailyPrice = 950000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
+                OvertimeHourlyPrice = 75000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Honda_CR-V"].ModelId,
                 Name = "Honda CR-V - Giá chuẩn",
                 BaseDailyPrice = 1100000,
                 MonthMultiplier = 0.85m,
@@ -105,11 +141,24 @@ public static class PricingSeeder
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
-            // Hyundai i10 - Hatchback
             new()
             {
                 PriceId = Guid.NewGuid(),
-                VehicleModelId = hyundaii10.ModelId,
+                VehicleModelId = models["Honda_HR-V"].ModelId,
+                Name = "Honda HR-V - Giá chuẩn",
+                BaseDailyPrice = 900000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
+                OvertimeHourlyPrice = 75000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            
+            // HYUNDAI MODELS
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Hyundai_i10"].ModelId,
                 Name = "Hyundai i10 - Giá chuẩn",
                 BaseDailyPrice = 400000,
                 MonthMultiplier = 0.85m,
@@ -118,24 +167,60 @@ public static class PricingSeeder
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
-            // Ford Ranger - Pickup
             new()
             {
                 PriceId = Guid.NewGuid(),
-                VehicleModelId = fordRanger.ModelId,
-                Name = "Ford Ranger - Giá chuẩn",
-                BaseDailyPrice = 1300000,
+                VehicleModelId = models["Hyundai_Accent"].ModelId,
+                Name = "Hyundai Accent - Giá chuẩn",
+                BaseDailyPrice = 480000,
                 MonthMultiplier = 0.85m,
-                PeakMultiplier = 1.6m,
-                OvertimeHourlyPrice = 110000,
+                PeakMultiplier = 1.5m,
+                OvertimeHourlyPrice = 50000,
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
-            // Mazda 3 - Sedan
             new()
             {
                 PriceId = Guid.NewGuid(),
-                VehicleModelId = mazda3.ModelId,
+                VehicleModelId = models["Hyundai_Elantra"].ModelId,
+                Name = "Hyundai Elantra - Giá chuẩn",
+                BaseDailyPrice = 650000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
+                OvertimeHourlyPrice = 55000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Hyundai_Tucson"].ModelId,
+                Name = "Hyundai Tucson - Giá chuẩn",
+                BaseDailyPrice = 950000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
+                OvertimeHourlyPrice = 80000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Hyundai_Santa Fe"].ModelId,
+                Name = "Hyundai Santa Fe - Giá chuẩn",
+                BaseDailyPrice = 1300000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.6m,
+                OvertimeHourlyPrice = 100000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            
+            // MAZDA MODELS
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Mazda_Mazda 3"].ModelId,
                 Name = "Mazda 3 - Giá chuẩn",
                 BaseDailyPrice = 700000,
                 MonthMultiplier = 0.85m,
@@ -144,16 +229,177 @@ public static class PricingSeeder
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             },
-            // Mazda CX-5 - Crossover
             new()
             {
                 PriceId = Guid.NewGuid(),
-                VehicleModelId = mazdaCX5.ModelId,
+                VehicleModelId = models["Mazda_Mazda 6"].ModelId,
+                Name = "Mazda 6 - Giá chuẩn",
+                BaseDailyPrice = 850000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
+                OvertimeHourlyPrice = 70000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Mazda_CX-5"].ModelId,
                 Name = "Mazda CX-5 - Giá chuẩn",
                 BaseDailyPrice = 1000000,
                 MonthMultiplier = 0.85m,
                 PeakMultiplier = 1.5m,
                 OvertimeHourlyPrice = 80000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Mazda_CX-8"].ModelId,
+                Name = "Mazda CX-8 - Giá chuẩn",
+                BaseDailyPrice = 1150000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.6m,
+                OvertimeHourlyPrice = 90000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            
+            // FORD MODELS
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Ford_Ranger"].ModelId,
+                Name = "Ford Ranger - Giá chuẩn",
+                BaseDailyPrice = 1300000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.6m,
+                OvertimeHourlyPrice = 110000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Ford_Everest"].ModelId,
+                Name = "Ford Everest - Giá chuẩn",
+                BaseDailyPrice = 1400000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.6m,
+                OvertimeHourlyPrice = 120000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Ford_Territory"].ModelId,
+                Name = "Ford Territory - Giá chuẩn",
+                BaseDailyPrice = 950000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
+                OvertimeHourlyPrice = 80000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            
+            // KIA MODELS
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Kia_Morning"].ModelId,
+                Name = "Kia Morning - Giá chuẩn",
+                BaseDailyPrice = 450000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.4m,
+                OvertimeHourlyPrice = 40000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Kia_K3"].ModelId,
+                Name = "Kia K3 - Giá chuẩn",
+                BaseDailyPrice = 600000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
+                OvertimeHourlyPrice = 55000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Kia_K5"].ModelId,
+                Name = "Kia K5 - Giá chuẩn",
+                BaseDailyPrice = 750000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
+                OvertimeHourlyPrice = 60000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Kia_Seltos"].ModelId,
+                Name = "Kia Seltos - Giá chuẩn",
+                BaseDailyPrice = 850000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
+                OvertimeHourlyPrice = 70000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["Kia_Carnival"].ModelId,
+                Name = "Kia Carnival - Giá chuẩn",
+                BaseDailyPrice = 1500000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.6m,
+                OvertimeHourlyPrice = 120000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            
+            // VINFAST MODELS - Xe điện
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["VinFast_VF5"].ModelId,
+                Name = "VinFast VF5 - Giá chuẩn",
+                BaseDailyPrice = 550000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.5m,
+                OvertimeHourlyPrice = 50000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["VinFast_VF8"].ModelId,
+                Name = "VinFast VF8 - Giá chuẩn",
+                BaseDailyPrice = 1200000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.6m,
+                OvertimeHourlyPrice = 100000,
+                ValidFrom = DateTime.UtcNow.AddMonths(-6),
+                IsActive = true
+            },
+            new()
+            {
+                PriceId = Guid.NewGuid(),
+                VehicleModelId = models["VinFast_VF9"].ModelId,
+                Name = "VinFast VF9 - Giá chuẩn",
+                BaseDailyPrice = 1600000,
+                MonthMultiplier = 0.85m,
+                PeakMultiplier = 1.7m,
+                OvertimeHourlyPrice = 130000,
                 ValidFrom = DateTime.UtcNow.AddMonths(-6),
                 IsActive = true
             }

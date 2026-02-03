@@ -91,15 +91,12 @@ public static class VehicleCatalogSeeder
         var vehicles = new List<Vehicle>();
         var plateNumbers = GeneratePlateNumbers(50);
         var colors = new[] { "Trắng", "Đen", "Bạc", "Xám", "Đỏ", "Xanh dương", "Xanh lá" };
-        var statuses = new[] { VehicleStatus.Available, VehicleStatus.Available, VehicleStatus.Available,
-                               VehicleStatus.Renting, VehicleStatus.Maintenance, VehicleStatus.Reserved };
         var random = new Random(42);
 
         for (int i = 0; i < 50; i++)
         {
             var model = vehicleModels[random.Next(vehicleModels.Count)];
             var branch = branches[random.Next(branches.Count)];
-            var status = statuses[random.Next(statuses.Length)];
             var year = random.Next(2019, 2025);
             var odo = random.Next(5000, 80000);
 
@@ -111,7 +108,7 @@ public static class VehicleCatalogSeeder
                 PlateNo = plateNumbers[i],
                 Color = colors[random.Next(colors.Length)],
                 ManufactureYear = year,
-                CurrentStatus = status,
+                CurrentStatus = VehicleStatus.Available,
                 CurrentOdoKm = odo
             });
         }
