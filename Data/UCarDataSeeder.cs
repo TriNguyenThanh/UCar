@@ -1068,14 +1068,23 @@ public static class UCarDataSeeder
                 DepositPolicyId = Guid.NewGuid(),
                 PolicyName = $"Chính sách cọc chuẩn - {vehicleType.TypeName}",
                 VehicleTypeId = vehicleType.VehicleTypeId,
-                CalculationType = DepositCalculationType.Percentage,
-                Value = 50, // 50% of rental amount
-                MinimumAmount = 2_000_000, // Min 2M VND
-                MaximumAmount = vehicleType.TypeName == "Sedan" ? 5_000_000 : 
-                                vehicleType.TypeName == "SUV" ? 10_000_000 : 
-                                vehicleType.TypeName == "MPV" ? 8_000_000 : 
-                                vehicleType.TypeName == "Hatchback" ? 3_000_000 : 
-                                vehicleType.TypeName == "Pickup" ? 8_000_000 : 5_000_000,
+                
+                // Responsibility Deposit (fixed by vehicle type)
+                ResponsibilityDepositAmount = vehicleType.TypeName == "Sedan" ? 2_000_000 :
+                                             vehicleType.TypeName == "SUV" ? 5_000_000 :
+                                             vehicleType.TypeName == "MPV" ? 3_000_000 :
+                                             vehicleType.TypeName == "Hatchback" ? 1_500_000 :
+                                             vehicleType.TypeName == "Pickup" ? 4_000_000 : 2_000_000,
+                
+                // Rental Deposit (50% of rental amount)
+                RentalDepositCalculationType = DepositCalculationType.Percentage,
+                RentalDepositValue = 50, // 50% of rental amount
+                RentalDepositMinimum = 2_000_000, // Min 2M VND
+                RentalDepositMaximum = vehicleType.TypeName == "Sedan" ? 10_000_000 : 
+                                vehicleType.TypeName == "SUV" ? 20_000_000 : 
+                                vehicleType.TypeName == "MPV" ? 15_000_000 : 
+                                vehicleType.TypeName == "Hatchback" ? 8_000_000 : 
+                                vehicleType.TypeName == "Pickup" ? 15_000_000 : 10_000_000,
                 FullRefundCondition = "Trả xe đúng hạn, không hư hỏng, không vi phạm giao thông",
                 PartialRefundCondition = "Vi phạm nhẹ, trả xe trễ dưới 24h, hư hỏng nhỏ",
                 NoRefundCondition = "Vi phạm nghiêm trọng, mất xe, hư hỏng lớn, trả xe trễ quá 3 ngày",
@@ -1093,14 +1102,23 @@ public static class UCarDataSeeder
                 DepositPolicyId = Guid.NewGuid(),
                 PolicyName = $"Chính sách cọc ưu đãi - {vehicleType.TypeName}",
                 VehicleTypeId = vehicleType.VehicleTypeId,
-                CalculationType = DepositCalculationType.Percentage,
-                Value = 30, // 30% of rental amount for loyal customers
-                MinimumAmount = 1_500_000, // Min 1.5M VND
-                MaximumAmount = vehicleType.TypeName == "Sedan" ? 3_000_000 : 
-                                vehicleType.TypeName == "SUV" ? 7_000_000 : 
-                                vehicleType.TypeName == "MPV" ? 5_000_000 : 
-                                vehicleType.TypeName == "Hatchback" ? 2_000_000 : 
-                                vehicleType.TypeName == "Pickup" ? 5_000_000 : 3_000_000,
+                
+                // Responsibility Deposit (same as standard)
+                ResponsibilityDepositAmount = vehicleType.TypeName == "Sedan" ? 2_000_000 :
+                                             vehicleType.TypeName == "SUV" ? 5_000_000 :
+                                             vehicleType.TypeName == "MPV" ? 3_000_000 :
+                                             vehicleType.TypeName == "Hatchback" ? 1_500_000 :
+                                             vehicleType.TypeName == "Pickup" ? 4_000_000 : 2_000_000,
+                
+                // Rental Deposit (30% for loyal customers)
+                RentalDepositCalculationType = DepositCalculationType.Percentage,
+                RentalDepositValue = 30, // 30% of rental amount for loyal customers
+                RentalDepositMinimum = 1_500_000, // Min 1.5M VND
+                RentalDepositMaximum = vehicleType.TypeName == "Sedan" ? 8_000_000 : 
+                                vehicleType.TypeName == "SUV" ? 15_000_000 : 
+                                vehicleType.TypeName == "MPV" ? 12_000_000 : 
+                                vehicleType.TypeName == "Hatchback" ? 6_000_000 : 
+                                vehicleType.TypeName == "Pickup" ? 12_000_000 : 8_000_000,
                 FullRefundCondition = "Trả xe đúng hạn, không hư hỏng, không vi phạm giao thông",
                 PartialRefundCondition = "Vi phạm nhẹ, trả xe trễ dưới 12h",
                 NoRefundCondition = "Vi phạm nghiêm trọng, mất xe, hư hỏng lớn",

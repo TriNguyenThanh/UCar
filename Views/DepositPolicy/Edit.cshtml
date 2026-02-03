@@ -1,0 +1,195 @@
+@model UCar.ViewModels.DepositPolicy.DepositPolicyViewModel
+
+@{
+    ViewData["Title"] = "Sửa Chính sách Đặt cọc";
+}
+
+<div class="container" style="margin-top: 30px;">
+    <div class="row">
+        <div class="col s12 m10 offset-m1 l8 offset-l2">
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title amber-text text-darken-2">
+                        <i class="material-icons left">edit</i>
+                        Sửa Chính sách Đặt cọc
+                    </span>
+
+                    <form asp-action="Edit" method="post">
+                        <input type="hidden" asp-for="DepositPolicyId" />
+                        <div asp-validation-summary="ModelOnly" class="red-text"></div>
+
+                        <!-- Basic Info -->
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <input asp-for="PolicyName" id="PolicyName" type="text" class="validate active" />
+                                <label for="PolicyName" class="active">Tên chính sách *</label>
+                                <span asp-validation-for="PolicyName" class="red-text"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <select asp-for="VehicleTypeId" asp-items="ViewBag.VehicleTypes" class="browser-default">
+                                    <option value="">-- Chọn loại xe --</option>
+                                </select>
+                                <span asp-validation-for="VehicleTypeId" class="red-text"></span>
+                            </div>
+                        </div>
+
+                        <div class="divider" style="margin: 20px 0;"></div>
+
+                        <!-- SECTION 1: Responsibility Deposit -->
+                        <h6 class="blue-text text-darken-2">
+                            <i class="material-icons tiny">shield</i> Cọc Trách nhiệm (Cố định)
+                        </h6>
+
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <input asp-for="ResponsibilityDepositAmount" id="ResponsibilityDepositAmount" type="number" step="100000" class="validate active" />
+                                <label for="ResponsibilityDepositAmount" class="active">Tiền cọc trách nhiệm (VNĐ) *</label>
+                                <span asp-validation-for="ResponsibilityDepositAmount" class="red-text"></span>
+                            </div>
+                        </div>
+
+                        <div class="divider" style="margin: 20px 0;"></div>
+
+                        <!-- SECTION 2: Rental Deposit -->
+                        <h6 class="teal-text">
+                            <i class="material-icons tiny">payment</i> Cọc Thuê xe (Linh hoạt)
+                        </h6>
+
+                        <div class="row">
+                            <div class="input-field col s12 m6">
+                                <select asp-for="RentalDepositCalculationType" class="browser-default" id="rentalCalcType">
+                                    <option value="0">Phần trăm (%)</option>
+                                    <option value="1">Số tiền cố định</option>
+                                </select>
+                                <span asp-validation-for="RentalDepositCalculationType" class="red-text"></span>
+                            </div>
+
+                            <div class="input-field col s12 m6">
+                                <input asp-for="RentalDepositValue" id="RentalDepositValue" type="number" step="1" class="validate active" />
+                                <label for="RentalDepositValue" id="valueLabel" class="active">Giá trị *</label>
+                                <span asp-validation-for="RentalDepositValue" class="red-text"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="input-field col s12 m6">
+                                <input asp-for="RentalDepositMinimum" id="RentalDepositMinimum" type="number" step="100000" class="validate active" />
+                                <label for="RentalDepositMinimum" class="active">Số tiền tối thiểu (VNĐ)</label>
+                                <span asp-validation-for="RentalDepositMinimum" class="red-text"></span>
+                            </div>
+
+                            <div class="input-field col s12 m6">
+                                <input asp-for="RentalDepositMaximum" id="RentalDepositMaximum" type="number" step="100000" class="validate active" />
+                                <label for="RentalDepositMaximum" class="active">Số tiền tối đa (VNĐ)</label>
+                                <span asp-validation-for="RentalDepositMaximum" class="red-text"></span>
+                            </div>
+                        </div>
+
+                        <div class="divider" style="margin: 20px 0;"></div>
+
+                        <!-- Refund Conditions -->
+                        <h6>Điều kiện hoàn cọc</h6>
+
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <textarea asp-for="FullRefundCondition" id="FullRefundCondition" class="materialize-textarea"></textarea>
+                                <label for="FullRefundCondition" class="@(string.IsNullOrEmpty(Model.FullRefundCondition) ? "" : "active")">Điều kiện hoàn 100%</label>
+                                <span asp-validation-for="FullRefundCondition" class="red-text"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <textarea asp-for="PartialRefundCondition" id="PartialRefundCondition" class="materialize-textarea"></textarea>
+                                <label for="PartialRefundCondition" class="@(string.IsNullOrEmpty(Model.PartialRefundCondition) ? "" : "active")">Điều kiện hoàn 50%</label>
+                                <span asp-validation-for="PartialRefundCondition" class="red-text"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <textarea asp-for="NoRefundCondition" id="NoRefundCondition" class="materialize-textarea"></textarea>
+                                <label for="NoRefundCondition" class="@(string.IsNullOrEmpty(Model.NoRefundCondition) ? "" : "active")">Điều kiện không hoàn cọc</label>
+                                <span asp-validation-for="NoRefundCondition" class="red-text"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <input asp-for="RefundProcessingDays" id="RefundProcessingDays" type="number" class="validate active" />
+                                <label for="RefundProcessingDays" class="active">Số ngày xử lý hoàn cọc *</label>
+                                <span asp-validation-for="RefundProcessingDays" class="red-text"></span>
+                            </div>
+                        </div>
+
+                        <!-- Validity Period -->
+                        <div class="row">
+                            <div class="input-field col s12 m6">
+                                <input asp-for="ValidFrom" id="ValidFrom" type="date" class="validate active" />
+                                <label for="ValidFrom" class="active">Có hiệu lực từ *</label>
+                                <span asp-validation-for="ValidFrom" class="red-text"></span>
+                            </div>
+
+                            <div class="input-field col s12 m6">
+                                <input asp-for="ValidTo" id="ValidTo" type="date" class="active" />
+                                <label for="ValidTo" class="@(Model.ValidTo.HasValue ? "active" : "")">Có hiệu lực đến</label>
+                                <span asp-validation-for="ValidTo" class="red-text"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col s12">
+                                <label>
+                                    <input asp-for="IsActive" type="checkbox" class="filled-in" />
+                                    <span>Đang hoạt động</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        @if (Model.CreatedAt.HasValue)
+                        {
+                            <div class="row">
+                                <div class="col s12">
+                                    <div class="card-panel grey lighten-4">
+                                        <p class="grey-text text-darken-2">
+                                            <strong>Tạo lúc:</strong> @Model.CreatedAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                            @if (Model.UpdatedAt.HasValue)
+                                            {
+                                                <br/><strong>Cập nhật lúc:</strong> @Model.UpdatedAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Actions -->
+                        <div class="row">
+                            <div class="col s12 center-align">
+                                <button type="submit" class="btn waves-effect waves-light amber darken-2">
+                                    <i class="material-icons left">save</i>Lưu thay đổi
+                                </button>
+                                <a asp-action="Index" class="btn waves-effect waves-light grey">
+                                    <i class="material-icons left">cancel</i>Hủy
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            M.updateTextFields();
+            M.textareaAutoResize(document.querySelectorAll('.materialize-textarea'));
+        });
+    </script>
+}
