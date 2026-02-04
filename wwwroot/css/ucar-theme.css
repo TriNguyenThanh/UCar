@@ -69,36 +69,328 @@ html {
 body {
     font-family: 'Be Vietnam Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background-color: var(--ucar-bg-primary);
-    display: flex;
-    min-height: 100vh;
-    flex-direction: column;
-}
-
-main {
-    flex: 1 0 auto;
+    padding-top: 64px;
+    margin: 0;
 }
 
 /* =========================================
    Navigation Override
    ========================================= */
-.ucar-navbar {
+
+/* Top Navigation Bar */
+.ucar-topbar {
     background-color: var(--ucar-secondary) !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 997;
+    height: 64px;
 }
 
-.ucar-navbar .brand-logo {
+.ucar-topbar .brand-logo {
     color: var(--ucar-primary) !important;
     font-weight: 700;
     display: flex;
     align-items: center;
+    padding-left: 1rem;
 }
 
-.ucar-navbar .brand-logo i {
+.ucar-topbar .brand-logo i {
     margin-right: 0.5rem;
 }
 
-.ucar-navbar ul li a {
+.ucar-topbar .brand-logo span {
+    font-size: 1.5rem;
+}
+
+.ucar-topbar ul li a {
     color: var(--ucar-primary) !important;
+    transition: background-color 0.3s ease;
+}
+
+.ucar-topbar ul li a:hover {
+    background-color: rgba(250, 203, 1, 0.1) !important;
+}
+
+/* Vertical Sidebar */
+.ucar-sidebar {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    width: 260px;
+    height: calc(100vh - 64px);
+    background: linear-gradient(180deg, #00275e 0%, #001d45 100%);
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 996;
+    box-shadow: 4px 0 12px rgba(0, 0, 0, 0.15);
+    transition: width 0.3s ease;
+}
+
+/* Sidebar Collapsed State */
+.ucar-sidebar.collapsed {
+    width: 70px;
+}
+
+.ucar-sidebar.collapsed .menu-text,
+.ucar-sidebar.collapsed .toggle-icon {
+    display: none;
+}
+
+.ucar-sidebar.collapsed .section-header {
+    justify-content: center;
+    padding: 0.75rem 0.5rem;
+}
+
+.ucar-sidebar.collapsed .section-items {
+    display: none;
+}
+
+.ucar-sidebar.collapsed .menu-item > a {
+    justify-content: center;
+    padding: 0.875rem 0.5rem;
+}
+
+.ucar-sidebar.collapsed .menu-item > a i {
+    margin-right: 0;
+}
+
+.ucar-sidebar.collapsed .sidebar-toggle-wrapper {
+    justify-content: center;
+}
+
+.ucar-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.ucar-sidebar::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.ucar-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(250, 203, 1, 0.3);
+    border-radius: 3px;
+}
+
+.ucar-sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(250, 203, 1, 0.5);
+}
+
+.sidebar-content {
+    padding: 0.5rem 0;
+}
+
+/* Sidebar Toggle Button */
+.sidebar-toggle-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.sidebar-toggle-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem;
+    cursor: pointer;
+    color: var(--ucar-primary);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-toggle-btn:hover {
+    background: rgba(250, 203, 1, 0.2);
+}
+
+.sidebar-toggle-btn i {
+    font-size: 1.5rem;
+}
+
+/* Sidebar Menu */
+.sidebar-menu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.sidebar-menu .menu-item {
+    margin: 0.25rem 0.5rem;
+}
+
+.sidebar-menu .menu-item > a {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.2s ease;
     font-weight: 500;
+}
+
+.sidebar-menu .menu-item > a:hover {
+    background: rgba(250, 203, 1, 0.15);
+}
+
+.sidebar-menu .menu-item > a.active {
+    background: var(--ucar-primary);
+    color: var(--ucar-secondary);
+    font-weight: 600;
+    box-shadow: 0 4px 8px rgba(250, 203, 1, 0.3);
+}
+
+.sidebar-menu .menu-item > a i {
+    margin-right: 0.75rem;
+    font-size: 1.25rem;
+}
+
+/* Menu Sections with Dropdown */
+.menu-section {
+    margin: 0.25rem 0.5rem;
+}
+
+.menu-section .section-header {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+    font-size: 0.95rem;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.menu-section .section-header:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.menu-section .section-header.active {
+    background: rgba(250, 203, 1, 0.1);
+    color: var(--ucar-primary);
+}
+
+.menu-section .section-header .section-icon {
+    margin-right: 0.75rem;
+    font-size: 1.25rem;
+    color: var(--ucar-primary);
+}
+
+.menu-section .section-header .toggle-icon {
+    margin-left: auto;
+    font-size: 1.25rem;
+    transition: transform 0.3s ease;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.menu-section.expanded .section-header .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.menu-section .section-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.menu-section.expanded .section-items {
+    max-height: 500px;
+}
+
+.menu-section .section-items li {
+    margin: 0.15rem 0;
+}
+
+.menu-section .section-items li.divider-item {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 0.4rem 1rem;
+}
+
+.menu-section .section-items a {
+    display: block;
+    padding: 0.6rem 1rem 0.6rem 3rem;
+    color: rgba(255, 255, 255, 0.75);
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+    position: relative;
+}
+
+.menu-section .section-items a::before {
+    content: '';
+    position: absolute;
+    left: 1.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transition: all 0.2s ease;
+}
+
+.menu-section .section-items a:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+}
+
+.menu-section .section-items a:hover::before {
+    background: var(--ucar-primary);
+}
+
+/* Active State for Child Items - Using full border instead of left line */
+.menu-section .section-items a.active {
+    background: var(--ucar-primary);
+    color: var(--ucar-secondary);
+    font-weight: 600;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(250, 203, 1, 0.25);
+}
+
+.menu-section .section-items a.active::before {
+    background: var(--ucar-secondary);
+    width: 8px;
+    height: 8px;
+}
+
+/* Main Content Wrapper */
+body {
+    padding-top: 64px;
+}
+
+.main-wrapper {
+    min-height: calc(100vh - 64px);
+    background-color: var(--ucar-bg-primary);
+}
+
+.main-wrapper.with-sidebar {
+    margin-left: 260px;
+    transition: margin-left 0.3s ease;
+}
+
+.main-wrapper.with-sidebar.sidebar-collapsed {
+    margin-left: 70px;
+}
+
+.main-wrapper main {
+    padding: 2rem;
+}
+
+/* Responsive */
+@media only screen and (max-width: 992px) {
+    .main-wrapper.with-sidebar {
+        margin-left: 0;
+    }
 }
 
 .ucar-navbar ul li a:hover {
