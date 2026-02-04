@@ -69,8 +69,27 @@ public class BookingCreateVM
     [Required]
     public DateTime EndAt { get; set; }
     
-    public decimal EstimatedPrice { get; set; }
-    public decimal TotalAmount { get; set; }
+    // === PRICING DETAILS (Module 3) ===
+    public int TotalDays { get; set; }
+    public int NormalDays { get; set; }
+    public int PeakDays { get; set; }
+    
+    public decimal BaseDailyPrice { get; set; }
+    public decimal NormalDaysAmount { get; set; }
+    public decimal PeakDaysAmount { get; set; }
+    public decimal MonthlyAmount { get; set; }
+    public bool IsMonthlyRate { get; set; }
+    
+    public decimal RentalAmount { get; set; }  // Subtotal before deposits
+    
+    // === DEPOSIT DETAILS ===
+    public decimal ResponsibilityDeposit { get; set; } // Cọc trách nhiệm
+    public decimal RentalDeposit { get; set; }  // Cọc thuê xe
+    public decimal TotalDeposit { get; set; }
+    
+    // === TOTAL ===
+    public decimal EstimatedPrice { get; set; }  // For backward compatibility
+    public decimal TotalAmount { get; set; }  // RentalAmount + TotalDeposit
     
     // Customer Info (Pre-filled)
     [Display(Name = "Họ và tên")]

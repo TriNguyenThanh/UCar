@@ -33,8 +33,9 @@ public class PriceCalculationService : IPriceCalculationService
         if (price == null)
             return null;
 
-        // Calculate total days
-        var totalDays = (returnDate.Date - pickupDate.Date).Days;
+        // Calculate rental days: count calendar days crossed
+        // Example: 8h on Feb 5 to 20h on Feb 6 = spans 2 calendar days (5th and 6th) = 2 days
+        var totalDays = (returnDate.Date - pickupDate.Date).Days + 1;
 
         // Count holiday days in range
         var peakDays = await CountHolidaysInRangeAsync(pickupDate, returnDate);
@@ -113,8 +114,8 @@ public class PriceCalculationService : IPriceCalculationService
 
         int holidayDays = 0;
 
-        // Count each day in range
-        for (var date = startDate.Date; date < endDate.Date; date = date.AddDays(1))
+        // Count each day in range (inclusive of both start and end dates)
+        for (var date = startDate.Date; date <= endDate.Date; date = date.AddDays(1))
         {
             // Check if this date falls within any holiday
             if (holidays.Any(h => date >= h.StartDate && date <= h.EndDate))
@@ -137,7 +138,7 @@ public class PriceCalculationService : IPriceCalculationService
         var breakdown = new List<PriceBreakdownDto>();
         int order = 1;
 
-        var totalDays = (returnDate.Date - pickupDate.Date).Days;
+        var totalDays = (returnDate.Date - pickupDate.Date).Days + 1;
         var peakDays = await CountHolidaysInRangeAsync(pickupDate, returnDate);
         var normalDays = totalDays - peakDays;
         bool isMonthlyRate = totalDays >= MONTHLY_THRESHOLD_DAYS;

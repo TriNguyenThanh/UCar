@@ -16,11 +16,13 @@ public class ContractController : Controller
 {
     private readonly IContractService _contractService;
     private readonly ILogger<ContractController> _logger;
+    private readonly IPriceCalculationService _priceCalculationService;
 
-    public ContractController(IContractService contractService, ILogger<ContractController> logger)
+    public ContractController(IContractService contractService, ILogger<ContractController> logger, IPriceCalculationService priceCalculationService)
     {
         _contractService = contractService;
         _logger = logger;
+        _priceCalculationService = priceCalculationService;
     }
 
     #region Helpers
@@ -164,12 +166,26 @@ public class ContractController : Controller
             model.DepositAmount = bookingInfo.DepositSuggest;
             model.Terms = options.DefaultTerms;
 
-            // Calculate
-            var (days, rentalAmount, total) = _contractService.CalculateRentalAmount(
-                bookingInfo.StartAt, bookingInfo.EndAt, bookingInfo.UnitPrice, 0);
-            model.RentalDays = days;
-            model.RentalAmount = rentalAmount;
-            model.TotalAmount = total;
+            // Calculate detailed pricing using IPriceCalculationService
+            var vehicle = options.Vehicles.FirstOrDefault(v => v.VehicleId == bookingInfo.VehicleId);
+            if (vehicle != null)
+            {
+                var priceEstimate = await _priceCalculationService.CalculateEstimateAsync(
+                    vehicle.ModelId, bookingInfo.StartAt, bookingInfo.EndAt);
+                
+                model.RentalDays = priceEstimate.TotalDays;
+                model.NormalDays = priceEstimate.NormalDays;
+                model.PeakDays = priceEstimate.PeakDays;
+                model.BaseDailyPrice = priceEstimate.BaseDailyPrice;
+                model.PeakMultiplier = priceEstimate.PeakMultiplier;
+                model.NormalDaysAmount = priceEstimate.NormalDaysAmount;
+                model.PeakDaysAmount = priceEstimate.PeakDaysAmount;
+                model.RentalAmount = priceEstimate.SubTotal;
+                model.ResponsibilityDeposit = priceEstimate.ResponsibilityDeposit;
+                model.RentalDeposit = priceEstimate.RentalDeposit;
+                model.TotalDeposit = priceEstimate.TotalDeposit;
+                model.TotalAmount = priceEstimate.TotalAmount;
+            }
 
             ViewBag.BookingInfo = bookingInfo;
         }
@@ -600,10 +616,30 @@ public class ContractController : Controller
     /// API: Tính toán tiền thuê
     /// </summary>
     [HttpGet]
-    public IActionResult CalculateAmount(DateTime start, DateTime end, decimal unitPrice, decimal extraCharges = 0)
+    public async Task<IActionResult> CalculateAmount(Guid modelId, DateTime start, DateTime end, decimal extraCharges = 0)
     {
-        var (days, rentalAmount, total) = _contractService.CalculateRentalAmount(start, end, unitPrice, extraCharges);
-        return Json(new { days, rentalAmount, total });
+        try
+        {
+            var priceEstimate = await _priceCalculationService.CalculateEstimateAsync(modelId, start, end);
+            return Json(new 
+            { 
+                days = priceEstimate.TotalDays,
+                normalDays = priceEstimate.NormalDays,
+                peakDays = priceEstimate.PeakDays,
+                normalDaysAmount = priceEstimate.NormalDaysAmount,
+                peakDaysAmount = priceEstimate.PeakDaysAmount,
+                rentalAmount = priceEstimate.SubTotal,
+                responsibilityDeposit = priceEstimate.ResponsibilityDeposit,
+                rentalDeposit = priceEstimate.RentalDeposit,
+                totalDeposit = priceEstimate.TotalDeposit,
+                total = priceEstimate.TotalAmount + extraCharges
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calculating amount for model {ModelId}", modelId);
+            return Json(new { error = ex.Message });
+        }
     }
 
     /// <summary>

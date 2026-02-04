@@ -1,0 +1,283 @@
+@model Invoice
+@using UCar.Models.Enums
+@using UCar.Models.DTOs
+@{
+    ViewData["Title"] = "Thanh toán hóa đơn";
+    var paymentInfo = ViewBag.PaymentInfo as InvoicePaymentInfoDto;
+}
+
+<!-- Page Header -->
+<div class="row">
+    <div class="col s12">
+        <div class="card">
+            <div class="card-content">
+                <span class="card-title">
+                    <i class="material-icons left">payment</i>
+                    Thanh toán hóa đơn @Model.InvoiceNumber
+                </span>
+                <a href="@Url.Action("MyInvoices")" class="btn-flat waves-effect">
+                    <i class="material-icons left">arrow_back</i>Quay lại
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Invoice Summary -->
+<div class="row">
+    <div class="col s12 m6">
+        <div class="card">
+            <div class="card-content">
+                <span class="card-title">Thông tin hóa đơn</span>
+                <table class="striped">
+                    <tbody>
+                        <tr>
+                            <td><strong>Mã hóa đơn:</strong></td>
+                            <td>@Model.InvoiceNumber</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Loại:</strong></td>
+                            <td>
+                                @switch (Model.InvoiceType)
+                                {
+                                    case InvoiceType.Deposit:
+                                        <span class="badge blue">Đặt cọc</span>
+                                        break;
+                                    case InvoiceType.Rental:
+                                        <span class="badge green">Tiền thuê</span>
+                                        break;
+                                    case InvoiceType.Surcharge:
+                                        <span class="badge orange">Phụ phí</span>
+                                        break;
+                                    case InvoiceType.Penalty:
+                                        <span class="badge red">Phạt</span>
+                                        break;
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ngày phát hành:</strong></td>
+                            <td>@Model.IssuedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                        </tr>
+                        @if (Model.DueDate.HasValue)
+                        {
+                            <tr>
+                                <td><strong>Hạn thanh toán:</strong></td>
+                                <td>
+                                    @Model.DueDate.Value.ToString("dd/MM/yyyy")
+                                    @if (Model.DueDate.Value < DateTime.Now)
+                                    {
+                                        <span class="red-text">(Quá hạn)</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col s12 m6">
+        <div class="card">
+            <div class="card-content">
+                <span class="card-title">Số tiền</span>
+                <table class="striped">
+                    <tbody>
+                        <tr>
+                            <td><strong>Tổng tiền:</strong></td>
+                            <td class="right-align"><strong>@Model.TotalAmount.ToString("N0")đ</strong></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Đã thanh toán:</strong></td>
+                            <td class="right-align">@Model.AmountPaid.ToString("N0")đ</td>
+                        </tr>
+                        <tr class="blue lighten-5">
+                            <td><strong class="blue-text text-darken-2">Còn lại:</strong></td>
+                            <td class="right-align">
+                                <strong class="blue-text text-darken-2" style="font-size: 1.3em;">
+                                    @Model.AmountDue.ToString("N0")đ
+                                </strong>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Form -->
+<div class="row">
+    <div class="col s12 m8 offset-m2">
+        <div class="card">
+            <div class="card-content">
+                <span class="card-title">
+                    <i class="material-icons left">credit_card</i>
+                    Thông tin thanh toán
+                </span>
+
+                <form asp-action="SubmitPayment" method="post" id="paymentForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="invoiceId" value="@Model.InvoiceId" />
+
+                    <!-- Amount -->
+                    <div class="input-field">
+                        <input type="number" id="amount" name="amount" 
+                               value="@Model.AmountDue" 
+                               min="1" 
+                               max="@Model.AmountDue" 
+                               step="1000"
+                               required />
+                        <label for="amount">Số tiền thanh toán (đ) *</label>
+                        <span class="helper-text">Tối đa: @Model.AmountDue.ToString("N0")đ</span>
+                    </div>
+
+                    <!-- Payment Method -->
+                    <div class="input-field">
+                        <select id="paymentMethod" name="paymentMethod" required>
+                            <option value="" disabled selected>Chọn phương thức thanh toán</option>
+                            <option value="@((int)PaymentMethod.Cash)">Tiền mặt tại quầy</option>
+                            <option value="@((int)PaymentMethod.Transfer)">Chuyển khoản ngân hàng</option>
+                            <option value="@((int)PaymentMethod.Card)">Thẻ ngân hàng</option>
+                        </select>
+                        <label>Phương thức thanh toán *</label>
+                    </div>
+
+                    <!-- Bank Reference (conditional) -->
+                    <div class="input-field" id="bankRefField" style="display: none;">
+                        <input type="text" id="bankRefCode" name="bankRefCode" maxlength="50" />
+                        <label for="bankRefCode">Mã giao dịch ngân hàng</label>
+                        <span class="helper-text">Nhập mã tham chiếu nếu đã chuyển khoản</span>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="input-field">
+                        <textarea id="notes" name="notes" class="materialize-textarea" maxlength="500"></textarea>
+                        <label for="notes">Ghi chú</label>
+                        <span class="helper-text">Thông tin bổ sung về thanh toán (không bắt buộc)</span>
+                    </div>
+
+                    <!-- Bank Transfer Instructions -->
+                    <div id="bankInstructions" style="display: none;" class="card blue lighten-5">
+                        <div class="card-content">
+                            <span class="card-title blue-text text-darken-2">
+                                <i class="material-icons left">account_balance</i>
+                                Thông tin chuyển khoản
+                            </span>
+                            <table class="striped">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Ngân hàng:</strong></td>
+                                        <td>Vietcombank - Chi nhánh Hà Nội</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Số tài khoản:</strong></td>
+                                        <td><strong class="blue-text text-darken-2" style="font-size: 1.2em;">0123456789</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Chủ tài khoản:</strong></td>
+                                        <td>CÔNG TY TNHH UCAR</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Nội dung CK:</strong></td>
+                                        <td>
+                                            <strong class="red-text">@Model.InvoiceNumber @ViewBag.CustomerName</strong>
+                                            <a href="#!" class="btn-flat" onclick="copyToClipboard('@Model.InvoiceNumber @ViewBag.CustomerName')">
+                                                <i class="material-icons tiny">content_copy</i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <p class="blue-text text-darken-2" style="margin-top: 15px;">
+                                <i class="material-icons tiny">info</i>
+                                Sau khi chuyển khoản, vui lòng nhập mã giao dịch và nhấn "Xác nhận thanh toán"
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="center-align" style="margin-top: 30px;">
+                        <button type="submit" class="btn-large waves-effect waves-light teal" id="submitBtn">
+                            <i class="material-icons left">check_circle</i>
+                            Xác nhận thanh toán
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Important Note -->
+<div class="row">
+    <div class="col s12 m8 offset-m2">
+        <div class="card amber lighten-5">
+            <div class="card-content">
+                <span class="card-title amber-text text-darken-2">
+                    <i class="material-icons left">warning</i>
+                    Lưu ý quan trọng
+                </span>
+                <ul class="browser-default">
+                    <li>Với thanh toán chuyển khoản, vui lòng điền <strong>ĐÚNG nội dung chuyển khoản</strong> để hệ thống tự động đối soát</li>
+                    <li>Sau khi gửi xác nhận, nhân viên sẽ kiểm tra và xác nhận thanh toán trong <strong>15-30 phút</strong></li>
+                    <li>Nếu có vấn đề, vui lòng liên hệ hotline: <strong>1900-xxxx</strong></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function(){
+            // Initialize select
+            $('select').formSelect();
+
+            // Show/hide bank reference field based on payment method
+            $('#paymentMethod').change(function() {
+                var method = parseInt($(this).val());
+                var isBankTransfer = method === @((int)PaymentMethod.Transfer);
+                
+                if (isBankTransfer) {
+                    $('#bankRefField').slideDown();
+                    $('#bankInstructions').slideDown();
+                } else {
+                    $('#bankRefField').slideUp();
+                    $('#bankInstructions').slideUp();
+                    $('#bankRefCode').val('');
+                }
+            });
+
+            // Form validation
+            $('#paymentForm').submit(function(e) {
+                var amount = parseFloat($('#amount').val());
+                var maxAmount = parseFloat(@Model.AmountDue);
+                
+                if (amount <= 0 || amount > maxAmount) {
+                    e.preventDefault();
+                    M.toast({html: 'Số tiền thanh toán không hợp lệ!', classes: 'red'});
+                    return false;
+                }
+
+                if (!$('#paymentMethod').val()) {
+                    e.preventDefault();
+                    M.toast({html: 'Vui lòng chọn phương thức thanh toán!', classes: 'red'});
+                    return false;
+                }
+
+                // Show loading
+                $('#submitBtn').prop('disabled', true).html('<i class="material-icons left">hourglass_empty</i>Đang xử lý...');
+                return true;
+            });
+        });
+
+        // Copy to clipboard function
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                M.toast({html: 'Đã copy nội dung chuyển khoản!', classes: 'teal'});
+            });
+        }
+    </script>
+}

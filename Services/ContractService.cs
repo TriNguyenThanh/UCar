@@ -16,6 +16,8 @@ public class ContractService : IContractService
     private readonly UCarDbContext _context;
     private readonly ILogger<ContractService> _logger;
     private readonly IBranchAccessService _branchAccess;
+    private readonly IInvoiceService _invoiceService;
+    private readonly IPriceCalculationService _priceCalculationService;
 
     // Điều khoản mặc định
     private const string DefaultTerms = @"ĐIỀU KHOẢN HỢP ĐỒNG THUÊ XE
@@ -29,11 +31,13 @@ public class ContractService : IContractService
 7. Tiền cọc sẽ được hoàn trả sau khi đối soát và xe không có vấn đề.
 8. BÊN CHO THUÊ có quyền thu hồi xe nếu BÊN THUÊ vi phạm điều khoản.";
 
-    public ContractService(UCarDbContext context, ILogger<ContractService> logger, IBranchAccessService branchAccess)
+    public ContractService(UCarDbContext context, ILogger<ContractService> logger, IBranchAccessService branchAccess, IInvoiceService invoiceService, IPriceCalculationService priceCalculationService)
     {
         _context = context;
         _logger = logger;
         _branchAccess = branchAccess;
+        _invoiceService = invoiceService;
+        _priceCalculationService = priceCalculationService;
     }
 
     #region 5.1 Tạo và quản lý hợp đồng thuê
@@ -294,7 +298,7 @@ public class ContractService : IContractService
         var booking = await _context.Bookings
             .Include(b => b.Customer).ThenInclude(c => c.UserAccount)
             .Include(b => b.AssignedVehicle).ThenInclude(v => v!.Model).ThenInclude(m => m.VehicleType)
-            .Include(b => b.VehicleType).ThenInclude(vt => vt.Prices)
+            .Include(b => b.VehicleType)
             .FirstOrDefaultAsync(b => b.BookingId == bookingId);
 
         if (booking == null) return null;
@@ -309,8 +313,14 @@ public class ContractService : IContractService
             return null;
         }
 
-        // Get price
-        var price = booking.VehicleType.Prices.FirstOrDefault(p => p.IsActive);
+        // Get price from assigned vehicle's model (since Prices.VehicleTypeId is nullable)
+        Price? price = null;
+        if (booking.AssignedVehicle?.ModelId != null)
+        {
+            price = await _context.Prices
+                .Where(p => p.VehicleModelId == booking.AssignedVehicle.ModelId && p.IsActive)
+                .FirstOrDefaultAsync();
+        }
 
         return new BookingForContractViewModel
         {
@@ -358,6 +368,7 @@ public class ContractService : IContractService
             .Select(v => new VehicleOption
             {
                 VehicleId = v.VehicleId,
+                ModelId = v.Model.ModelId,
                 PlateNo = v.PlateNo,
                 ModelName = v.Model.Make + " " + v.Model.ModelName,
                 VehicleTypeId = v.Model.VehicleTypeId,
@@ -372,7 +383,7 @@ public class ContractService : IContractService
             {
                 PriceId = p.PriceId,
                 Name = p.Name,
-                VehicleTypeId = Guid.Empty, // No longer used
+                VehicleTypeId = p.VehicleTypeId, // Include to match with vehicle
                 UnitPrice = p.BaseDailyPrice,
                 DepositSuggest = 2000000 // Fixed
             })
@@ -418,9 +429,19 @@ public class ContractService : IContractService
             throw new InvalidOperationException("Ngày bắt đầu không hợp lệ");
         }
 
-        // Calculate rental
-        var (days, rentalAmount, total) = CalculateRentalAmount(
-            model.PlannedStart, model.PlannedEnd, model.UnitPrice, model.ExtraCharges);
+        // Get vehicle and model for price calculation
+        var vehicle = await _context.Vehicles
+            .Include(v => v.Model)
+            .FirstOrDefaultAsync(v => v.VehicleId == model.VehicleId);
+        
+        if (vehicle == null)
+        {
+            throw new InvalidOperationException("Không tìm thấy xe");
+        }
+
+        // Calculate detailed pricing using IPriceCalculationService
+        var priceEstimate = await _priceCalculationService.CalculateEstimateAsync(
+            vehicle.Model.ModelId, model.PlannedStart, model.PlannedEnd);
 
         // Generate contract code
         var contractCode = await GenerateContractCodeAsync();
@@ -439,10 +460,18 @@ public class ContractService : IContractService
             PlannedEnd = model.PlannedEnd,
             PickupLocation = model.PickupLocation,
             ReturnLocation = model.ReturnLocation,
-            RentalDays = days,
-            RentalAmount = rentalAmount,
+            RentalDays = priceEstimate.TotalDays,
+            NormalDays = priceEstimate.NormalDays,
+            PeakDays = priceEstimate.PeakDays,
+            NormalDaysAmount = priceEstimate.NormalDaysAmount,
+            PeakDaysAmount = priceEstimate.PeakDaysAmount,
+            MonthlyAmount = priceEstimate.MonthlyAmount,
+            IsMonthlyRate = priceEstimate.MonthlyAmount > 0,
+            RentalAmount = priceEstimate.SubTotal,
             ExtraCharges = model.ExtraCharges,
-            TotalAmountFinal = total,
+            ResponsibilityDeposit = priceEstimate.ResponsibilityDeposit,
+            RentalDeposit = priceEstimate.RentalDeposit,
+            TotalAmountFinal = priceEstimate.TotalAmount + model.ExtraCharges,
             Status = model.SaveAsDraft ? RentalContractStatus.Draft : RentalContractStatus.Pending,
             Terms = string.IsNullOrWhiteSpace(model.Terms) ? DefaultTerms : model.Terms,
             InternalNote = model.InternalNote,
@@ -462,12 +491,8 @@ public class ContractService : IContractService
             }
         }
 
-        // Update vehicle status
-        var vehicle = await _context.Vehicles.FindAsync(model.VehicleId);
-        if (vehicle != null)
-        {
-            vehicle.CurrentStatus = VehicleStatus.Reserved;
-        }
+        // Update vehicle status (already fetched above)
+        vehicle.CurrentStatus = VehicleStatus.Reserved;
 
         await _context.SaveChangesAsync();
 
@@ -551,9 +576,19 @@ public class ContractService : IContractService
             }
         }
 
-        // Recalculate
-        var (days, rentalAmount, total) = CalculateRentalAmount(
-            model.PlannedStart, model.PlannedEnd, model.UnitPrice, model.ExtraCharges);
+        // Get vehicle and model for price calculation
+        var vehicle = await _context.Vehicles
+            .Include(v => v.Model)
+            .FirstOrDefaultAsync(v => v.VehicleId == model.VehicleId);
+        
+        if (vehicle == null)
+        {
+            throw new InvalidOperationException("Không tìm thấy xe");
+        }
+
+        // Calculate detailed pricing using IPriceCalculationService
+        var priceEstimate = await _priceCalculationService.CalculateEstimateAsync(
+            vehicle.Model.ModelId, model.PlannedStart, model.PlannedEnd);
 
         // Update fields
         contract.CustomerId = model.CustomerId;
@@ -565,10 +600,18 @@ public class ContractService : IContractService
         contract.ReturnLocation = model.ReturnLocation;
         contract.SnapshotUnitPrice = model.UnitPrice;
         contract.SnapshotDepositAmount = model.DepositAmount;
-        contract.RentalDays = days;
-        contract.RentalAmount = rentalAmount;
+        contract.RentalDays = priceEstimate.TotalDays;
+        contract.NormalDays = priceEstimate.NormalDays;
+        contract.PeakDays = priceEstimate.PeakDays;
+        contract.NormalDaysAmount = priceEstimate.NormalDaysAmount;
+        contract.PeakDaysAmount = priceEstimate.PeakDaysAmount;
+        contract.MonthlyAmount = priceEstimate.MonthlyAmount;
+        contract.IsMonthlyRate = priceEstimate.MonthlyAmount > 0;
+        contract.RentalAmount = priceEstimate.SubTotal;
         contract.ExtraCharges = model.ExtraCharges;
-        contract.TotalAmountFinal = total;
+        contract.ResponsibilityDeposit = priceEstimate.ResponsibilityDeposit;
+        contract.RentalDeposit = priceEstimate.RentalDeposit;
+        contract.TotalAmountFinal = priceEstimate.TotalAmount + model.ExtraCharges;
         contract.Terms = model.Terms;
         contract.InternalNote = model.InternalNote;
         contract.UpdatedAt = DateTime.Now;
@@ -717,6 +760,29 @@ public class ContractService : IContractService
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Contract {ContractId} confirmed, status changed to Active", contractId);
+
+        // Auto-create Deposit Invoice (Module 7 Integration)
+        try
+        {
+            _logger.LogInformation("Auto-creating Deposit Invoice for contract {ContractId}", contractId);
+            var depositInvoiceId = await _invoiceService.CreateDepositInvoiceAsync(contractId, confirmedBy);
+            
+            if (depositInvoiceId != Guid.Empty)
+            {
+                _logger.LogInformation("Deposit Invoice {InvoiceId} created successfully for contract {ContractId}", 
+                    depositInvoiceId, contractId);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to create Deposit Invoice for contract {ContractId} - may already exist", contractId);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Don't fail contract confirmation if invoice creation fails
+            _logger.LogError(ex, "Error creating Deposit Invoice for contract {ContractId}. Contract confirmed but invoice not created.", contractId);
+        }
+
         return true;
     }
 
@@ -1055,19 +1121,6 @@ public class ContractService : IContractService
                           b.EndAt > start);
 
         return !hasOverlap && !hasBookingOverlap;
-    }
-
-    public (int days, decimal rentalAmount, decimal total) CalculateRentalAmount(
-        DateTime start, DateTime end, decimal unitPrice, decimal extraCharges)
-    {
-        var duration = end - start;
-        var days = (int)Math.Ceiling(duration.TotalDays);
-        if (days < 1) days = 1;
-
-        var rentalAmount = days * unitPrice;
-        var total = rentalAmount + extraCharges;
-
-        return (days, rentalAmount, total);
     }
 
     public async Task<string> GenerateContractCodeAsync()

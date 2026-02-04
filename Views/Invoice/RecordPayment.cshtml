@@ -1,0 +1,271 @@
+@model RecordPaymentViewModel
+@using UCar.ViewModels
+
+@{
+    ViewData["Title"] = "Ghi nhận thanh toán";
+    ViewData["Description"] = $"Ghi nhận thanh toán cho hóa đơn {Model.InvoiceNumber}";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Page Header -->
+    <div style="margin-bottom: 2rem;">
+        <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+            <i class="material-icons green-text" style="vertical-align: middle; margin-right: 8px;">payment</i>
+            Ghi nhận thanh toán
+        </h4>
+        <p class="grey-text text-darken-1" style="font-size: 1.125rem; margin: 0;">
+            Hóa đơn: <strong>@Model.InvoiceNumber</strong>
+        </p>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Form -->
+        <div class="col s12 m7">
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title">Thông tin thanh toán</span>
+                    
+                    <form asp-action="RecordPayment" method="post" id="paymentForm">
+                        <input type="hidden" asp-for="InvoiceId" />
+                        
+                        <!-- Invoice Number (readonly) -->
+                        <div class="input-field">
+                            <i class="material-icons prefix">receipt</i>
+                            <input type="text" asp-for="InvoiceNumber" readonly />
+                            <label for="InvoiceNumber" class="active">Mã hóa đơn</label>
+                        </div>
+
+                        <!-- Amount Due (readonly) -->
+                        <div class="input-field">
+                            <i class="material-icons prefix red-text">account_balance_wallet</i>
+                            <input type="text" id="amountDueDisplay" value="@Model.AmountDue.ToString("N0") ₫" readonly />
+                            <label for="amountDueDisplay" class="active">Số tiền còn phải trả</label>
+                            <span class="helper-text">Tổng số tiền khách hàng cần thanh toán</span>
+                        </div>
+
+                        <!-- Amount Paid (editable) -->
+                        <div class="input-field">
+                            <i class="material-icons prefix green-text">attach_money</i>
+                            <input type="number" 
+                                   asp-for="AmountPaid" 
+                                   id="amountPaid" 
+                                   step="1000" 
+                                   min="0" 
+                                   max="@Model.AmountDue"
+                                   required />
+                            <label for="AmountPaid" class="active">Số tiền thanh toán *</label>
+                            <span asp-validation-for="AmountPaid" class="red-text"></span>
+                            <span class="helper-text">Nhập số tiền khách hàng thanh toán (tối đa @Model.AmountDue.ToString("N0") ₫)</span>
+                        </div>
+
+                        <!-- Quick Amount Buttons -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <p style="font-weight: 500; margin-bottom: 8px;">Chọn nhanh:</p>
+                            <button type="button" class="btn-small waves-effect waves-light blue" onclick="setAmount(@Model.AmountDue)" style="margin-right: 8px;">
+                                Toàn bộ (@Model.AmountDue.ToString("N0") ₫)
+                            </button>
+                            <button type="button" class="btn-small waves-effect waves-light blue lighten-2" onclick="setAmount(@(Model.AmountDue / 2))" style="margin-right: 8px;">
+                                50% (@((Model.AmountDue / 2).ToString("N0")) ₫)
+                            </button>
+                            <button type="button" class="btn-small waves-effect waves-light blue lighten-3" onclick="setAmount(0)">
+                                Xóa
+                            </button>
+                        </div>
+
+                        <!-- Payment Date (readonly, auto-filled) -->
+                        <div class="input-field">
+                            <i class="material-icons prefix">event</i>
+                            <input type="text" id="paymentDate" value="@DateTime.Now.ToString("dd/MM/yyyy HH:mm")" readonly />
+                            <label for="paymentDate" class="active">Thời gian ghi nhận</label>
+                        </div>
+
+                        <!-- Notes (optional) -->
+                        <div class="input-field">
+                            <i class="material-icons prefix">notes</i>
+                            <textarea asp-for="Notes" 
+                                      id="notes" 
+                                      class="materialize-textarea" 
+                                      maxlength="500"></textarea>
+                            <label for="Notes">Ghi chú (tùy chọn)</label>
+                            <span asp-validation-for="Notes" class="red-text"></span>
+                            <span class="helper-text" data-length="500">Ví dụ: Chuyển khoản, Tiền mặt, Momo, v.v.</span>
+                        </div>
+
+                        <!-- Validation Summary -->
+                        <div asp-validation-summary="ModelOnly" class="red-text"></div>
+
+                        <!-- Action Buttons -->
+                        <div style="margin-top: 2rem;">
+                            <button type="submit" class="btn waves-effect waves-light green" style="margin-right: 8px;">
+                                <i class="material-icons left">check</i>
+                                Xác nhận thanh toán
+                            </button>
+                            <a asp-action="Details" asp-route-id="@Model.InvoiceId" class="btn waves-effect waves-light grey">
+                                <i class="material-icons left">close</i>
+                                Hủy
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Invoice Summary -->
+        <div class="col s12 m5">
+            <!-- Invoice Summary Card -->
+            <div class="card blue lighten-5" style="border-left: 4px solid #2196F3;">
+                <div class="card-content">
+                    <span class="card-title" style="font-size: 1.25rem; font-weight: 700;">
+                        <i class="material-icons" style="vertical-align: middle;">info</i>
+                        Tóm tắt hóa đơn
+                    </span>
+                    <table style="margin-top: 1rem; font-size: 1rem;">
+                        <tbody>
+                            <tr>
+                                <td style="padding: 10px 0;">Tổng tiền hóa đơn:</td>
+                                <td style="text-align: right; padding: 10px 0;">
+                                    <strong>@Model.TotalAmount.ToString("N0") ₫</strong>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px 0;">Đã thanh toán:</td>
+                                <td style="text-align: right; padding: 10px 0;">
+                                    <strong class="green-text">@Model.PreviouslyPaid.ToString("N0") ₫</strong>
+                                </td>
+                            </tr>
+                            <tr style="border-top: 2px solid #1976D2;">
+                                <td style="padding: 12px 0; font-size: 1.1rem; font-weight: 700;">Còn phải trả:</td>
+                                <td style="text-align: right; padding: 12px 0; font-size: 1.3rem; font-weight: 700;">
+                                    <span class="red-text">@Model.AmountDue.ToString("N0") ₫</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    @if (Model.DueDate.HasValue)
+                    {
+                        <div style="margin-top: 1rem; padding: 12px; background: white; border-radius: 4px;">
+                            <div style="display: flex; align-items: center;">
+                                <i class="material-icons @(Model.IsOverdue ? "red-text" : "blue-text")" style="margin-right: 8px;">
+                                    @(Model.IsOverdue ? "warning" : "event")
+                                </i>
+                                <div>
+                                    <strong>Hạn thanh toán:</strong><br />
+                                    <span class="@(Model.IsOverdue ? "red-text" : "")">
+                                        @Model.DueDate.Value.ToString("dd/MM/yyyy HH:mm")
+                                    </span>
+                                    @if (Model.IsOverdue)
+                                    {
+                                        <br />
+                                        <span class="red-text" style="font-size: 0.9rem;">
+                                            <strong>Đã quá hạn!</strong>
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Payment Instructions Card -->
+            <div class="card yellow lighten-5" style="border-left: 4px solid #FFC107;">
+                <div class="card-content">
+                    <span class="card-title" style="font-size: 1.1rem; font-weight: 700;">
+                        <i class="material-icons orange-text" style="vertical-align: middle;">info</i>
+                        Hướng dẫn
+                    </span>
+                    <ul style="margin-top: 1rem; padding-left: 20px;">
+                        <li style="margin-bottom: 8px;">
+                            Nhập số tiền khách hàng thanh toán vào ô "Số tiền thanh toán"
+                        </li>
+                        <li style="margin-bottom: 8px;">
+                            Có thể thanh toán toàn bộ hoặc một phần số tiền còn nợ
+                        </li>
+                        <li style="margin-bottom: 8px;">
+                            Ghi chú phương thức thanh toán để tiện theo dõi
+                        </li>
+                        <li style="margin-bottom: 8px;">
+                            Hệ thống sẽ tự động cập nhật trạng thái hóa đơn
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title" style="font-size: 1.1rem; font-weight: 700;">
+                        Thao tác nhanh
+                    </span>
+                    <div style="margin-top: 1rem;">
+                        <a asp-action="Details" asp-route-id="@Model.InvoiceId" 
+                           class="btn-small waves-effect waves-light blue" 
+                           style="width: 100%; margin-bottom: 8px;">
+                            <i class="material-icons left">visibility</i>
+                            Xem chi tiết hóa đơn
+                        </a>
+                        <a asp-action="Print" asp-route-id="@Model.InvoiceId" 
+                           class="btn-small waves-effect waves-light grey" 
+                           style="width: 100%;" 
+                           target="_blank">
+                            <i class="material-icons left">print</i>
+                            In hóa đơn
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize character counter for textarea
+            M.CharacterCounter.init(document.querySelectorAll('.materialize-textarea'));
+
+            // Update labels
+            M.updateTextFields();
+
+            // Form validation
+            document.getElementById('paymentForm').addEventListener('submit', function(e) {
+                var amountPaid = parseFloat(document.getElementById('amountPaid').value);
+                var amountDue = @Model.AmountDue;
+
+                if (isNaN(amountPaid) || amountPaid <= 0) {
+                    e.preventDefault();
+                    M.toast({
+                        html: '<i class="material-icons left">error</i>Vui lòng nhập số tiền thanh toán hợp lệ',
+                        classes: 'red'
+                    });
+                    return false;
+                }
+
+                if (amountPaid > amountDue) {
+                    e.preventDefault();
+                    M.toast({
+                        html: '<i class="material-icons left">warning</i>Số tiền thanh toán không được vượt quá số tiền còn nợ',
+                        classes: 'orange'
+                    });
+                    return false;
+                }
+
+                // Confirm before submit
+                var confirmMsg = 'Xác nhận ghi nhận thanh toán ' + amountPaid.toLocaleString('vi-VN') + ' ₫?';
+                if (!confirm(confirmMsg)) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
+
+        // Set amount function for quick buttons
+        function setAmount(amount) {
+            document.getElementById('amountPaid').value = Math.round(amount);
+            M.updateTextFields();
+        }
+    </script>
+}

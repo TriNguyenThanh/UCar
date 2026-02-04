@@ -1,0 +1,356 @@
+@model List<InvoiceListViewModel>
+@using UCar.ViewModels
+@using UCar.Models.Enums
+
+@{
+    ViewData["Title"] = "Hóa đơn theo hợp đồng";
+    ViewData["Description"] = $"Tất cả hóa đơn của hợp đồng {ViewBag.ContractCode}";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Page Header -->
+    <div style="margin-bottom: 2rem;">
+        <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+            <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">receipt_long</i>
+            Hóa đơn theo hợp đồng
+        </h4>
+        <p class="grey-text text-darken-1" style="font-size: 1.125rem; margin: 0;">
+            Hợp đồng: <strong>@ViewBag.ContractCode</strong>
+            @if (!string.IsNullOrEmpty(ViewBag.VehiclePlateNo))
+            {
+                <span class="chip" style="margin-left: 8px;">@ViewBag.VehiclePlateNo</span>
+            }
+        </p>
+    </div>
+
+    <!-- Contract Summary Card -->
+    @if (ViewBag.CustomerName != null)
+    {
+        <div class="card blue lighten-5" style="margin-bottom: 1.5rem; border-left: 4px solid #2196F3;">
+            <div class="card-content">
+                <div class="row" style="margin-bottom: 0;">
+                    <div class="col s12 m4">
+                        <p style="margin: 0;">
+                            <i class="material-icons tiny blue-text" style="vertical-align: middle;">person</i>
+                            <strong>Khách hàng:</strong> @ViewBag.CustomerName
+                        </p>
+                    </div>
+                    <div class="col s12 m4">
+                        <p style="margin: 0;">
+                            <i class="material-icons tiny blue-text" style="vertical-align: middle;">directions_car</i>
+                            <strong>Xe:</strong> @ViewBag.VehiclePlateNo - @ViewBag.VehicleModelName
+                        </p>
+                    </div>
+                    <div class="col s12 m4">
+                        <p style="margin: 0;">
+                            <i class="material-icons tiny blue-text" style="vertical-align: middle;">info</i>
+                            <strong>Tổng số hóa đơn:</strong> @Model.Count
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (Model.Any())
+    {
+        <!-- Payment Flow Timeline -->
+        <div class="card">
+            <div class="card-content">
+                <span class="card-title" style="margin-bottom: 1.5rem;">
+                    <i class="material-icons teal-text" style="vertical-align: middle;">timeline</i>
+                    Luồng thanh toán
+                </span>
+
+                <div class="row">
+                    @foreach (var invoice in Model)
+                    {
+                        <div class="col s12 m6 l3">
+                            <div class="card hoverable" style="border-top: 4px solid @GetColorForType(invoice.InvoiceType);">
+                                <div class="card-content">
+                                    <!-- Type Badge -->
+                                    <div style="text-align: center; margin-bottom: 1rem;">
+                                        @switch (invoice.InvoiceType)
+                                        {
+                                            case InvoiceType.Deposit:
+                                                <span class="badge blue white-text" style="font-size: 0.9rem; padding: 6px 12px;">
+                                                    <i class="material-icons tiny" style="vertical-align: middle;">lock</i>
+                                                    Đặt cọc
+                                                </span>
+                                                break;
+                                            case InvoiceType.Rental:
+                                                <span class="badge green white-text" style="font-size: 0.9rem; padding: 6px 12px;">
+                                                    <i class="material-icons tiny" style="vertical-align: middle;">attach_money</i>
+                                                    Tiền thuê
+                                                </span>
+                                                break;
+                                            case InvoiceType.Surcharge:
+                                                <span class="badge orange white-text" style="font-size: 0.9rem; padding: 6px 12px;">
+                                                    <i class="material-icons tiny" style="vertical-align: middle;">add</i>
+                                                    Phụ phí
+                                                </span>
+                                                break;
+                                            case InvoiceType.Penalty:
+                                                <span class="badge red white-text" style="font-size: 0.9rem; padding: 6px 12px;">
+                                                    <i class="material-icons tiny" style="vertical-align: middle;">warning</i>
+                                                    Phạt
+                                                </span>
+                                                break;
+                                            case InvoiceType.Refund:
+                                                <span class="badge teal white-text" style="font-size: 0.9rem; padding: 6px 12px;">
+                                                    <i class="material-icons tiny" style="vertical-align: middle;">replay</i>
+                                                    Hoàn cọc
+                                                </span>
+                                                break;
+                                        }
+                                    </div>
+
+                                    <!-- Invoice Number -->
+                                    <h6 style="text-align: center; font-weight: 700; margin-bottom: 0.5rem;">
+                                        @invoice.InvoiceNumber
+                                    </h6>
+
+                                    <!-- Issue Date -->
+                                    <p style="text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
+                                        <i class="material-icons tiny" style="vertical-align: middle;">event</i>
+                                        @invoice.IssuedDate.ToString("dd/MM/yyyy")
+                                    </p>
+
+                                    <!-- Amounts -->
+                                    <div style="background: #f5f5f5; padding: 12px; border-radius: 4px; margin-bottom: 1rem;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                            <span style="font-size: 0.85rem; color: #666;">Tổng tiền:</span>
+                                            <strong style="font-size: 0.95rem; @(invoice.TotalAmount < 0 ? "color: #4CAF50;" : "")">
+                                                @invoice.TotalAmount.ToString("N0") ₫
+                                            </strong>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <span style="font-size: 0.85rem; color: #666;">Còn phải trả:</span>
+                                            <strong style="font-size: 0.95rem; @(invoice.AmountDue > 0 ? "color: #F44336;" : invoice.AmountDue < 0 ? "color: #4CAF50;" : "")">
+                                                @invoice.AmountDue.ToString("N0") ₫
+                                            </strong>
+                                        </div>
+                                    </div>
+
+                                    <!-- Status -->
+                                    <div style="text-align: center; margin-bottom: 1rem;">
+                                        <span class="@invoice.StatusBadgeClass" style="font-size: 0.85rem;">
+                                            @invoice.StatusDisplay
+                                        </span>
+                                        @if (invoice.IsOverdue)
+                                        {
+                                            <br />
+                                            <span class="badge red white-text" style="font-size: 0.8rem; margin-top: 4px;">
+                                                <i class="material-icons tiny" style="vertical-align: middle;">warning</i>
+                                                Quá hạn
+                                            </span>
+                                        }
+                                    </div>
+
+                                    <!-- Actions -->
+                                    <div style="text-align: center;">
+                                        <a asp-action="Details" asp-route-id="@invoice.InvoiceId" 
+                                           class="btn-small waves-effect waves-light blue" 
+                                           style="width: 100%; margin-bottom: 4px;">
+                                            <i class="material-icons left tiny">visibility</i>
+                                            Chi tiết
+                                        </a>
+                                        @if (invoice.CanRecordPayment)
+                                        {
+                                            <a asp-action="RecordPayment" asp-route-id="@invoice.InvoiceId" 
+                                               class="btn-small waves-effect waves-light green" 
+                                               style="width: 100%;">
+                                                <i class="material-icons left tiny">payment</i>
+                                                Thanh toán
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Table View -->
+        <div class="card" style="margin-top: 1.5rem;">
+            <div class="card-content" style="padding: 0;">
+                <div style="padding: 1rem; background: #f5f5f5; border-bottom: 1px solid #e0e0e0;">
+                    <span style="font-weight: 700; font-size: 1.1rem;">
+                        <i class="material-icons" style="vertical-align: middle;">table_chart</i>
+                        Bảng chi tiết
+                    </span>
+                </div>
+                <table class="striped highlight responsive-table">
+                    <thead>
+                        <tr>
+                            <th>Mã hóa đơn</th>
+                            <th>Loại</th>
+                            <th>Ngày phát hành</th>
+                            <th>Hạn TT</th>
+                            <th style="text-align: right;">Tổng tiền</th>
+                            <th style="text-align: right;">Đã trả</th>
+                            <th style="text-align: right;">Còn phải trả</th>
+                            <th>Trạng thái</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var invoice in Model)
+                        {
+                            <tr class="@(invoice.IsOverdue ? "red lighten-5" : "")">
+                                <td>
+                                    <strong>@invoice.InvoiceNumber</strong>
+                                </td>
+                                <td>
+                                    @switch (invoice.InvoiceType)
+                                    {
+                                        case InvoiceType.Deposit:
+                                            <span class="badge blue white-text">Đặt cọc</span>
+                                            break;
+                                        case InvoiceType.Rental:
+                                            <span class="badge green white-text">Tiền thuê</span>
+                                            break;
+                                        case InvoiceType.Surcharge:
+                                            <span class="badge orange white-text">Phụ phí</span>
+                                            break;
+                                        case InvoiceType.Penalty:
+                                            <span class="badge red white-text">Phạt</span>
+                                            break;
+                                        case InvoiceType.Refund:
+                                            <span class="badge teal white-text">Hoàn cọc</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>@invoice.IssuedDate.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    @if (invoice.DueDate.HasValue)
+                                    {
+                                        <span class="@(invoice.IsOverdue ? "red-text" : "")">
+                                            @invoice.DueDate.Value.ToString("dd/MM/yyyy")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="grey-text">-</span>
+                                    }
+                                </td>
+                                <td style="text-align: right;">
+                                    <strong class="@(invoice.TotalAmount < 0 ? "green-text" : "")">
+                                        @invoice.TotalAmount.ToString("N0") ₫
+                                    </strong>
+                                </td>
+                                <td style="text-align: right;">
+                                    <strong class="green-text">@invoice.PreviouslyPaid.ToString("N0") ₫</strong>
+                                </td>
+                                <td style="text-align: right;">
+                                    <strong class="@(invoice.AmountDue > 0 ? "red-text" : invoice.AmountDue < 0 ? "green-text" : "")">
+                                        @invoice.AmountDue.ToString("N0") ₫
+                                    </strong>
+                                </td>
+                                <td>
+                                    <span class="@invoice.StatusBadgeClass">@invoice.StatusDisplay</span>
+                                    @if (invoice.IsOverdue)
+                                    {
+                                        <i class="material-icons tiny red-text" style="vertical-align: middle;">warning</i>
+                                    }
+                                </td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@invoice.InvoiceId" 
+                                       class="btn-small waves-effect waves-light blue tooltipped"
+                                       data-position="top" data-tooltip="Chi tiết">
+                                        <i class="material-icons">visibility</i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: #f5f5f5; font-weight: bold;">
+                            <td colspan="4" style="text-align: right; padding: 1rem;">
+                                <strong>Tổng cộng:</strong>
+                            </td>
+                            <td style="text-align: right; padding: 1rem;">
+                                @Model.Sum(i => i.TotalAmount).ToString("N0") ₫
+                            </td>
+                            <td style="text-align: right; padding: 1rem;" class="green-text">
+                                @Model.Sum(i => i.PreviouslyPaid).ToString("N0") ₫
+                            </td>
+                            <td style="text-align: right; padding: 1rem;" class="@(Model.Sum(i => i.AmountDue) > 0 ? "red-text" : "green-text")">
+                                @Model.Sum(i => i.AmountDue).ToString("N0") ₫
+                            </td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-content" style="padding: 3rem; text-align: center;">
+                <i class="material-icons grey-text" style="font-size: 4rem;">receipt_long</i>
+                <p class="grey-text" style="font-size: 1.25rem; margin-top: 1rem;">
+                    Chưa có hóa đơn nào cho hợp đồng này
+                </p>
+            </div>
+        </div>
+    }
+
+    <!-- Back Button -->
+    <div style="margin-top: 2rem; text-align: center;">
+        <a asp-action="Index" class="btn waves-effect waves-light grey">
+            <i class="material-icons left">arrow_back</i>
+            Quay lại danh sách tất cả hóa đơn
+        </a>
+        @if (!string.IsNullOrEmpty(ViewBag.ContractId))
+        {
+            <a asp-controller="Contract" asp-action="Details" asp-route-id="@ViewBag.ContractId" 
+               class="btn waves-effect waves-light blue">
+                <i class="material-icons left">assignment</i>
+                Xem chi tiết hợp đồng
+            </a>
+
+            @* Hiển thị button tạo refund invoice nếu chưa có *@
+            @if (ViewBag.CanCreateRefund == true)
+            {
+                <form asp-action="CreateRefundInvoice" asp-route-contractId="@ViewBag.ContractId" 
+                      method="post" style="display: inline-block;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn waves-effect waves-light teal"
+                            onclick="return confirm('Xác nhận tạo hóa đơn hoàn cọc cho hợp đồng này?')">
+                        <i class="material-icons left">replay</i>
+                        Tạo hóa đơn hoàn cọc
+                    </button>
+                </form>
+            }
+        }
+    </div>
+</div>
+
+@functions {
+    string GetColorForType(InvoiceType type)
+    {
+        return type switch
+        {
+            InvoiceType.Deposit => "#2196F3",
+            InvoiceType.Rental => "#4CAF50",
+            InvoiceType.Surcharge => "#FF9800",
+            InvoiceType.Penalty => "#F44336",
+            InvoiceType.Refund => "#009688",
+            _ => "#9E9E9E"
+        };
+    }
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize tooltips
+            var tooltips = document.querySelectorAll('.tooltipped');
+            M.Tooltip.init(tooltips);
+        });
+    </script>
+}

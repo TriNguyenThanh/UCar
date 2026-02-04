@@ -50,12 +50,13 @@ public class AccountController : Controller
         try
         {
             var user = await _authService.AuthenticateAsync(model.Username, model.Password);
-            var fullName = await _authService.GetName(user!);
             if (user == null)
             {
                 ModelState.AddModelError(string.Empty, "Invalid username or password.");
                 return View(model);
             }
+
+            var fullName = await _authService.GetName(user);
 
             // Create claims
             var claims = new List<Claim>
@@ -66,6 +67,12 @@ public class AccountController : Controller
                 new Claim(ClaimTypes.Role, user.Role.Code.ToString()),
                 new Claim(BranchAccessService.RoleCodeClaimType, user.Role.Code.ToString())
             };
+
+            // Add Phone claim if available
+            if (!string.IsNullOrEmpty(user.Phone))
+            {
+                claims.Add(new Claim(ClaimTypes.MobilePhone, user.Phone));
+            }
 
             if (user.Customer != null)
             {

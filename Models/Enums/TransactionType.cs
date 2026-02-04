@@ -7,5 +7,8 @@ public enum TransactionType
     RentalFee,              // Tiền thuê xe
     Penalty,                // Phạt vi phạm
     RefundResponsibility,   // Hoàn cọc trách nhiệm
-    RefundRental            // Hoàn cọc thuê xe
+    RefundRental,           // Hoàn cọc thuê xe
+    Deposit,                // Thanh toán Deposit Invoice
+    Surcharge,              // Thanh toán Surcharge Invoice
+    PenaltyFee              // Thanh toán Penalty Invoice
 }

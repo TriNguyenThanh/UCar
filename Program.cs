@@ -26,8 +26,8 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.ExpireTimeSpan = TimeSpan.FromHours(12);
         options.SlidingExpiration = true;
         options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Changed from Always
+        options.Cookie.SameSite = SameSiteMode.Lax; // Changed from Strict
     });
 
 // Register application services
@@ -47,6 +47,10 @@ builder.Services.AddScoped<IBookingService, BookingService>();
 
 // Register Contract services
 builder.Services.AddScoped<IContractService, ContractService>();
+
+// Register Invoice services (Module 7)
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+builder.Services.AddHostedService<BackgroundInvoiceService>(); // Background service cho tự động xử lý invoice
 
 // Register Payment services
 builder.Services.AddScoped<IPaymentService, PaymentService>();

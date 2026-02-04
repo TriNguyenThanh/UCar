@@ -112,11 +112,6 @@ public interface IContractService
     Task<bool> CheckVehicleAvailabilityAsync(Guid vehicleId, DateTime start, DateTime end, Guid? excludeContractId = null);
     
     /// <summary>
-    /// Tính toán tiền thuê
-    /// </summary>
-    (int days, decimal rentalAmount, decimal total) CalculateRentalAmount(DateTime start, DateTime end, decimal unitPrice, decimal extraCharges);
-    
-    /// <summary>
     /// Sinh mã hợp đồng
     /// </summary>
     Task<string> GenerateContractCodeAsync();

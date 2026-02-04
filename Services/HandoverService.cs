@@ -18,12 +18,14 @@ public class HandoverService : IHandoverService
     private readonly UCarDbContext _context;
     private readonly IVehicleStatusService _vehicleStatusService;
     private readonly IBranchAccessService _branchAccess;
+    private readonly IInvoiceService _invoiceService;
 
-    public HandoverService(UCarDbContext context, IVehicleStatusService vehicleStatusService, IBranchAccessService branchAccess)
+    public HandoverService(UCarDbContext context, IVehicleStatusService vehicleStatusService, IBranchAccessService branchAccess, IInvoiceService invoiceService)
     {
         _context = context;
         _vehicleStatusService = vehicleStatusService;
         _branchAccess = branchAccess;
+        _invoiceService = invoiceService;
     }
 
     #region Contract List for Handover
@@ -262,6 +264,24 @@ public class HandoverService : IHandoverService
         });
 
         await _context.SaveChangesAsync();
+
+        // Auto-create Rental Invoice (Module 7 Integration)
+        try
+        {
+            var rentalInvoiceId = await _invoiceService.CreateRentalInvoiceAsync(dto.ContractId, userId);
+            
+            if (rentalInvoiceId != Guid.Empty)
+            {
+                // Invoice created successfully - could add to success message
+            }
+        }
+        catch (Exception ex)
+        {
+            // Don't fail handover if invoice creation fails
+            // Log error but continue
+            Console.WriteLine($"Error creating Rental Invoice for contract {dto.ContractId}: {ex.Message}");
+        }
+
         return ServiceResult<Guid>.Ok(handover.HandoverId, "Giao xe thành công");
     }
 
@@ -462,6 +482,29 @@ public class HandoverService : IHandoverService
         });
 
         await _context.SaveChangesAsync();
+
+        // Auto-create Surcharge/Penalty Invoice if charges exist (Module 7 Integration)
+        try
+        {
+            var hasCharges = await _context.ContractCharges
+                .AnyAsync(c => c.ContractId == dto.ContractId && !c.IsPaid);
+            
+            if (hasCharges)
+            {
+                var surchargeInvoiceId = await _invoiceService.CreateSurchargePenaltyInvoiceAsync(dto.ContractId, userId);
+                
+                if (surchargeInvoiceId.HasValue && surchargeInvoiceId.Value != Guid.Empty)
+                {
+                    // Invoice created successfully
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Don't fail check-in if invoice creation fails
+            Console.WriteLine($"Error creating Surcharge/Penalty Invoice for contract {dto.ContractId}: {ex.Message}");
+        }
+
         return ServiceResult<Guid>.Ok(returnRecord.ReturnId, "Nhận xe thành công");
     }
 

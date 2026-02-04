@@ -212,59 +212,170 @@
                             Chi phí
                         </span>
                         
-                        <div class="row">
-                            <div class="col s12">
-                                <div class="input-field">
-                                    <select asp-for="PriceId" id="PriceId">
-                                        <option value="">-- Chọn bảng giá --</option>
-                                        @foreach (var price in options?.Prices ?? new List<UCar.ViewModels.Contract.PriceOption>())
-                                        {
-                                            <option value="@price.PriceId" 
-                                                    data-type-id="@price.VehicleTypeId"
-                                                    data-unit-price="@price.UnitPrice"
-                                                    data-deposit="@price.DepositSuggest"
-                                                    selected="@(Model.PriceId == price.PriceId)">
-                                                @price.Name - @price.UnitPrice.ToString("N0")đ/ngày
-                                            </option>
-                                        }
-                                    </select>
-                                    <label for="PriceId">Bảng giá</label>
+                        @if (Model.BookingId.HasValue)
+                        {
+                            <!-- Readonly for booking-based contract -->
+                            <input type="hidden" asp-for="PriceId" />
+                            <div class="row">
+                                <div class="col s12">
+                                    <p><strong>Bảng giá:</strong> @options?.Prices?.FirstOrDefault(p => p.PriceId == Model.PriceId)?.Name</p>
+                                    <p><strong>Đơn giá:</strong> @Model.UnitPrice.ToString("N0")đ/ngày</p>
                                 </div>
                             </div>
-                        </div>
+                        }
+                        else
+                        {
+                            <div class="row">
+                                <div class="col s12">
+                                    <div class="input-field">
+                                        <select asp-for="PriceId" id="PriceId">
+                                            <option value="">-- Chọn bảng giá --</option>
+                                            @foreach (var price in options?.Prices ?? new List<UCar.ViewModels.Contract.PriceOption>())
+                                            {
+                                                <option value="@price.PriceId" 
+                                                        data-type-id="@price.VehicleTypeId"
+                                                        data-unit-price="@price.UnitPrice"
+                                                        data-deposit="@price.DepositSuggest"
+                                                        selected="@(Model.PriceId == price.PriceId)">
+                                                    @price.Name - @price.UnitPrice.ToString("N0")đ/ngày
+                                                </option>
+                                            }
+                                        </select>
+                                        <label for="PriceId">Bảng giá</label>
+                                    </div>
+                                </div>
+                            </div>
+                        }
                         
                         <div class="divider"></div>
                         
                         <div style="margin-top: 1rem;">
-                            <div class="row" style="margin-bottom: 0.5rem;">
-                                <div class="col s6">
-                                    <span class="grey-text">Đơn giá/ngày:</span>
-                                </div>
-                                <div class="col s6 right-align">
-                                    <input type="hidden" asp-for="UnitPrice" id="UnitPrice" />
-                                    <strong id="displayUnitPrice">@Model.UnitPrice.ToString("N0")đ</strong>
-                                </div>
-                            </div>
+                            <!-- Chi tiết giá thuê -->
+                            <h6 style="font-weight: 600; margin-bottom: 1rem;">
+                                <i class="material-icons tiny">receipt</i> Chi tiết giá thuê
+                            </h6>
                             
-                            <div class="row" style="margin-bottom: 0.5rem;">
-                                <div class="col s6">
-                                    <span class="grey-text">Số ngày:</span>
+                            @if (Model.BookingId.HasValue)
+                            {
+                                <!-- Hiển thị chi tiết từ booking -->
+                                @if (Model.NormalDays > 0)
+                                {
+                                    <div class="row" style="margin-bottom: 0.3rem;">
+                                        <div class="col s7">
+                                            <span class="grey-text">Ngày thường: @Model.NormalDays ngày × @Model.BaseDailyPrice.ToString("N0")đ</span>
+                                        </div>
+                                        <div class="col s5 right-align">
+                                            <strong>@Model.NormalDaysAmount.ToString("N0")đ</strong>
+                                        </div>
+                                    </div>
+                                }
+                                @if (Model.PeakDays > 0)
+                                {
+                                    <div class="row" style="margin-bottom: 0.3rem;">
+                                        <div class="col s7">
+                                            <span class="orange-text">Ngày cao điểm/lễ: @Model.PeakDays ngày</span>
+                                        </div>
+                                        <div class="col s5 right-align">
+                                            <strong class="orange-text">@Model.PeakDaysAmount.ToString("N0")đ</strong>
+                                        </div>
+                                    </div>
+                                }
+                                
+                                <div class="divider" style="margin: 0.8rem 0;"></div>
+                                
+                                <div class="row" style="margin-bottom: 0.5rem;">
+                                    <div class="col s6">
+                                        <span style="font-weight: 600;">Tổng tiền thuê:</span>
+                                    </div>
+                                    <div class="col s6 right-align">
+                                        <input type="hidden" asp-for="RentalAmount" id="RentalAmount" />
+                                        <strong id="displayRentalAmount" style="font-size: 1.1rem;">@Model.RentalAmount.ToString("N0")đ</strong>
+                                    </div>
                                 </div>
-                                <div class="col s6 right-align">
-                                    <input type="hidden" asp-for="RentalDays" id="RentalDays" />
-                                    <strong id="displayDays">@Model.RentalDays ngày</strong>
+                                
+                                <!-- Chi tiết tiền cọc -->
+                                <div class="divider" style="margin: 1rem 0;"></div>
+                                <h6 style="font-weight: 600; margin-bottom: 1rem;">
+                                    <i class="material-icons tiny">account_balance_wallet</i> Tiền cọc
+                                </h6>
+                                
+                                <div class="row" style="margin-bottom: 0.3rem;">
+                                    <div class="col s7">
+                                        <span class="grey-text">Cọc trách nhiệm</span>
+                                    </div>
+                                    <div class="col s5 right-align">
+                                        <strong>@Model.ResponsibilityDeposit.ToString("N0")đ</strong>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <div class="row" style="margin-bottom: 0.5rem;">
-                                <div class="col s6">
-                                    <span class="grey-text">Tiền thuê:</span>
+                                
+                                <div class="row" style="margin-bottom: 0.3rem;">
+                                    <div class="col s7">
+                                        <span class="grey-text">Cọc thuê xe</span>
+                                    </div>
+                                    <div class="col s5 right-align">
+                                        <strong>@Model.RentalDeposit.ToString("N0")đ</strong>
+                                    </div>
                                 </div>
-                                <div class="col s6 right-align">
-                                    <input type="hidden" asp-for="RentalAmount" id="RentalAmount" />
-                                    <strong id="displayRentalAmount">@Model.RentalAmount.ToString("N0")đ</strong>
+                                
+                                <div class="divider" style="margin: 0.8rem 0;"></div>
+                                
+                                <div class="row" style="margin-bottom: 0.5rem;">
+                                    <div class="col s6">
+                                        <span style="font-weight: 600;">Tổng tiền cọc:</span>
+                                    </div>
+                                    <div class="col s6 right-align">
+                                        <input type="hidden" asp-for="DepositAmount" id="DepositAmount" value="@Model.TotalDeposit" />
+                                        <strong style="font-size: 1.1rem;">@Model.TotalDeposit.ToString("N0")đ</strong>
+                                    </div>
                                 </div>
-                            </div>
+                            }
+                            else
+                            {
+                                <!-- Walk-in: Hiển thị đơn giản -->
+                                <div class="row" style="margin-bottom: 0.5rem;">
+                                    <div class="col s6">
+                                        <span class="grey-text">Đơn giá/ngày:</span>
+                                    </div>
+                                    <div class="col s6 right-align">
+                                        <input type="hidden" asp-for="UnitPrice" id="UnitPrice" />
+                                        <strong id="displayUnitPrice">@Model.UnitPrice.ToString("N0")đ</strong>
+                                    </div>
+                                </div>
+                                
+                                <div class="row" style="margin-bottom: 0.5rem;">
+                                    <div class="col s6">
+                                        <span class="grey-text">Số ngày:</span>
+                                    </div>
+                                    <div class="col s6 right-align">
+                                        <input type="hidden" asp-for="RentalDays" id="RentalDays" />
+                                        <strong id="displayDays">@Model.RentalDays ngày</strong>
+                                    </div>
+                                </div>
+                                
+                                <div class="row" style="margin-bottom: 0.5rem;">
+                                    <div class="col s6">
+                                        <span class="grey-text">Tiền thuê:</span>
+                                    </div>
+                                    <div class="col s6 right-align">
+                                        <input type="hidden" asp-for="RentalAmount" id="RentalAmount" />
+                                        <strong id="displayRentalAmount">@Model.RentalAmount.ToString("N0")đ</strong>
+                                    </div>
+                                </div>
+                                
+                                <div class="divider" style="margin: 1rem 0;"></div>
+                                
+                                <div class="row" style="margin-bottom: 0.5rem;">
+                                    <div class="col s8">
+                                        <div class="input-field" style="margin: 0;">
+                                            <input type="number" asp-for="DepositAmount" id="DepositAmount" min="0" step="100000" />
+                                            <label for="DepositAmount" class="active">Tiền cọc</label>
+                                        </div>
+                                    </div>
+                                    <div class="col s4 right-align" style="line-height: 60px;">
+                                        <span>đ</span>
+                                    </div>
+                                </div>
+                            }
                             
                             <div class="row" style="margin-bottom: 0.5rem;">
                                 <div class="col s8">
@@ -282,7 +393,7 @@
                             
                             <div class="row" style="margin-top: 1rem; margin-bottom: 0.5rem;">
                                 <div class="col s6">
-                                    <span style="font-size: 1.1rem;"><strong>Tổng tiền:</strong></span>
+                                    <span style="font-size: 1.1rem;"><strong>TỔNG THANH TOÁN:</strong></span>
                                 </div>
                                 <div class="col s6 right-align">
                                     <input type="hidden" asp-for="TotalAmount" id="TotalAmount" />
@@ -290,19 +401,12 @@
                                 </div>
                             </div>
                             
-                            <div class="divider"></div>
-                            
-                            <div class="row" style="margin-top: 1rem;">
-                                <div class="col s8">
-                                    <div class="input-field" style="margin: 0;">
-                                        <input type="number" asp-for="DepositAmount" id="DepositAmount" min="0" step="100000" />
-                                        <label for="DepositAmount" class="active">Tiền cọc</label>
-                                    </div>
-                                </div>
-                                <div class="col s4 right-align" style="line-height: 60px;">
-                                    <span>đ</span>
-                                </div>
-                            </div>
+                            @if (Model.BookingId.HasValue)
+                            {
+                                <p class="grey-text" style="margin-top: 0.5rem; font-size: 0.85rem;">
+                                    <i class="material-icons tiny">info</i> Tiền cọc sẽ được hoàn lại sau khi trả xe và kiểm tra
+                                </p>
+                            }
                         </div>
                     </div>
                     
@@ -367,25 +471,62 @@
         document.getElementById('PlannedEnd').addEventListener('change', calculatePrice);
         document.getElementById('ExtraCharges').addEventListener('input', calculatePrice);
         
-        // Price selection
-        document.getElementById('PriceId').addEventListener('change', function() {
-            var selected = this.options[this.selectedIndex];
-            if (selected.value) {
-                var unitPrice = parseFloat(selected.dataset.unitPrice) || 0;
-                var deposit = parseFloat(selected.dataset.deposit) || 0;
-                
-                document.getElementById('UnitPrice').value = unitPrice;
-                document.getElementById('DepositAmount').value = deposit;
-                document.getElementById('displayUnitPrice').textContent = unitPrice.toLocaleString('vi-VN') + 'đ';
-                
-                calculatePrice();
-            }
-        });
+        // Price selection (only for walk-in contracts)
+        var priceSelect = document.getElementById('PriceId');
+        if (priceSelect) {
+            priceSelect.addEventListener('change', function() {
+                var selected = this.options[this.selectedIndex];
+                if (selected.value) {
+                    var unitPrice = parseFloat(selected.dataset.unitPrice) || 0;
+                    var deposit = parseFloat(selected.dataset.deposit) || 0;
+                    
+                    document.getElementById('UnitPrice').value = unitPrice;
+                    document.getElementById('DepositAmount').value = deposit;
+                    document.getElementById('displayUnitPrice').textContent = unitPrice.toLocaleString('vi-VN') + 'đ';
+                    
+                    calculatePrice();
+                }
+            });
+        }
         
         // Customer eligibility check
         @if (!Model.BookingId.HasValue)
         {
             <text>
+            // Auto-select price when vehicle is selected
+            document.getElementById('VehicleId').addEventListener('change', function() {
+                var selectedVehicle = this.options[this.selectedIndex];
+                var vehicleTypeId = selectedVehicle.dataset.typeId;
+                
+                if (vehicleTypeId) {
+                    var priceSelect = document.getElementById('PriceId');
+                    var priceOptions = priceSelect.options;
+                    var priceFound = false;
+                    
+                    // Find matching price by VehicleTypeId
+                    for (var i = 0; i < priceOptions.length; i++) {
+                        if (priceOptions[i].dataset.typeId === vehicleTypeId) {
+                            priceSelect.selectedIndex = i;
+                            priceFound = true;
+                            
+                            // Trigger change event to update unit price and calculate
+                            var event = new Event('change');
+                            priceSelect.dispatchEvent(event);
+                            break;
+                        }
+                    }
+                    
+                    if (!priceFound) {
+                        // If no exact match, select first available price
+                        if (priceOptions.length > 1) {
+                            priceSelect.selectedIndex = 1;
+                            var event = new Event('change');
+                            priceSelect.dispatchEvent(event);
+                        }
+                    }
+                }
+            });
+            
             document.getElementById('CustomerId').addEventListener('change', function() {
                 var customerId = this.value;
                 if (customerId) {

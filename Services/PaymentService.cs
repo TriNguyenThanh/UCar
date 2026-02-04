@@ -15,11 +15,16 @@ public class PaymentService : IPaymentService
 {
     private readonly UCarDbContext _context;
     private readonly ILogger<PaymentService> _logger;
+    private readonly IInvoiceService _invoiceService;
 
-    public PaymentService(UCarDbContext context, ILogger<PaymentService> logger)
+    public PaymentService(
+        UCarDbContext context, 
+        ILogger<PaymentService> logger,
+        IInvoiceService invoiceService)
     {
         _context = context;
         _logger = logger;
+        _invoiceService = invoiceService;
     }
 
     public async Task<PaymentProcessViewModel?> GetPaymentInfoAsync(Guid contractId)
