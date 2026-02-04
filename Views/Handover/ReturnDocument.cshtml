@@ -19,25 +19,34 @@
             <button class="btn waves-effect waves-light" onclick="window.print()">
                 <i class="material-icons left">print</i>In biên bản
             </button>
-            @if (!Model.IsPaid && Model.AmountDue > 0)
+            @if (!Model.IsPaid && Model.RefundAmount < 0)
             {
+                <!-- Khách cần trả thêm tiền -->
                 <a href="@Url.Action("Payment", "Payment", new { contractId = Model.ContractId })" 
-                   class="btn waves-effect waves-light green" style="margin-left: 0.5rem;">
-                    <i class="material-icons left">payment</i>Thanh toán (@Model.RemainingAmount.ToString("N0")đ)
+                   class="btn waves-effect waves-light red" style="margin-left: 0.5rem;">
+                    <i class="material-icons left">payment</i>Thu thêm (@Math.Abs(Model.RefundAmount).ToString("N0")đ)
                 </a>
             }
             else if (Model.IsPaid)
             {
                 <span class="btn disabled green lighten-2" style="margin-left: 0.5rem;">
-                    <i class="material-icons left">check_circle</i>Đã thanh toán
+                    <i class="material-icons left">check_circle</i>Đã hoàn tất
                 </span>
             }
-            else if (Model.AmountDue < 0)
+            else if (Model.RefundAmount > 0)
             {
+                <!-- Hoàn tiền cho khách -->
                 <a href="@Url.Action("Refund", "Payment", new { contractId = Model.ContractId })" 
                    class="btn waves-effect waves-light orange" style="margin-left: 0.5rem;">
-                    <i class="material-icons left">money_off</i>Hoàn tiền (@Math.Abs(Model.AmountDue).ToString("N0")đ)
+                    <i class="material-icons left">money_off</i>Hoàn tiền (@Model.RefundAmount.ToString("N0")đ)
                 </a>
+            }
+            else
+            {
+                <!-- RefundAmount = 0: Không cần hoàn/thu -->
+                <span class="btn disabled grey lighten-2" style="margin-left: 0.5rem;">
+                    <i class="material-icons left">check</i>Không phát sinh
+                </span>
             }
         </div>
     </div>
@@ -166,39 +175,65 @@
                 <hr/>
             }
 
-            <!-- TỔNG CHI PHÍ KHÁCH HÀNG PHẢI TRẢ -->
-            <h6><strong>TỔNG CHI PHÍ:</strong></h6>
+            <!-- TỔNG QUYẾT TOÁN KHI TRẢ XE -->
+            <h6><strong>QUYẾT TOÁN:</strong></h6>
             <table class="striped">
                 <tbody>
-                    <tr>
-                        <td>Phí thuê xe (@Model.RentalDays ngày x @Model.RentalUnitPrice.ToString("N0") đ/ngày)</td>
-                        <td class="right-align">@Model.RentalAmount.ToString("N0") đ</td>
+                    <!-- Thông tin tham khảo: Tiền thuê đã thanh toán -->
+                    <tr class="grey lighten-4">
+                        <td><i class="material-icons tiny">info</i> Tiền thuê xe (@Model.RentalDays ngày x @Model.RentalUnitPrice.ToString("N0") đ/ngày)</td>
+                        <td class="right-align grey-text">@Model.RentalAmount.ToString("N0") đ <em>(đã TT khi giao xe)</em></td>
                     </tr>
+                    
+                    <!-- Cọc đã đặt -->
+                    <tr style="border-top: 2px solid #333;">
+                        <td><strong>Cọc trách nhiệm</strong></td>
+                        <td class="right-align">@Model.ResponsibilityDeposit.ToString("N0") đ</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cọc thuê xe</strong></td>
+                        <td class="right-align">@Model.RentalDeposit.ToString("N0") đ</td>
+                    </tr>
+                    <tr style="background-color: #e8f5e9;">
+                        <td><strong>TỔNG CỌC</strong></td>
+                        <td class="right-align"><strong class="green-text">@Model.DepositAmount.ToString("N0") đ</strong></td>
+                    </tr>
+
+                    <!-- Phí phát sinh -->
                     @if (Model.TotalCharges > 0)
                     {
                         <tr>
                             <td>Phụ phí phát sinh</td>
-                            <td class="right-align">@Model.TotalCharges.ToString("N0") đ</td>
+                            <td class="right-align red-text">-@Model.TotalCharges.ToString("N0") đ</td>
                         </tr>
                     }
                     @if (Model.AccessoryDamageCost > 0)
                     {
                         <tr>
                             <td>Chi phí hư hỏng/thiếu phụ kiện</td>
-                            <td class="right-align red-text">@Model.AccessoryDamageCost.ToString("N0") đ</td>
+                            <td class="right-align red-text">-@Model.AccessoryDamageCost.ToString("N0") đ</td>
                         </tr>
                     }
-                    <tr style="border-top: 2px solid #333;">
-                        <td><strong>TỔNG CỘNG</strong></td>
-                        <td class="right-align"><strong>@Model.GrandTotal.ToString("N0") đ</strong></td>
-                    </tr>
-                    <tr>
-                        <td>Đã đặt cọc</td>
-                        <td class="right-align green-text">-@Model.DepositAmount.ToString("N0") đ</td>
-                    </tr>
-                    <tr style="background-color: #e3f2fd;">
-                        <td><strong style="font-size: 1.1rem;">@(Model.AmountDue >= 0 ? "SỐ TIỀN CẦN THANH TOÁN" : "SỐ TIỀN HOÀN LẠI")</strong></td>
-                        <td class="right-align"><strong style="font-size: 1.1rem;" class="@(Model.AmountDue >= 0 ? "red-text" : "green-text")">@Math.Abs(Model.AmountDue).ToString("N0") đ</strong></td>
+                    @if (Model.TotalSurcharges > 0)
+                    {
+                        <tr style="background-color: #ffebee;">
+                            <td><strong>TỔNG PHÍ PHÁT SINH</strong></td>
+                            <td class="right-align"><strong class="red-text">-@Model.TotalSurcharges.ToString("N0") đ</strong></td>
+                        </tr>
+                    }
+
+                    <!-- Kết quả: Hoàn tiền hoặc Thu thêm -->
+                    <tr style="background-color: #e3f2fd; border-top: 3px solid #333;">
+                        @if (Model.RefundAmount >= 0)
+                        {
+                            <td><strong style="font-size: 1.1rem;">SỐ TIỀN HOÀN LẠI KHÁCH</strong></td>
+                            <td class="right-align"><strong style="font-size: 1.1rem;" class="green-text">@Model.RefundAmount.ToString("N0") đ</strong></td>
+                        }
+                        else
+                        {
+                            <td><strong style="font-size: 1.1rem;">SỐ TIỀN KHÁCH CẦN TRẢ THÊM</strong></td>
+                            <td class="right-align"><strong style="font-size: 1.1rem;" class="red-text">@Math.Abs(Model.RefundAmount).ToString("N0") đ</strong></td>
+                        }
                     </tr>
                 </tbody>
             </table>

@@ -16,7 +16,7 @@
         </h4>
         <p class="grey-text text-darken-1" style="font-size: 1.125rem; margin: 0;">
             Hợp đồng: <strong>@ViewBag.ContractCode</strong>
-            @if (!string.IsNullOrEmpty(ViewBag.VehiclePlateNo))
+            @if (ViewBag.VehiclePlateNo != null)
             {
                 <span class="chip" style="margin-left: 8px;">@ViewBag.VehiclePlateNo</span>
             }
@@ -305,7 +305,7 @@
             <i class="material-icons left">arrow_back</i>
             Quay lại danh sách tất cả hóa đơn
         </a>
-        @if (!string.IsNullOrEmpty(ViewBag.ContractId))
+        @if (ViewBag.ContractId != null)
         {
             <a asp-controller="Contract" asp-action="Details" asp-route-id="@ViewBag.ContractId" 
                class="btn waves-effect waves-light blue">

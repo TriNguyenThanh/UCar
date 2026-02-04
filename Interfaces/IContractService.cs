@@ -24,7 +24,7 @@ public interface IContractService
     /// <summary>
     /// Lấy chi tiết hợp đồng
     /// </summary>
-    Task<ContractDetailsViewModel?> GetContractDetailsAsync(Guid contractId);
+    Task<ContractDetailsViewModel?> GetContractDetailsAsync(Guid contractId, string ? contractCode = null);
     
     /// <summary>
     /// Lấy thông tin booking để tạo hợp đồng
@@ -72,6 +72,23 @@ public interface IContractService
     /// Nhân viên xác nhận hợp đồng
     /// </summary>
     Task<bool> ConfirmContractAsync(Guid contractId, Guid confirmedBy, string? note = null);
+    
+    // ===== Luồng mới: Tạo hợp đồng nháp =====
+    
+    /// <summary>
+    /// Tạo hợp đồng nháp (Draft) từ Booking đã xác nhận - Luồng mới
+    /// </summary>
+    Task<Guid> CreateDraftContractFromBookingAsync(Guid bookingId, Guid staffId);
+    
+    /// <summary>
+    /// Cập nhật hợp đồng khi giao xe - thêm phụ kiện và cập nhật tổng tiền
+    /// </summary>
+    Task UpdateContractForHandoverAsync(Guid contractId, decimal extraCharges, string? note = null);
+    
+    /// <summary>
+    /// Chuyển hợp đồng sang trạng thái chờ ký (PendingSigning)
+    /// </summary>
+    Task SetContractPendingSigningAsync(Guid contractId);
     
     // ===== Hủy =====
     

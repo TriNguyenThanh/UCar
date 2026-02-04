@@ -14,9 +14,13 @@
                 <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">car_rental</i>
                 Danh sách chờ giao xe
             </h4>
-            <p class="grey-text text-darken-1" style="margin: 0;">Các hợp đồng đang chờ nhân viên xác nhận giao xe cho
-                khách</p>
+            <p class="grey-text text-darken-1" style="margin: 0;">
+                Các hợp đồng nháp (Draft) và đang chờ ký + thanh toán (PendingSigning)
+            </p>
         </div>
+        <a asp-action="Return" class="btn waves-effect waves-light orange">
+            <i class="material-icons left">assignment_return</i>Danh sách trả xe
+        </a>
     </div>
 
     <!-- Filter Section -->
@@ -110,10 +114,20 @@
                                         data-position="top" data-tooltip="Xem hợp đồng">
                                         <i class="material-icons">visibility</i>
                                     </a>
-                                    <a asp-action="CheckOut" asp-route-contractId="@item.ContractId"
-                                        class="btn-small waves-effect waves-light green">
-                                        <i class="material-icons left">exit_to_app</i>Giao xe
-                                    </a>
+                                    @if (item.Status == RentalContractStatus.Draft)
+                                    {
+                                        <a asp-action="CheckOut" asp-route-contractId="@item.ContractId"
+                                            class="btn-small waves-effect waves-light green">
+                                            <i class="material-icons left">exit_to_app</i>Lập biên bản
+                                        </a>
+                                    }
+                                    else if (item.Status == RentalContractStatus.PendingSigning)
+                                    {
+                                        <a asp-controller="Payment" asp-action="Pickup" asp-route-contractId="@item.ContractId"
+                                            class="btn-small waves-effect waves-light orange">
+                                            <i class="material-icons left">payment</i>Thanh toán
+                                        </a>
+                                    }
                                 </td>
                             </tr>
                         }

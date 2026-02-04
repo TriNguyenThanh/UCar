@@ -68,6 +68,11 @@ builder.Services.AddScoped<IHolidayService, HolidayService>();
 builder.Services.AddScoped<IDepositPolicyService, DepositPolicyService>();
 builder.Services.AddScoped<ISurchargePolicyService, SurchargePolicyService>();
 
+// Document Template Service (DOCX templates)
+builder.Services.AddScoped<IDocumentTemplateService, DocumentTemplateService>();
+
+// Image Upload Service
+builder.Services.AddScoped<IImageUploadService, ImageUploadService>();
 // Register Analytics services (Module 9.0)
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 

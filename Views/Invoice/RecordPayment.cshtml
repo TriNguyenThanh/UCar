@@ -1,9 +1,10 @@
 @model RecordPaymentViewModel
 @using UCar.ViewModels
+@using UCar.Models.Enums
 
 @{
-    ViewData["Title"] = "Ghi nhận thanh toán";
-    ViewData["Description"] = $"Ghi nhận thanh toán cho hóa đơn {Model.InvoiceNumber}";
+    ViewData["Title"] = "Thanh toán hóa đơn";
+    ViewData["Description"] = $"Thanh toán hóa đơn {Model.InvoiceNumber}";
 }
 
 <div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
@@ -11,7 +12,7 @@
     <div style="margin-bottom: 2rem;">
         <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
             <i class="material-icons green-text" style="vertical-align: middle; margin-right: 8px;">payment</i>
-            Ghi nhận thanh toán
+            Thanh toán hóa đơn
         </h4>
         <p class="grey-text text-darken-1" style="font-size: 1.125rem; margin: 0;">
             Hóa đơn: <strong>@Model.InvoiceNumber</strong>
@@ -35,48 +36,48 @@
                             <label for="InvoiceNumber" class="active">Mã hóa đơn</label>
                         </div>
 
-                        <!-- Amount Due (readonly) -->
-                        <div class="input-field">
-                            <i class="material-icons prefix red-text">account_balance_wallet</i>
-                            <input type="text" id="amountDueDisplay" value="@Model.AmountDue.ToString("N0") ₫" readonly />
-                            <label for="amountDueDisplay" class="active">Số tiền còn phải trả</label>
-                            <span class="helper-text">Tổng số tiền khách hàng cần thanh toán</span>
-                        </div>
-
-                        <!-- Amount Paid (editable) -->
+                        <!-- Amount to Pay (readonly, auto-filled) -->
                         <div class="input-field">
                             <i class="material-icons prefix green-text">attach_money</i>
-                            <input type="number" 
-                                   asp-for="AmountPaid" 
-                                   id="amountPaid" 
-                                   step="1000" 
-                                   min="0" 
-                                   max="@Model.AmountDue"
-                                   required />
-                            <label for="AmountPaid" class="active">Số tiền thanh toán *</label>
-                            <span asp-validation-for="AmountPaid" class="red-text"></span>
-                            <span class="helper-text">Nhập số tiền khách hàng thanh toán (tối đa @Model.AmountDue.ToString("N0") ₫)</span>
+                            <input type="text" 
+                                   id="amountDisplay" 
+                                   value="@Model.AmountDue.ToString("N0") ₫" 
+                                   readonly 
+                                   class="validate" />
+                            <input type="hidden" asp-for="AmountPaid" value="@Model.AmountDue" />
+                            <label for="amountDisplay" class="active">Số tiền thanh toán</label>
+                            <span class="helper-text">Số tiền sẽ thanh toán toàn bộ số tiền còn nợ</span>
                         </div>
 
-                        <!-- Quick Amount Buttons -->
-                        <div style="margin-bottom: 1.5rem;">
-                            <p style="font-weight: 500; margin-bottom: 8px;">Chọn nhanh:</p>
-                            <button type="button" class="btn-small waves-effect waves-light blue" onclick="setAmount(@Model.AmountDue)" style="margin-right: 8px;">
-                                Toàn bộ (@Model.AmountDue.ToString("N0") ₫)
-                            </button>
-                            <button type="button" class="btn-small waves-effect waves-light blue lighten-2" onclick="setAmount(@(Model.AmountDue / 2))" style="margin-right: 8px;">
-                                50% (@((Model.AmountDue / 2).ToString("N0")) ₫)
-                            </button>
-                            <button type="button" class="btn-small waves-effect waves-light blue lighten-3" onclick="setAmount(0)">
-                                Xóa
-                            </button>
+                        <!-- Payment Method Selection (MUI Select) -->
+                        <div class="input-field">
+                            <select asp-for="PaymentMethod" id="paymentMethod">
+                                <option value="" disabled selected>Chọn phương thức thanh toán</option>
+                                <option value="@PaymentMethod.Cash">💵 Tiền mặt</option>
+                                <option value="@PaymentMethod.Transfer">🏦 Chuyển khoản</option>
+                                <option value="@PaymentMethod.Card">💳 Thẻ tín dụng/Ghi nợ</option>
+                            </select>
+                            <label>Phương thức thanh toán *</label>
+                            <span asp-validation-for="PaymentMethod" class="red-text"></span>
+                        </div>
+
+                        <!-- Bank Reference Code (only for bank transfer) -->
+                        <div class="input-field" id="bankRefSection" style="display: none;">
+                            <i class="material-icons prefix">confirmation_number</i>
+                            <input type="text" 
+                                   asp-for="BankRefCode" 
+                                   id="bankRefCode" 
+                                   maxlength="100" />
+                            <label for="BankRefCode">Mã giao dịch / Mã tham chiếu</label>
+                            <span asp-validation-for="BankRefCode" class="red-text"></span>
+                            <span class="helper-text">Nhập mã giao dịch từ ngân hàng hoặc ví điện tử</span>
                         </div>
 
                         <!-- Payment Date (readonly, auto-filled) -->
                         <div class="input-field">
                             <i class="material-icons prefix">event</i>
                             <input type="text" id="paymentDate" value="@DateTime.Now.ToString("dd/MM/yyyy HH:mm")" readonly />
-                            <label for="paymentDate" class="active">Thời gian ghi nhận</label>
+                            <label for="paymentDate" class="active">Thời gian thanh toán</label>
                         </div>
 
                         <!-- Notes (optional) -->
@@ -88,7 +89,6 @@
                                       maxlength="500"></textarea>
                             <label for="Notes">Ghi chú (tùy chọn)</label>
                             <span asp-validation-for="Notes" class="red-text"></span>
-                            <span class="helper-text" data-length="500">Ví dụ: Chuyển khoản, Tiền mặt, Momo, v.v.</span>
                         </div>
 
                         <!-- Validation Summary -->
@@ -134,7 +134,7 @@
                                 </td>
                             </tr>
                             <tr style="border-top: 2px solid #1976D2;">
-                                <td style="padding: 12px 0; font-size: 1.1rem; font-weight: 700;">Còn phải trả:</td>
+                                <td style="padding: 12px 0; font-size: 1.1rem; font-weight: 700;">Cần thanh toán:</td>
                                 <td style="text-align: right; padding: 12px 0; font-size: 1.3rem; font-weight: 700;">
                                     <span class="red-text">@Model.AmountDue.ToString("N0") ₫</span>
                                 </td>
@@ -168,27 +168,21 @@
                 </div>
             </div>
 
-            <!-- Payment Instructions Card -->
-            <div class="card yellow lighten-5" style="border-left: 4px solid #FFC107;">
+            <!-- Payment Methods Info Card -->
+            <div class="card green lighten-5" style="border-left: 4px solid #4CAF50;">
                 <div class="card-content">
                     <span class="card-title" style="font-size: 1.1rem; font-weight: 700;">
-                        <i class="material-icons orange-text" style="vertical-align: middle;">info</i>
-                        Hướng dẫn
+                        <i class="material-icons green-text" style="vertical-align: middle;">account_balance</i>
+                        Thông tin chuyển khoản
                     </span>
-                    <ul style="margin-top: 1rem; padding-left: 20px;">
-                        <li style="margin-bottom: 8px;">
-                            Nhập số tiền khách hàng thanh toán vào ô "Số tiền thanh toán"
-                        </li>
-                        <li style="margin-bottom: 8px;">
-                            Có thể thanh toán toàn bộ hoặc một phần số tiền còn nợ
-                        </li>
-                        <li style="margin-bottom: 8px;">
-                            Ghi chú phương thức thanh toán để tiện theo dõi
-                        </li>
-                        <li style="margin-bottom: 8px;">
-                            Hệ thống sẽ tự động cập nhật trạng thái hóa đơn
-                        </li>
-                    </ul>
+                    <div style="margin-top: 1rem; background: white; padding: 12px; border-radius: 4px;">
+                        <p style="margin: 0 0 8px 0;"><strong>Ngân hàng:</strong> Vietcombank</p>
+                        <p style="margin: 0 0 8px 0;"><strong>Số TK:</strong> 1234567890</p>
+                        <p style="margin: 0 0 8px 0;"><strong>Chủ TK:</strong> CONG TY UCAR</p>
+                        <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                            <strong>Nội dung CK:</strong> @Model.InvoiceNumber
+                        </p>
+                    </div>
                 </div>
             </div>
 
@@ -224,48 +218,139 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize MUI Select
+            var selectElems = document.querySelectorAll('select');
+            M.FormSelect.init(selectElems);
+            
             // Initialize character counter for textarea
             M.CharacterCounter.init(document.querySelectorAll('.materialize-textarea'));
 
             // Update labels
             M.updateTextFields();
 
-            // Form validation
-            document.getElementById('paymentForm').addEventListener('submit', function(e) {
-                var amountPaid = parseFloat(document.getElementById('amountPaid').value);
-                var amountDue = @Model.AmountDue;
+            // Show/hide bank reference field based on payment method
+            var paymentMethodSelect = document.getElementById('paymentMethod');
+            var bankRefSection = document.getElementById('bankRefSection');
+            
+            function toggleBankRef() {
+                var method = paymentMethodSelect.value;
+                // Show bank ref for: Transfer, Card
+                if (method === '@PaymentMethod.Transfer' || 
+                    method === '@PaymentMethod.Card') {
+                    bankRefSection.style.display = 'block';
+                } else {
+                    bankRefSection.style.display = 'none';
+                }
+            }
+            
+            paymentMethodSelect.addEventListener('change', toggleBankRef);
+            toggleBankRef(); // Initial check
 
-                if (isNaN(amountPaid) || amountPaid <= 0) {
-                    e.preventDefault();
+            // Form submission with AJAX
+            document.getElementById('paymentForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                var paymentMethod = paymentMethodSelect.value;
+                
+                if (!paymentMethod) {
                     M.toast({
-                        html: '<i class="material-icons left">error</i>Vui lòng nhập số tiền thanh toán hợp lệ',
+                        html: '<i class="material-icons left">error</i>Vui lòng chọn phương thức thanh toán',
                         classes: 'red'
                     });
                     return false;
                 }
 
-                if (amountPaid > amountDue) {
-                    e.preventDefault();
-                    M.toast({
-                        html: '<i class="material-icons left">warning</i>Số tiền thanh toán không được vượt quá số tiền còn nợ',
-                        classes: 'orange'
-                    });
-                    return false;
-                }
+                // Get form data
+                var form = this;
+                var formData = new FormData(form);
+                var amount = @((int)(Model.AmountDue));
+                var methodText = paymentMethodSelect.options[paymentMethodSelect.selectedIndex].text;
 
-                // Confirm before submit
-                var confirmMsg = 'Xác nhận ghi nhận thanh toán ' + amountPaid.toLocaleString('vi-VN') + ' ₫?';
-                if (!confirm(confirmMsg)) {
-                    e.preventDefault();
-                    return false;
-                }
+                // Show confirmation modal
+                var confirmHtml = `
+                    <div class="modal-content">
+                        <h5><i class="material-icons green-text" style="vertical-align: middle;">payment</i> Xác nhận thanh toán</h5>
+                        <p>Bạn có chắc chắn muốn thanh toán:</p>
+                        <table class="striped" style="margin: 1rem 0;">
+                            <tr>
+                                <td>Số tiền:</td>
+                                <td class="right-align"><strong class="green-text">${amount.toLocaleString('vi-VN')} ₫</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Phương thức:</td>
+                                <td class="right-align"><strong>${methodText}</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="#!" class="modal-close waves-effect waves-grey btn-flat">Hủy</a>
+                        <button type="button" id="confirmPaymentBtn" class="waves-effect waves-light btn green">
+                            <i class="material-icons left">check</i>Xác nhận
+                        </button>
+                    </div>
+                `;
+
+                // Create and show modal
+                var modalEl = document.createElement('div');
+                modalEl.id = 'confirmPaymentModal';
+                modalEl.className = 'modal';
+                modalEl.innerHTML = confirmHtml;
+                document.body.appendChild(modalEl);
+
+                var modal = M.Modal.init(modalEl, {
+                    onCloseEnd: function() {
+                        modalEl.remove();
+                    }
+                });
+                modal.open();
+
+                // Handle confirm button
+                document.getElementById('confirmPaymentBtn').addEventListener('click', function() {
+                    var btn = this;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="material-icons left">hourglass_empty</i>Đang xử lý...';
+
+                    // Submit via AJAX with proper headers
+                    fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        modal.close();
+                        
+                        if (data.success) {
+                            M.toast({
+                                html: '<i class="material-icons left">check_circle</i>' + data.message,
+                                classes: 'green'
+                            });
+                            // Redirect after success
+                            setTimeout(() => {
+                                window.location.href = data.redirectUrl;
+                            }, 1000);
+                        } else {
+                            M.toast({
+                                html: '<i class="material-icons left">error</i>' + data.message,
+                                classes: 'red'
+                            });
+                            btn.disabled = false;
+                            btn.innerHTML = '<i class="material-icons left">check</i>Xác nhận';
+                        }
+                    })
+                    .catch(error => {
+                        modal.close();
+                        M.toast({
+                            html: '<i class="material-icons left">error</i>Có lỗi xảy ra: ' + error.message,
+                            classes: 'red'
+                        });
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="material-icons left">check</i>Xác nhận';
+                    });
+                });
             });
         });
-
-        // Set amount function for quick buttons
-        function setAmount(amount) {
-            document.getElementById('amountPaid').value = Math.round(amount);
-            M.updateTextFields();
-        }
     </script>
 }

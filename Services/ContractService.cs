@@ -138,9 +138,9 @@ public class ContractService : IContractService
                 CreatedByName = c.Handler.Username,
                 // Handover Integration: Check if contract is ready for handover
                 IsBookingCancelled = c.Booking != null && c.Booking.Status == BookingStatus.Cancelled,
-                IsReadyForHandover = (c.Status == RentalContractStatus.Signed || 
-                                      c.Status == RentalContractStatus.Active || 
-                                      c.Status == RentalContractStatus.AwaitingDelivery) &&
+                // Luồng mới: Draft, PendingSigning = sẵn sàng giao xe
+                IsReadyForHandover = (c.Status == RentalContractStatus.Draft || 
+                                      c.Status == RentalContractStatus.PendingSigning) &&
                                      (c.Booking == null || c.Booking.Status != BookingStatus.Cancelled)
             })
             .ToListAsync();
@@ -172,7 +172,7 @@ public class ContractService : IContractService
         return await GetContractsAsync(filter);
     }
 
-    public async Task<ContractDetailsViewModel?> GetContractDetailsAsync(Guid contractId)
+    public async Task<ContractDetailsViewModel?> GetContractDetailsAsync(Guid contractId, string? contractCode = null)
     {
         _logger.LogInformation("GetContractDetailsAsync: Fetching contract {ContractId}", contractId);
 
@@ -189,13 +189,18 @@ public class ContractService : IContractService
             .Include(c => c.ReturnRecord)
             .Include(c => c.Charges)
             .Include(c => c.Violations)
-            .FirstOrDefaultAsync(c => c.ContractId == contractId);
+            .FirstOrDefaultAsync(c => c.ContractId == contractId || (contractCode != null && c.ContractCode == contractCode));
 
         if (contract == null) return null;
 
         // Get ID number from documents
         var idDoc = contract.Customer.Documents
             .FirstOrDefault(d => d.DocType == CustomerDocumentType.IdCard || d.DocType == CustomerDocumentType.Passport);
+
+        // Check if delivery invoice is paid (Luồng mới: thanh toán trước khi xác nhận)
+        var deliveryInvoice = await _context.Invoices
+            .FirstOrDefaultAsync(i => i.ContractId == contractId && i.InvoiceType == InvoiceType.Delivery);
+        var hasPaidDeliveryInvoice = deliveryInvoice != null && deliveryInvoice.Status == InvoiceStatus.Paid;
 
         return new ContractDetailsViewModel
         {
@@ -287,7 +292,11 @@ public class ContractService : IContractService
             // Audit
             CreatedAt = contract.CreatedAt,
             CreatedByName = contract.Handler.Username,
-            UpdatedAt = contract.UpdatedAt
+            UpdatedAt = contract.UpdatedAt,
+
+            // Luồng mới: Thanh toán trước khi xác nhận
+            HasHandoverRecord = contract.HandoverRecord != null,
+            HasPaidDeliveryInvoice = hasPaidDeliveryInvoice
         };
     }
 
@@ -460,7 +469,7 @@ public class ContractService : IContractService
             PlannedEnd = model.PlannedEnd,
             PickupLocation = model.PickupLocation,
             ReturnLocation = model.ReturnLocation,
-            RentalDays = priceEstimate.TotalDays,
+            RentalDays = priceEstimate!.TotalDays,
             NormalDays = priceEstimate.NormalDays,
             PeakDays = priceEstimate.PeakDays,
             NormalDaysAmount = priceEstimate.NormalDaysAmount,
@@ -472,7 +481,8 @@ public class ContractService : IContractService
             ResponsibilityDeposit = priceEstimate.ResponsibilityDeposit,
             RentalDeposit = priceEstimate.RentalDeposit,
             TotalAmountFinal = priceEstimate.TotalAmount + model.ExtraCharges,
-            Status = model.SaveAsDraft ? RentalContractStatus.Draft : RentalContractStatus.Pending,
+            // Luồng mới: Tạo hợp đồng luôn ở trạng thái Draft, sau đó giao xe → PendingSigning → Active
+            Status = RentalContractStatus.Draft,
             Terms = string.IsNullOrWhiteSpace(model.Terms) ? DefaultTerms : model.Terms,
             InternalNote = model.InternalNote,
             HandledBy = handledBy,
@@ -510,8 +520,8 @@ public class ContractService : IContractService
 
         if (contract == null) return null;
 
-        // Only allow edit for Draft and Pending
-        if (contract.Status != RentalContractStatus.Draft && contract.Status != RentalContractStatus.Pending)
+        // Luồng mới: Chỉ cho phép edit Draft, PendingSigning
+        if (contract.Status != RentalContractStatus.Draft && contract.Status != RentalContractStatus.PendingSigning)
         {
             _logger.LogWarning("Cannot edit contract {ContractId} with status {Status}", contractId, contract.Status);
             return null;
@@ -556,8 +566,8 @@ public class ContractService : IContractService
             return false;
         }
 
-        // Check status
-        if (contract.Status != RentalContractStatus.Draft && contract.Status != RentalContractStatus.Pending)
+        // Luồng mới: Chỉ cho phép edit Draft, PendingSigning
+        if (contract.Status != RentalContractStatus.Draft && contract.Status != RentalContractStatus.PendingSigning)
         {
             _logger.LogWarning("Cannot edit contract {ContractId} with status {Status}", model.ContractId, contract.Status);
             return false;
@@ -600,7 +610,7 @@ public class ContractService : IContractService
         contract.ReturnLocation = model.ReturnLocation;
         contract.SnapshotUnitPrice = model.UnitPrice;
         contract.SnapshotDepositAmount = model.DepositAmount;
-        contract.RentalDays = priceEstimate.TotalDays;
+        contract.RentalDays = priceEstimate!.TotalDays;
         contract.NormalDays = priceEstimate.NormalDays;
         contract.PeakDays = priceEstimate.PeakDays;
         contract.NormalDaysAmount = priceEstimate.NormalDaysAmount;
@@ -631,8 +641,12 @@ public class ContractService : IContractService
 
     #endregion
 
-    #region Sign / Confirm
+    #region Sign / Confirm - Luồng mới: Ký giấy tại quầy
 
+    /// <summary>
+    /// Luồng mới: Khách không xem hợp đồng online, ký tại quầy
+    /// Method này giữ lại để backward compatible nhưng không dùng trong luồng mới
+    /// </summary>
     public async Task<ContractSignViewModel?> GetContractForSignAsync(Guid contractId)
     {
         var contract = await _context.RentalContracts
@@ -640,7 +654,8 @@ public class ContractService : IContractService
             .Include(c => c.Vehicle).ThenInclude(v => v.Model)
             .FirstOrDefaultAsync(c => c.ContractId == contractId);
 
-        if (contract == null || contract.Status != RentalContractStatus.Pending)
+        // Luồng mới: PendingSigning = đã lập biên bản, chờ ký tại quầy
+        if (contract == null || contract.Status != RentalContractStatus.PendingSigning)
             return null;
 
         return new ContractSignViewModel
@@ -657,6 +672,10 @@ public class ContractService : IContractService
         };
     }
 
+    /// <summary>
+    /// Luồng mới: Ký giấy tại quầy, không phải online
+    /// Method này giữ lại cho backward compatible
+    /// </summary>
     public async Task<bool> SignContractAsync(Guid contractId, Guid userId)
     {
         _logger.LogInformation("SignContractAsync: User {UserId} signing contract {ContractId}", userId, contractId);
@@ -671,7 +690,8 @@ public class ContractService : IContractService
             return false;
         }
 
-        if (contract.Status != RentalContractStatus.Pending)
+        // Luồng mới: Chỉ ký được khi đang ở PendingSigning
+        if (contract.Status != RentalContractStatus.PendingSigning)
         {
             _logger.LogWarning("Cannot sign contract {ContractId} with status {Status}", contractId, contract.Status);
             return false;
@@ -686,7 +706,7 @@ public class ContractService : IContractService
 
         contract.CustomerSigned = true;
         contract.CustomerSignedAt = DateTime.Now;
-        contract.Status = RentalContractStatus.Signed;
+        // Luồng mới: Sau khi ký + thanh toán → Active (do PaymentService xử lý)
         contract.UpdatedAt = DateTime.Now;
 
         await _context.SaveChangesAsync();
@@ -704,9 +724,8 @@ public class ContractService : IContractService
 
         if (contract == null) return null;
 
-        // Can confirm if Signed, or Pending with customer already signed
-        if (contract.Status != RentalContractStatus.Signed && 
-            !(contract.Status == RentalContractStatus.Pending && contract.CustomerSigned))
+        // Luồng mới: Confirm khi PendingSigning (đã lập biên bản)
+        if (contract.Status != RentalContractStatus.PendingSigning)
         {
             return null;
         }
@@ -737,9 +756,8 @@ public class ContractService : IContractService
             return false;
         }
 
-        // Validate state
-        if (contract.Status != RentalContractStatus.Signed && 
-            !(contract.Status == RentalContractStatus.Pending && contract.CustomerSigned))
+        // Luồng mới: Confirm từ PendingSigning (sau khi lập biên bản giao xe)
+        if (contract.Status != RentalContractStatus.PendingSigning)
         {
             _logger.LogWarning("Cannot confirm contract {ContractId} with status {Status}", contractId, contract.Status);
             return false;
@@ -747,43 +765,184 @@ public class ContractService : IContractService
 
         contract.ConfirmedBy = confirmedBy;
         contract.ConfirmedAt = DateTime.Now;
+        contract.CustomerSigned = true;
+        contract.CustomerSignedAt = DateTime.Now;
         contract.Status = RentalContractStatus.Active;
+        contract.ActualStart = DateTime.Now; // Ghi nhận thời gian bắt đầu thực tế
         contract.UpdatedAt = DateTime.Now;
 
         if (!string.IsNullOrWhiteSpace(note))
         {
             contract.InternalNote = string.IsNullOrWhiteSpace(contract.InternalNote) 
-                ? $"[Xác nhận] {note}" 
-                : $"{contract.InternalNote}\n[Xác nhận] {note}";
+                ? $"[Xác nhận HĐ] {note}" 
+                : $"{contract.InternalNote}\n[Xác nhận HĐ] {note}";
         }
 
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Contract {ContractId} confirmed, status changed to Active", contractId);
 
-        // Auto-create Deposit Invoice (Module 7 Integration)
-        try
-        {
-            _logger.LogInformation("Auto-creating Deposit Invoice for contract {ContractId}", contractId);
-            var depositInvoiceId = await _invoiceService.CreateDepositInvoiceAsync(contractId, confirmedBy);
-            
-            if (depositInvoiceId != Guid.Empty)
-            {
-                _logger.LogInformation("Deposit Invoice {InvoiceId} created successfully for contract {ContractId}", 
-                    depositInvoiceId, contractId);
-            }
-            else
-            {
-                _logger.LogWarning("Failed to create Deposit Invoice for contract {ContractId} - may already exist", contractId);
-            }
-        }
-        catch (Exception ex)
-        {
-            // Don't fail contract confirmation if invoice creation fails
-            _logger.LogError(ex, "Error creating Deposit Invoice for contract {ContractId}. Contract confirmed but invoice not created.", contractId);
-        }
+        // NOTE: Theo luồng mới, thanh toán được thực hiện tại quầy khi giao xe
+        // Không tự tạo invoice ở đây nữa
 
         return true;
+    }
+
+    /// <summary>
+    /// Tạo hợp đồng nháp (Draft) từ Booking đã xác nhận - Luồng mới
+    /// </summary>
+    public async Task<Guid> CreateDraftContractFromBookingAsync(Guid bookingId, Guid staffId)
+    {
+        _logger.LogInformation("CreateDraftContractFromBookingAsync: Creating draft contract from booking {BookingId}", bookingId);
+
+        var booking = await _context.Bookings
+            .Include(b => b.Customer)
+            .Include(b => b.AssignedVehicle)
+                .ThenInclude(v => v!.Model)
+            .FirstOrDefaultAsync(b => b.BookingId == bookingId);
+
+        if (booking == null)
+            throw new InvalidOperationException("Không tìm thấy booking");
+
+        if (booking.Status != BookingStatus.Confirmed)
+            throw new InvalidOperationException("Chỉ có thể tạo hợp đồng từ booking đã xác nhận");
+
+        if (booking.AssignedVehicleId == null || booking.AssignedVehicle == null)
+            throw new InvalidOperationException("Booking chưa được gán xe");
+
+        // Check if already has contract
+        var existingContract = await _context.RentalContracts
+            .AnyAsync(c => c.BookingId == bookingId && c.Status != RentalContractStatus.Cancelled);
+        
+        if (existingContract)
+            throw new InvalidOperationException("Booking này đã có hợp đồng");
+
+        // Get price from vehicle's model
+        var price = await _context.Prices
+            .Where(p => p.VehicleModelId == booking.AssignedVehicle.ModelId && p.IsActive)
+            .FirstOrDefaultAsync();
+
+        if (price == null)
+            throw new InvalidOperationException("Không tìm thấy bảng giá cho loại xe này");
+
+        // Calculate detailed pricing using IPriceCalculationService
+        var priceEstimate = await _priceCalculationService.CalculateEstimateAsync(
+            booking.AssignedVehicle.ModelId, booking.StartAt, booking.EndAt);
+
+        // Generate contract code
+        var contractCode = await GenerateContractCodeAsync();
+
+        var contract = new RentalContract
+        {
+            ContractId = Guid.NewGuid(),
+            ContractCode = contractCode,
+            BookingId = bookingId,
+            CustomerId = booking.CustomerId,
+            VehicleId = booking.AssignedVehicleId.Value,
+            PriceId = price.PriceId,
+            
+            // Snapshot giá tại thời điểm tạo hợp đồng
+            SnapshotBaseDailyPrice = price.BaseDailyPrice,
+            SnapshotMonthMultiplier = price.MonthMultiplier,
+            SnapshotPeakMultiplier = price.PeakMultiplier,
+            SnapshotOvertimeHourlyPrice = price.OvertimeHourlyPrice,
+            SnapshotUnitPrice = price.BaseDailyPrice,
+            SnapshotDepositAmount = priceEstimate!.TotalDeposit,
+            
+            PlannedStart = booking.StartAt,
+            PlannedEnd = booking.EndAt,
+            
+            // Price breakdown
+            RentalDays = priceEstimate.TotalDays,
+            NormalDays = priceEstimate.NormalDays,
+            PeakDays = priceEstimate.PeakDays,
+            NormalDaysAmount = priceEstimate.NormalDaysAmount,
+            PeakDaysAmount = priceEstimate.PeakDaysAmount,
+            MonthlyAmount = priceEstimate.MonthlyAmount,
+            IsMonthlyRate = priceEstimate.MonthlyAmount > 0,
+            
+            // Deposit breakdown
+            ResponsibilityDeposit = priceEstimate.ResponsibilityDeposit,
+            RentalDeposit = priceEstimate.RentalDeposit,
+            
+            // Amounts
+            RentalAmount = priceEstimate.SubTotal,
+            ExtraCharges = 0, // Phụ kiện sẽ được thêm khi giao xe
+            TotalAmountFinal = priceEstimate.TotalAmount,
+            
+            // Status: LUÔN LÀ DRAFT theo luồng mới
+            Status = RentalContractStatus.Draft,
+            CustomerSigned = false,
+            
+            Terms = DefaultTerms,
+            HandledBy = staffId,
+            CreatedAt = DateTime.Now
+        };
+
+        _context.RentalContracts.Add(contract);
+
+        // Update booking status
+        booking.Status = BookingStatus.InProgress;
+
+        // Reserve the vehicle
+        var vehicle = booking.AssignedVehicle;
+        if (vehicle.CurrentStatus == VehicleStatus.Available)
+        {
+            vehicle.CurrentStatus = VehicleStatus.Reserved;
+        }
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Created draft contract {ContractCode} from booking {BookingId}", contractCode, bookingId);
+
+        return contract.ContractId;
+    }
+
+    /// <summary>
+    /// Cập nhật hợp đồng khi giao xe - thêm phụ kiện và cập nhật tổng tiền
+    /// </summary>
+    public async Task UpdateContractForHandoverAsync(Guid contractId, decimal extraCharges, string? note = null)
+    {
+        var contract = await _context.RentalContracts.FindAsync(contractId);
+        if (contract == null)
+            throw new InvalidOperationException("Không tìm thấy hợp đồng");
+
+        if (contract.Status != RentalContractStatus.Draft && contract.Status != RentalContractStatus.PendingSigning)
+            throw new InvalidOperationException("Hợp đồng không ở trạng thái cho phép cập nhật");
+
+        contract.ExtraCharges = extraCharges;
+        contract.TotalAmountFinal = contract.RentalAmount + extraCharges;
+        
+        // Tính lại tiền cọc nếu tổng tiền thay đổi
+        contract.RentalDeposit = contract.TotalAmountFinal * 0.5m;
+        contract.SnapshotDepositAmount = contract.ResponsibilityDeposit + contract.RentalDeposit;
+
+        if (!string.IsNullOrWhiteSpace(note))
+        {
+            contract.InternalNote = string.IsNullOrWhiteSpace(contract.InternalNote)
+                ? $"[Giao xe] {note}"
+                : $"{contract.InternalNote}\n[Giao xe] {note}";
+        }
+
+        contract.UpdatedAt = DateTime.Now;
+        await _context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Chuyển hợp đồng sang trạng thái chờ ký (PendingSigning)
+    /// </summary>
+    public async Task SetContractPendingSigningAsync(Guid contractId)
+    {
+        var contract = await _context.RentalContracts.FindAsync(contractId);
+        if (contract == null)
+            throw new InvalidOperationException("Không tìm thấy hợp đồng");
+
+        if (contract.Status != RentalContractStatus.Draft)
+            throw new InvalidOperationException("Chỉ có thể chuyển hợp đồng nháp sang chờ ký");
+
+        contract.Status = RentalContractStatus.PendingSigning;
+        contract.UpdatedAt = DateTime.Now;
+        await _context.SaveChangesAsync();
     }
 
     #endregion
@@ -799,13 +958,11 @@ public class ContractService : IContractService
 
         if (contract == null) return null;
 
-        // Can only cancel Draft, Pending, Signed, Active (before handover)
-        var cancellableStatuses = new[] 
+        // Luồng mới: Có thể hủy Draft, PendingSigning (trước khi thanh toán)
+        var cancellableStatuses = new List<RentalContractStatus> 
         { 
             RentalContractStatus.Draft, 
-            RentalContractStatus.Pending, 
-            RentalContractStatus.Signed,
-            RentalContractStatus.Active
+            RentalContractStatus.PendingSigning
         };
 
         if (!cancellableStatuses.Contains(contract.Status))
@@ -815,9 +972,9 @@ public class ContractService : IContractService
 
         // Check if has handover
         var hasHandover = await _context.HandoverRecords.AnyAsync(h => h.ContractId == contractId);
-        if (hasHandover)
+        if (hasHandover && contract.Status == RentalContractStatus.Active)
         {
-            return null; // Cannot cancel after handover
+            return null; // Cannot cancel after handover completed
         }
 
         return new ContractCancelViewModel
@@ -846,13 +1003,11 @@ public class ContractService : IContractService
             return false;
         }
 
-        // Validate status
-        var cancellableStatuses = new[] 
+        // Luồng mới: Chỉ hủy được Draft, PendingSigning
+        var cancellableStatuses = new List<RentalContractStatus> 
         { 
             RentalContractStatus.Draft, 
-            RentalContractStatus.Pending, 
-            RentalContractStatus.Signed,
-            RentalContractStatus.Active
+            RentalContractStatus.PendingSigning
         };
 
         if (!cancellableStatuses.Contains(contract.Status))
@@ -1082,14 +1237,13 @@ public class ContractService : IContractService
     {
         // Check for overlapping contracts
         // Overlap: (StartA < EndB) && (EndA > StartB)
-        var blockingStatuses = new[]
+        // Luồng mới: Draft, PendingSigning, Active, InProgress đều block xe
+        var blockingStatuses = new List<RentalContractStatus>
         {
-            RentalContractStatus.Pending,
-            RentalContractStatus.Signed,
+            RentalContractStatus.Draft,
+            RentalContractStatus.PendingSigning,
             RentalContractStatus.Active,
-            RentalContractStatus.AwaitingDelivery,
-            RentalContractStatus.InProgress,
-            RentalContractStatus.AwaitingReturn
+            RentalContractStatus.InProgress
         };
 
         var query = _context.RentalContracts
@@ -1187,15 +1341,12 @@ public class ContractService : IContractService
         return status switch
         {
             RentalContractStatus.Draft => "Bản nháp",
-            RentalContractStatus.Pending => "Chờ ký",
-            RentalContractStatus.Signed => "Đã ký",
+            RentalContractStatus.PendingSigning => "Chờ ký",
             RentalContractStatus.Active => "Đang hoạt động",
-            RentalContractStatus.AwaitingDelivery => "Chờ giao xe",
             RentalContractStatus.InProgress => "Đang thuê",
-            RentalContractStatus.AwaitingReturn => "Chờ trả xe",
             RentalContractStatus.PendingSettlement => "Chờ quyết toán",
             RentalContractStatus.Completed => "Hoàn tất",
-            RentalContractStatus.Violation => "Vi phạm",
+            RentalContractStatus.Disputed => "Tranh chấp",
             RentalContractStatus.Cancelled => "Đã hủy",
             _ => status.ToString()
         };
@@ -1210,15 +1361,12 @@ public class ContractService : IContractService
                 Display = s switch
                 {
                     RentalContractStatus.Draft => "Bản nháp",
-                    RentalContractStatus.Pending => "Chờ ký",
-                    RentalContractStatus.Signed => "Đã ký",
+                    RentalContractStatus.PendingSigning => "Chờ ký",
                     RentalContractStatus.Active => "Đang hoạt động",
-                    RentalContractStatus.AwaitingDelivery => "Chờ giao xe",
                     RentalContractStatus.InProgress => "Đang thuê",
-                    RentalContractStatus.AwaitingReturn => "Chờ trả xe",
                     RentalContractStatus.PendingSettlement => "Chờ quyết toán",
                     RentalContractStatus.Completed => "Hoàn tất",
-                    RentalContractStatus.Violation => "Vi phạm",
+                    RentalContractStatus.Disputed => "Tranh chấp",
                     RentalContractStatus.Cancelled => "Đã hủy",
                     _ => s.ToString()
                 }
@@ -1272,12 +1420,12 @@ public class ContractService : IContractService
 
     /// <summary>
     /// Statuses that indicate Contract is ready for Handover
+    /// Luồng mới: Draft = chưa giao, PendingSigning = đã lập biên bản chờ ký
     /// </summary>
     private static readonly RentalContractStatus[] HandoverReadyStatuses = new[]
     {
-        RentalContractStatus.Signed,
-        RentalContractStatus.Active,
-        RentalContractStatus.AwaitingDelivery
+        RentalContractStatus.Draft,
+        RentalContractStatus.PendingSigning
     };
 
     /// <inheritdoc/>
@@ -1303,7 +1451,7 @@ public class ContractService : IContractService
             return false;
         }
 
-        // Check if Contract is signed (ready for handover)
+        // Check if Contract is in ready status for handover
         var isReady = HandoverReadyStatuses.Contains(contract.Status);
         _logger.LogInformation(
             "IsBookingReadyForHandoverAsync: Booking {BookingId} -> Contract {ContractId} Status={Status}, IsReady={IsReady}",
@@ -1407,15 +1555,12 @@ public class ContractService : IContractService
     private static string GetStatusDisplayName(RentalContractStatus status) => status switch
     {
         RentalContractStatus.Draft => "Bản nháp",
-        RentalContractStatus.Pending => "Chờ ký",
-        RentalContractStatus.Signed => "Đã ký",
+        RentalContractStatus.PendingSigning => "Chờ ký",
         RentalContractStatus.Active => "Đang hoạt động",
-        RentalContractStatus.AwaitingDelivery => "Chờ giao xe",
         RentalContractStatus.InProgress => "Đang thuê",
-        RentalContractStatus.AwaitingReturn => "Chờ trả xe",
         RentalContractStatus.PendingSettlement => "Chờ quyết toán",
         RentalContractStatus.Completed => "Hoàn tất",
-        RentalContractStatus.Violation => "Vi phạm",
+        RentalContractStatus.Disputed => "Tranh chấp",
         RentalContractStatus.Cancelled => "Đã hủy",
         _ => status.ToString()
     };
@@ -1427,12 +1572,11 @@ public class ContractService : IContractService
 
         return status switch
         {
-            RentalContractStatus.Draft => "Hợp đồng đang ở trạng thái bản nháp. Cần chờ khách hàng ký.",
-            RentalContractStatus.Pending => "Hợp đồng đang chờ khách hàng ký.",
-            RentalContractStatus.Signed or
-            RentalContractStatus.Active or
-            RentalContractStatus.AwaitingDelivery => "Hợp đồng đã ký. Sẵn sàng giao xe.",
+            RentalContractStatus.Draft => "Hợp đồng đang ở bản nháp. Cần lập biên bản giao xe.",
+            RentalContractStatus.PendingSigning => "Đã lập biên bản. Chờ khách ký và thanh toán.",
+            RentalContractStatus.Active => "Hợp đồng đã ký. Khách đang thuê xe.",
             RentalContractStatus.InProgress => "Xe đã được giao. Đang trong quá trình thuê.",
+            RentalContractStatus.PendingSettlement => "Chờ quyết toán sau khi trả xe.",
             RentalContractStatus.Cancelled => "Hợp đồng đã bị hủy.",
             _ => $"Trạng thái: {status}"
         };

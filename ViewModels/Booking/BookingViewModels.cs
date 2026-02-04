@@ -138,6 +138,37 @@ public class BookingDetailVM
     
     public decimal EstimatedTotal { get; set; }
     
+    // ===== Chi tiết giá dự kiến =====
+    /// <summary>Số ngày thường</summary>
+    public int NormalDays { get; set; }
+    
+    /// <summary>Số ngày lễ</summary>
+    public int PeakDays { get; set; }
+    
+    /// <summary>Đơn giá ngày thường</summary>
+    public decimal DailyPrice { get; set; }
+    
+    /// <summary>Hệ số ngày lễ</summary>
+    public decimal PeakMultiplier { get; set; }
+    
+    /// <summary>Tiền thuê ngày thường</summary>
+    public decimal NormalDaysAmount { get; set; }
+    
+    /// <summary>Tiền thuê ngày lễ</summary>
+    public decimal PeakDaysAmount { get; set; }
+    
+    /// <summary>Tiền cọc trách nhiệm</summary>
+    public decimal ResponsibilityDeposit { get; set; }
+    
+    /// <summary>Tiền cọc thuê xe (50%)</summary>
+    public decimal RentalDeposit { get; set; }
+    
+    /// <summary>Tổng tiền cọc</summary>
+    public decimal TotalDeposit => ResponsibilityDeposit + RentalDeposit;
+    
+    /// <summary>Tổng tiền cần thanh toán khi nhận xe = Tiền thuê + Cọc</summary>
+    public decimal TotalPickupAmount => EstimatedTotal + TotalDeposit;
+    
     public BookingStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
     public string CreatedBy { get; set; } = string.Empty;
@@ -169,58 +200,49 @@ public class BookingDetailVM
     public RentalContractStatus? ContractStatus { get; set; }
     
     /// <summary>
-    /// Text hiển thị trạng thái hợp đồng
+    /// Text hiển thị trạng thái hợp đồng - Luồng mới
     /// </summary>
     public string ContractStatusDisplay => ContractStatus switch
     {
         RentalContractStatus.Draft => "Bản nháp",
-        RentalContractStatus.Pending => "Chờ ký",
-        RentalContractStatus.Signed => "Đã ký",
+        RentalContractStatus.PendingSigning => "Chờ ký",
         RentalContractStatus.Active => "Đang hoạt động",
-        RentalContractStatus.AwaitingDelivery => "Chờ giao xe",
         RentalContractStatus.InProgress => "Đang thuê",
-        RentalContractStatus.AwaitingReturn => "Chờ trả xe",
         RentalContractStatus.PendingSettlement => "Chờ quyết toán",
         RentalContractStatus.Completed => "Hoàn tất",
-        RentalContractStatus.Violation => "Vi phạm",
+        RentalContractStatus.Disputed => "Tranh chấp",
         RentalContractStatus.Cancelled => "Đã hủy",
         _ => ""
     };
     
     /// <summary>
-    /// CSS class cho chip trạng thái hợp đồng
+    /// CSS class cho chip trạng thái hợp đồng - Luồng mới
     /// </summary>
     public string ContractStatusClass => ContractStatus switch
     {
         RentalContractStatus.Draft => "chip grey lighten-1",
-        RentalContractStatus.Pending => "chip orange white-text",
-        RentalContractStatus.Signed => "chip green white-text",
+        RentalContractStatus.PendingSigning => "chip orange white-text",
         RentalContractStatus.Active => "chip blue white-text",
-        RentalContractStatus.AwaitingDelivery => "chip light-blue white-text",
         RentalContractStatus.InProgress => "chip teal white-text",
-        RentalContractStatus.AwaitingReturn => "chip amber white-text",
         RentalContractStatus.PendingSettlement => "chip deep-orange white-text",
         RentalContractStatus.Completed => "chip green darken-2 white-text",
-        RentalContractStatus.Violation => "chip red white-text",
+        RentalContractStatus.Disputed => "chip red white-text",
         RentalContractStatus.Cancelled => "chip grey white-text",
         _ => "chip"
     };
     
     /// <summary>
-    /// Icon cho trạng thái hợp đồng
+    /// Icon cho trạng thái hợp đồng - Luồng mới
     /// </summary>
     public string ContractStatusIcon => ContractStatus switch
     {
         RentalContractStatus.Draft => "edit",
-        RentalContractStatus.Pending => "schedule",
-        RentalContractStatus.Signed => "check_circle",
+        RentalContractStatus.PendingSigning => "schedule",
         RentalContractStatus.Active => "play_circle",
-        RentalContractStatus.AwaitingDelivery => "local_shipping",
         RentalContractStatus.InProgress => "directions_car",
-        RentalContractStatus.AwaitingReturn => "assignment_return",
         RentalContractStatus.PendingSettlement => "receipt_long",
         RentalContractStatus.Completed => "verified",
-        RentalContractStatus.Violation => "report",
+        RentalContractStatus.Disputed => "report",
         RentalContractStatus.Cancelled => "cancel",
         _ => "description"
     };

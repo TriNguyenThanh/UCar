@@ -285,24 +285,28 @@
                     <span class="card-title">Thao tác</span>
                     
                     <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        @* Luồng mới: Không cho phép ký online - Khách ký giấy tại quầy *@
                         @if (Model.CanSign && User.IsInRole("Customer"))
                         {
-                            <a asp-action="Sign" asp-route-id="@Model.ContractId" class="btn waves-effect waves-light green">
-                                <i class="material-icons left">edit</i>Ký hợp đồng
+                            <div class="card-panel blue-grey lighten-5">
+                                <i class="material-icons left">info</i>
+                                <small>Vui lòng đến chi nhánh để ký hợp đồng giấy khi nhận xe.</small>
+                            </div>
+                        }
+                        
+                        @* Luồng mới: Lập biên bản giao xe (khi Draft) *@
+                        @if (Model.CanCreateHandover && (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff")))
+                        {
+                            <a asp-controller="Handover" asp-action="CheckOut" asp-route-contractId="@Model.ContractId" class="btn waves-effect waves-light green">
+                                <i class="material-icons left">assignment</i>Lập biên bản giao xe
                             </a>
                         }
                         
-                        @if (Model.CanConfirm && (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff")))
+                        @* Luồng mới: Thanh toán (khi PendingSigning và có biên bản) *@
+                        @if (Model.CanPayPickup && (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff")))
                         {
-                            <a asp-action="Confirm" asp-route-id="@Model.ContractId" class="btn waves-effect waves-light blue">
-                                <i class="material-icons left">check</i>Xác nhận
-                            </a>
-                        }
-                        
-                        @if (Model.CanHandover && (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff")))
-                        {
-                            <a asp-controller="Handover" asp-action="CheckOut" asp-route-contractId="@Model.ContractId" class="btn waves-effect waves-light teal">
-                                <i class="material-icons left">car_rental</i>Bàn giao xe
+                            <a asp-controller="Payment" asp-action="Pickup" asp-route-contractId="@Model.ContractId" class="btn waves-effect waves-light orange">
+                                <i class="material-icons left">payment</i>Thanh toán & Giao xe
                             </a>
                         }
                         

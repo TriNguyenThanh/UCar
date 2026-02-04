@@ -318,17 +318,26 @@ namespace UCar.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RecordPayment(RecordPaymentViewModel model)
         {
+            var isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+            
             if (!ModelState.IsValid)
             {
+                if (isAjax)
+                {
+                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                    return Json(new { success = false, message = string.Join(", ", errors) });
+                }
                 return View(model);
             }
 
             try
             {
-                // Lấy current user ID
-                var staffId = User.Claims.FirstOrDefault(c => c.Type == "StaffId")?.Value;
-                if (string.IsNullOrEmpty(staffId) || !Guid.TryParse(staffId, out var paidBy))
+                // Lấy current user ID (UserAccountId)
+                var userId = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var paidBy))
                 {
+                    if (isAjax)
+                        return Json(new { success = false, message = "Không xác định được người dùng hiện tại" });
                     TempData["ErrorMessage"] = "Không xác định được người dùng hiện tại";
                     return View(model);
                 }
@@ -343,11 +352,19 @@ namespace UCar.Controllers
 
                 if (success)
                 {
+                    if (isAjax)
+                        return Json(new { 
+                            success = true, 
+                            message = $"Đã ghi nhận thanh toán {model.AmountPaid:N0} VNĐ thành công",
+                            redirectUrl = Url.Action(nameof(Details), new { id = model.InvoiceId })
+                        });
                     TempData["SuccessMessage"] = $"Đã ghi nhận thanh toán {model.AmountPaid:N0} VNĐ thành công";
                     return RedirectToAction(nameof(Details), new { id = model.InvoiceId });
                 }
                 else
                 {
+                    if (isAjax)
+                        return Json(new { success = false, message = "Không thể ghi nhận thanh toán" });
                     TempData["ErrorMessage"] = "Không thể ghi nhận thanh toán";
                     return View(model);
                 }
@@ -355,6 +372,8 @@ namespace UCar.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error recording payment for invoice {InvoiceId}", model.InvoiceId);
+                if (isAjax)
+                    return Json(new { success = false, message = "Có lỗi xảy ra khi ghi nhận thanh toán: " + ex.Message });
                 TempData["ErrorMessage"] = "Có lỗi xảy ra khi ghi nhận thanh toán";
                 return View(model);
             }
@@ -372,9 +391,9 @@ namespace UCar.Controllers
         {
             try
             {
-                // Lấy current user ID
-                var staffId = User.Claims.FirstOrDefault(c => c.Type == "StaffId")?.Value;
-                if (string.IsNullOrEmpty(staffId) || !Guid.TryParse(staffId, out var issuedBy))
+                // Lấy current user ID (UserAccountId)
+                var userId = User.Claims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var issuedBy))
                 {
                     TempData["ErrorMessage"] = "Không xác định được người dùng hiện tại";
                     return RedirectToAction(nameof(ByContract), new { contractId });
@@ -461,184 +480,46 @@ namespace UCar.Controllers
         }
 
         // ===== CUSTOMER FACING ACTIONS =====
+        // LUỒNG MỚI: Khách hàng không được xem hóa đơn và thanh toán online
 
         /// <summary>
         /// GET: Invoice/MyInvoices - Customer xem các hóa đơn của mình
+        /// LUỒNG MỚI: Không cho phép
         /// </summary>
         [Authorize(Roles = "Customer")]
         [HttpGet]
-        public async Task<IActionResult> MyInvoices()
+        public IActionResult MyInvoices()
         {
-            try
-            {
-                // Get current customer ID from claims
-                var customerIdClaim = User.FindFirst("CustomerId")?.Value;
-                if (string.IsNullOrEmpty(customerIdClaim) || !Guid.TryParse(customerIdClaim, out Guid customerId))
-                {
-                    TempData["ErrorMessage"] = "Không tìm thấy thông tin khách hàng";
-                    return RedirectToAction("Index", "Home");
-                }
-
-                var customer = await _context.Customers
-                    .Include(c => c.UserAccount)
-                    .FirstOrDefaultAsync(c => c.CustomerId == customerId);
-
-                if (customer == null)
-                {
-                    TempData["ErrorMessage"] = "Không tìm thấy thông tin khách hàng";
-                    return RedirectToAction("Index", "Home");
-                }
-
-                // Get all invoices for this customer
-                var invoices = await _invoiceService.GetInvoicesAsync();
-                var customerInvoices = invoices.Items
-                    .Where(i => i.CustomerId == customer.CustomerId)
-                    .OrderByDescending(i => i.IssuedDate)
-                    .ToList();
-
-                return View(customerInvoices);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading customer invoices");
-                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải danh sách hóa đơn";
-                return RedirectToAction("Index", "Home");
-            }
+            // Luồng mới: Khách hàng không được xem hóa đơn online
+            TempData["ErrorMessage"] = "Tính năng xem hóa đơn online không còn khả dụng. Vui lòng liên hệ chi nhánh để được hỗ trợ.";
+            return RedirectToAction("MyBookings", "Booking");
         }
 
         /// <summary>
         /// GET: Invoice/Pay/{id} - Customer xem chi tiết hóa đơn để thanh toán
+        /// LUỒNG MỚI: Không cho phép thanh toán online
         /// </summary>
         [Authorize(Roles = "Customer")]
         [HttpGet]
-        public async Task<IActionResult> Pay(Guid id)
+        public IActionResult Pay(Guid id)
         {
-            try
-            {
-                // Get invoice details
-                var invoice = await _invoiceService.GetInvoiceDetailsAsync(id);
-                if (invoice == null)
-                {
-                    TempData["ErrorMessage"] = "Không tìm thấy hóa đơn";
-                    return RedirectToAction(nameof(MyInvoices));
-                }
-
-                // Get current customer ID from claims
-                var customerIdClaim = User.FindFirst("CustomerId")?.Value;
-                if (string.IsNullOrEmpty(customerIdClaim) || !Guid.TryParse(customerIdClaim, out Guid customerId))
-                {
-                    TempData["ErrorMessage"] = "Không tìm thấy thông tin khách hàng";
-                    return RedirectToAction("Index", "Home");
-                }
-
-                var customer = await _context.Customers
-                    .Include(c => c.UserAccount)
-                    .FirstOrDefaultAsync(c => c.CustomerId == customerId);
-
-                if (customer == null || invoice.CustomerId != customer.CustomerId)
-                {
-                    TempData["ErrorMessage"] = "Bạn không có quyền xem hóa đơn này";
-                    return RedirectToAction(nameof(MyInvoices));
-                }
-
-                // Check if invoice can be paid
-                if (invoice.Status == InvoiceStatus.Paid || invoice.Status == InvoiceStatus.Cancelled)
-                {
-                    TempData["ErrorMessage"] = "Hóa đơn này không thể thanh toán";
-                    return RedirectToAction(nameof(MyInvoices));
-                }
-
-                // Prepare payment info
-                var paymentInfo = await _invoiceService.GetInvoicePaymentInfoAsync(id);
-                ViewBag.PaymentInfo = paymentInfo;
-                ViewBag.CustomerName = customer.FullName;
-
-                return View(invoice);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error loading invoice for payment {InvoiceId}", id);
-                TempData["ErrorMessage"] = "Có lỗi xảy ra khi tải thông tin thanh toán";
-                return RedirectToAction(nameof(MyInvoices));
-            }
+            // Luồng mới: Khách hàng không được thanh toán online
+            TempData["ErrorMessage"] = "Tính năng thanh toán online không còn khả dụng. Vui lòng thanh toán tại quầy khi nhận xe.";
+            return RedirectToAction("MyBookings", "Booking");
         }
 
         /// <summary>
         /// POST: Invoice/SubmitPayment - Customer gửi xác nhận thanh toán
+        /// LUỒNG MỚI: Không cho phép thanh toán online
         /// </summary>
         [Authorize(Roles = "Customer")]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SubmitPayment(Guid invoiceId, decimal amount, PaymentMethod paymentMethod, string? bankRefCode, string? notes)
+        public IActionResult SubmitPayment(Guid invoiceId, decimal amount, PaymentMethod paymentMethod, string? bankRefCode, string? notes)
         {
-            try
-            {
-                // Get invoice
-                var invoice = await _invoiceService.GetInvoiceForPaymentAsync(invoiceId);
-                if (invoice == null)
-                {
-                    TempData["ErrorMessage"] = "Không tìm thấy hóa đơn";
-                    return RedirectToAction(nameof(MyInvoices));
-                }
-
-                // Get current customer ID from claims
-                var customerIdClaim = User.FindFirst("CustomerId")?.Value;
-                if (string.IsNullOrEmpty(customerIdClaim) || !Guid.TryParse(customerIdClaim, out Guid customerId))
-                {
-                    TempData["ErrorMessage"] = "Không tìm thấy thông tin khách hàng";
-                    return RedirectToAction(nameof(MyInvoices));
-                }
-
-                var customer = await _context.Customers
-                    .Include(c => c.UserAccount)
-                    .FirstOrDefaultAsync(c => c.CustomerId == customerId);
-
-                if (customer == null || invoice.CustomerId != customer.CustomerId)
-                {
-                    TempData["ErrorMessage"] = "Bạn không có quyền thanh toán hóa đơn này";
-                    return RedirectToAction(nameof(MyInvoices));
-                }
-
-                // Validate amount
-                if (amount <= 0 || amount > invoice.AmountDue)
-                {
-                    TempData["ErrorMessage"] = $"Số tiền thanh toán không hợp lệ. Vui lòng nhập từ 1đ đến {invoice.AmountDue:N0}đ";
-                    return RedirectToAction(nameof(Pay), new { id = invoiceId });
-                }
-
-                // Get customer's UserAccountId for paidBy
-                if (customer.UserId == null)
-                {
-                    TempData["ErrorMessage"] = "Không tìm thấy thông tin tài khoản";
-                    return RedirectToAction(nameof(Pay), new { id = invoiceId });
-                }
-
-                // Record payment
-                var success = await _invoiceService.RecordPaymentAsync(
-                    invoiceId,
-                    amount,
-                    paymentMethod,
-                    bankRefCode,
-                    customer.UserId,
-                    notes ?? $"Khách hàng thanh toán qua {paymentMethod}");
-
-                if (success)
-                {
-                    TempData["SuccessMessage"] = "Đã gửi xác nhận thanh toán thành công. Nhân viên sẽ xác nhận trong thời gian sớm nhất.";
-                    return RedirectToAction(nameof(MyInvoices));
-                }
-                else
-                {
-                    TempData["ErrorMessage"] = "Có lỗi xảy ra khi ghi nhận thanh toán";
-                    return RedirectToAction(nameof(Pay), new { id = invoiceId });
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error submitting payment for invoice {InvoiceId}", invoiceId);
-                TempData["ErrorMessage"] = "Có lỗi xảy ra khi xử lý thanh toán";
-                return RedirectToAction(nameof(MyInvoices));
-            }
+            // Luồng mới: Khách hàng không được thanh toán online
+            TempData["ErrorMessage"] = "Tính năng thanh toán online không còn khả dụng. Vui lòng thanh toán tại quầy khi nhận xe.";
+            return RedirectToAction("MyBookings", "Booking");
         }
 
         // ===== HELPER METHOD =====

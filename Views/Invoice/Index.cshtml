@@ -37,6 +37,8 @@
                     <div class="input-field col s12 m2">
                         <select id="type" name="type">
                             <option value="">Tất cả loại</option>
+                            <option value="@InvoiceType.Delivery" selected="@(ViewBag.CurrentType == InvoiceType.Delivery)">Giao xe</option>
+                            <option value="@InvoiceType.Return" selected="@(ViewBag.CurrentType == InvoiceType.Return)">Trả xe</option>
                             <option value="@InvoiceType.Deposit" selected="@(ViewBag.CurrentType == InvoiceType.Deposit)">Đặt cọc</option>
                             <option value="@InvoiceType.Rental" selected="@(ViewBag.CurrentType == InvoiceType.Rental)">Tiền thuê</option>
                             <option value="@InvoiceType.Surcharge" selected="@(ViewBag.CurrentType == InvoiceType.Surcharge)">Phụ phí</option>
@@ -93,7 +95,7 @@
                             <th>Loại</th>
                             <th>Hợp đồng</th>
                             <th>Khách hàng</th>
-                            <th>Xe</th>
+                            @* <th>Xe</th> *@
                             <th>Tổng tiền</th>
                             <th>Còn phải trả</th>
                             <th>Trạng thái</th>
@@ -113,6 +115,12 @@
                                 <td>
                                     @switch (invoice.InvoiceType)
                                     {
+                                        case InvoiceType.Delivery:
+                                            <span class="badge purple white-text">@invoice.InvoiceTypeDisplay</span>
+                                            break;
+                                        case InvoiceType.Return:
+                                            <span class="badge indigo white-text">@invoice.InvoiceTypeDisplay</span>
+                                            break;
                                         case InvoiceType.Deposit:
                                             <span class="badge blue white-text">@invoice.InvoiceTypeDisplay</span>
                                             break;
@@ -128,17 +136,20 @@
                                         case InvoiceType.Refund:
                                             <span class="badge teal white-text">@invoice.InvoiceTypeDisplay</span>
                                             break;
+                                        default:
+                                            <span class="badge grey white-text">@invoice.InvoiceTypeDisplay</span>
+                                            break;
                                     }
                                 </td>
                                 <td>
-                                    <a asp-controller="Contract" asp-action="Details" asp-route-id="@invoice.ContractCode" class="blue-text">
+                                    <a asp-controller="Contract" asp-action="Details" asp-route-code="@invoice.ContractCode" class="blue-text">
                                         @invoice.ContractCode
                                     </a>
                                 </td>
                                 <td>@invoice.CustomerName</td>
-                                <td>
+                                @* <td>
                                     <span class="chip">@invoice.VehiclePlateNo</span>
-                                </td>
+                                </td> *@
                                 <td>
                                     <strong class="@(invoice.TotalAmount < 0 ? "green-text" : "")">
                                         @invoice.TotalAmount.ToString("N0") ₫
