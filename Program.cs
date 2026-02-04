@@ -14,7 +14,7 @@ builder.Services.AddControllersWithViews(options =>
     options.ModelBinderProviders.Insert(0, new DateTimeModelBinderProvider());
 });
 builder.Services.AddDbContext<UCarDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("HieuDb"))); //Anh em nhớ đổi chỗ này nhé
+    options.UseSqlServer(builder.Configuration.GetConnectionString("TriDb"))); //Anh em nhớ đổi chỗ này nhé
 
 // Add authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -83,7 +83,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<UCarDbContext>();
-        await UCarDataSeeder.SeedAllDataAsync(context, force: false);
+        await UCarDataSeeder.SeedAllDataAsync(context, force: true);
     }
     catch (Exception ex)
     {

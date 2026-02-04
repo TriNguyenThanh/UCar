@@ -3,7 +3,9 @@
 @{
     ViewData["Title"] = "Cập nhật giấy tờ tùy thân";
 }
-
+@section styles {
+    <link href="/css/account.css" rel="stylesheet" />
+}
 <!-- Page Header -->
 <div class="section ucar-header-section">
     <div class="container">
@@ -108,8 +110,8 @@
                             {
                                 <div class="document-image-preview">
                                     <p class="grey-text" style="margin-bottom: 0.5rem;"><strong>Mặt trước:</strong></p>
-                                    <a href="@Model.ExistingImageFrontUrl" target="_blank" class="view-image-link">
-                                        <img src="@Model.ExistingImageFrontUrl" alt="Mặt trước" class="responsive-img materialboxed">
+                                    <a href="/@Model.ExistingImageFrontUrl" target="_blank" class="view-image-link">
+                                        <img src="/@Model.ExistingImageFrontUrl" alt="Mặt trước" class="responsive-img materialboxed">
                                     </a>
                                 </div>
                             }
@@ -118,8 +120,8 @@
                             {
                                 <div class="document-image-preview" style="margin-top: 1rem;">
                                     <p class="grey-text" style="margin-bottom: 0.5rem;"><strong>Mặt sau:</strong></p>
-                                    <a href="@Model.ExistingImageBackUrl" target="_blank" class="view-image-link">
-                                        <img src="@Model.ExistingImageBackUrl" alt="Mặt sau" class="responsive-img materialboxed">
+                                    <a href="/@Model.ExistingImageBackUrl" target="_blank" class="view-image-link">
+                                        <img src="/@Model.ExistingImageBackUrl" alt="Mặt sau" class="responsive-img materialboxed">
                                     </a>
                                 </div>
                             }
