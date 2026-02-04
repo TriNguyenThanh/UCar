@@ -48,7 +48,15 @@ public interface IDepositPolicyService
     // ===== DEPOSIT CALCULATION =====
     
     /// <summary>
-    /// Tính số tiền cọc dựa trên policy và giá trị hợp đồng
+    /// Tính chi tiết đặt cọc (tách biệt ResponsibilityDeposit và RentalDeposit)
+    /// </summary>
+    /// <param name="vehicleModelId">Model xe</param>
+    /// <param name="rentalAmount">Tổng tiền thuê (chưa bao gồm cọc)</param>
+    /// <returns>Chi tiết deposit breakdown</returns>
+    Task<DepositBreakdownDto> CalculateDepositBreakdownAsync(Guid vehicleModelId, decimal rentalAmount);
+    
+    /// <summary>
+    /// Tính số tiền cọc dựa trên policy và giá trị hợp đồng (LEGACY - chỉ trả về rental deposit)
     /// </summary>
     /// <param name="vehicleModelId">Model xe</param>
     /// <param name="rentalAmount">Tổng tiền thuê (chưa bao gồm cọc)</param>

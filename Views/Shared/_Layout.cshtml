@@ -89,6 +89,22 @@
                             </a>
                         </li>
                         
+                        <!-- 5.0 Hợp đồng Dropdown -->
+                        <li>
+                            <a class="dropdown-trigger" href="#!" data-target="contract-dropdown">
+                                <i class="material-icons left">description</i>Hợp đồng<i
+                                    class="material-icons right">arrow_drop_down</i>
+                            </a>
+                        </li>
+                        
+                        <!-- 7.0 Hóa đơn Dropdown -->
+                        <li>
+                            <a class="dropdown-trigger" href="#!" data-target="invoice-dropdown">
+                                <i class="material-icons left">receipt</i>Hóa đơn<i
+                                    class="material-icons right">arrow_drop_down</i>
+                            </a>
+                        </li>
+                        
                         <!-- 8.0 Vận hành & Nhân sự Dropdown -->
                         <li>
                             <a class="dropdown-trigger" href="#!" data-target="operations-dropdown">
@@ -112,8 +128,7 @@
                         <li><a asp-controller="Booking" asp-action="Search"><i class="material-icons left">search</i>Thuê xe</a></li>
                         <li><a asp-controller="Booking" asp-action="MyBookings"><i class="material-icons left">event</i>Đặt xe
                                 của tôi</a></li>
-                        <li><a asp-controller="Contract" asp-action="MyContracts"><i
-                                    class="material-icons left">directions_car</i>Hợp đồng của tôi</a></li>
+                        @* Luồng mới: Khách không xem được Hợp đồng và Hóa đơn online *@
                     }
 
                     <!-- User Dropdown -->
@@ -152,6 +167,8 @@
         <li class="divider"></li>
         <li><a asp-controller="Pricing" asp-action="Index"><i class="material-icons">attach_money</i>Bảng giá</a></li>
         <li><a asp-controller="Holiday" asp-action="Index"><i class="material-icons">event</i>Ngày lễ</a></li>
+        <li><a asp-controller="DepositPolicy" asp-action="Index"><i class="material-icons">account_balance_wallet</i>Chính sách đặt cọc</a></li>
+        <li><a asp-controller="SurchargePolicy" asp-action="Index"><i class="material-icons">monetization_on</i>Chính sách phụ phí</a></li>
     </ul>
 
     <!-- Handover Management Dropdown Structure -->
@@ -165,6 +182,29 @@
         </li>
         <li><a asp-controller="Handover" asp-action="AllIncidents"><i class="material-icons">report_problem</i>Sự cố</a>
         </li>
+    </ul>
+    
+    <!-- Contract Management Dropdown Structure (Module 5.0) -->
+    <ul id="contract-dropdown" class="dropdown-content">
+        <li><a asp-controller="Contract" asp-action="Manage"><i class="material-icons">list</i>Quản lý hợp đồng</a></li>
+        <li><a asp-controller="Contract" asp-action="Create"><i class="material-icons">add</i>Tạo hợp đồng mới</a></li>
+        <li class="divider"></li>
+        <li><a asp-controller="Contract" asp-action="Manage" asp-route-status="Pending"><i class="material-icons">schedule</i>Chờ xác nhận</a></li>
+        <li><a asp-controller="Contract" asp-action="Manage" asp-route-status="Active"><i class="material-icons">check_circle</i>Đang hoạt động</a></li>
+        <li><a asp-controller="Contract" asp-action="Manage" asp-route-status="InProgress"><i class="material-icons">directions_car</i>Đang thuê</a></li>
+        <li><a asp-controller="Contract" asp-action="Manage" asp-route-status="Completed"><i class="material-icons">done_all</i>Hoàn thành</a></li>
+    </ul>
+    
+    <!-- Invoice Management Dropdown Structure (Module 7.0) -->
+    <ul id="invoice-dropdown" class="dropdown-content">
+        <li><a asp-controller="Invoice" asp-action="Index"><i class="material-icons">list</i>Tất cả hóa đơn</a></li>
+        <li class="divider"></li>
+        <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="Deposit"><i class="material-icons">account_balance_wallet</i>Hóa đơn cọc</a></li>
+        <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="Rental"><i class="material-icons">directions_car</i>Hóa đơn thuê xe</a></li>
+        <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="SurchargePenalty"><i class="material-icons">monetization_on</i>Phụ thu/Phạt</a></li>
+        <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="Refund"><i class="material-icons">restore</i>Hoàn tiền</a></li>
+        <li class="divider"></li>
+        <li><a asp-controller="Invoice" asp-action="Index" asp-route-status="Overdue"><i class="material-icons">warning</i>Hóa đơn quá hạn</a></li>
     </ul>
     
     <!-- Operations & HR Dropdown Structure (Module 8.0) -->
@@ -270,6 +310,45 @@
                     </ul>
                 </li>
                 
+                <!-- Hợp đồng - Collapsible (Module 5.0) -->
+                <li class="no-padding">
+                    <ul class="collapsible collapsible-accordion">
+                        <li>
+                            <a class="collapsible-header"><i class="material-icons">description</i>Hợp đồng<i
+                                    class="material-icons right">arrow_drop_down</i></a>
+                            <div class="collapsible-body">
+                                <ul>
+                                    <li><a asp-controller="Contract" asp-action="Manage">Quản lý hợp đồng</a></li>
+                                    <li><a asp-controller="Contract" asp-action="Create">Tạo mới</a></li>
+                                    <li><a asp-controller="Contract" asp-action="Manage" asp-route-status="Pending">Chờ xác nhận</a></li>
+                                    <li><a asp-controller="Contract" asp-action="Manage" asp-route-status="Active">Đang hoạt động</a></li>
+                                    <li><a asp-controller="Contract" asp-action="Manage" asp-route-status="InProgress">Đang thuê</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+                
+                <!-- Hóa đơn - Collapsible (Module 7.0) -->
+                <li class="no-padding">
+                    <ul class="collapsible collapsible-accordion">
+                        <li>
+                            <a class="collapsible-header"><i class="material-icons">receipt</i>Hóa đơn<i
+                                    class="material-icons right">arrow_drop_down</i></a>
+                            <div class="collapsible-body">
+                                <ul>
+                                    <li><a asp-controller="Invoice" asp-action="Index">Tất cả hóa đơn</a></li>
+                                    <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="Deposit">Hóa đơn cọc</a></li>
+                                    <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="Rental">Hóa đơn thuê xe</a></li>
+                                    <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="SurchargePenalty">Phụ thu/Phạt</a></li>
+                                    <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="Refund">Hoàn tiền</a></li>
+                                    <li><a asp-controller="Invoice" asp-action="Index" asp-route-status="Overdue">Quá hạn</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+                
                 <!-- Vận hành & Nhân sự - Collapsible (Module 8.0) -->
                 <li class="no-padding">
                     <ul class="collapsible collapsible-accordion">
@@ -308,7 +387,7 @@
             {
                 <li><a asp-controller="Booking" asp-action="MyBookings"><i class="material-icons">event</i>Đặt xe của tôi</a>
                 </li>
-                <li><a asp-controller="Contract" asp-action="MyContracts"><i class="material-icons">directions_car</i>Hợp đồng của tôi</a></li>
+                @* Luồng mới: Khách không xem được Hợp đồng và Hóa đơn online *@
             }
 
             <li class="divider"></li>

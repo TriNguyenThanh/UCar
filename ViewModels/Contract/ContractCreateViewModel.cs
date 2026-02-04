@@ -74,6 +74,34 @@ public class ContractCreateViewModel
     [Display(Name = "Tiền thuê")]
     public decimal RentalAmount { get; set; }
     
+    // Chi tiết tính giá
+    [Display(Name = "Số ngày thường")]
+    public int NormalDays { get; set; }
+    
+    [Display(Name = "Số ngày cao điểm")]
+    public int PeakDays { get; set; }
+    
+    [Display(Name = "Tiền ngày thường")]
+    public decimal NormalDaysAmount { get; set; }
+    
+    [Display(Name = "Tiền ngày cao điểm")]
+    public decimal PeakDaysAmount { get; set; }
+    
+    [Display(Name = "Giá cơ bản hàng ngày")]
+    public decimal BaseDailyPrice { get; set; }
+    
+    [Display(Name = "Hệ số cao điểm")]
+    public decimal PeakMultiplier { get; set; }
+    
+    [Display(Name = "Cọc trách nhiệm")]
+    public decimal ResponsibilityDeposit { get; set; }
+    
+    [Display(Name = "Cọc thuê xe")]
+    public decimal RentalDeposit { get; set; }
+    
+    [Display(Name = "Tổng cọc")]
+    public decimal TotalDeposit { get; set; }
+    
     [Display(Name = "Phụ phí")]
     [Range(0, double.MaxValue)]
     public decimal ExtraCharges { get; set; }
@@ -149,6 +177,7 @@ public class CustomerOption
 public class VehicleOption
 {
     public Guid VehicleId { get; set; }
+    public Guid ModelId { get; set; }
     public string PlateNo { get; set; } = string.Empty;
     public string ModelName { get; set; } = string.Empty;
     public Guid VehicleTypeId { get; set; }
@@ -160,7 +189,7 @@ public class PriceOption
 {
     public Guid PriceId { get; set; }
     public string Name { get; set; } = string.Empty;
-    public Guid VehicleTypeId { get; set; }
+    public Guid? VehicleTypeId { get; set; } // Nullable - no longer used
     public decimal UnitPrice { get; set; }
     public decimal DepositSuggest { get; set; }
 }

@@ -8,13 +8,15 @@ namespace UCar.Services;
 public class PriceCalculationService : IPriceCalculationService
 {
     private readonly UCarDbContext _context;
-    private const decimal RESPONSIBILITY_DEPOSIT = 2_000_000m; // Fixed 2M VND
-    private const decimal RENTAL_DEPOSIT_RATE = 0.5m; // 50% of rental cost
+    private readonly IDepositPolicyService _depositPolicyService;
     private const int MONTHLY_THRESHOLD_DAYS = 30; // >= 30 days uses monthly rate
 
-    public PriceCalculationService(UCarDbContext context)
+    public PriceCalculationService(
+        UCarDbContext context,
+        IDepositPolicyService depositPolicyService)
     {
         _context = context;
+        _depositPolicyService = depositPolicyService;
     }
 
     public async Task<PriceEstimateDto?> CalculateEstimateAsync(Guid vehicleModelId, DateTime pickupDate, DateTime returnDate)
@@ -31,8 +33,9 @@ public class PriceCalculationService : IPriceCalculationService
         if (price == null)
             return null;
 
-        // Calculate total days
-        var totalDays = (returnDate.Date - pickupDate.Date).Days;
+        // Calculate rental days: count calendar days crossed
+        // Example: 8h on Feb 5 to 20h on Feb 6 = spans 2 calendar days (5th and 6th) = 2 days
+        var totalDays = (returnDate.Date - pickupDate.Date).Days + 1;
 
         // Count holiday days in range
         var peakDays = await CountHolidaysInRangeAsync(pickupDate, returnDate);
@@ -60,10 +63,11 @@ public class PriceCalculationService : IPriceCalculationService
             subTotal = normalDaysAmount + peakDaysAmount;
         }
 
-        // Calculate deposits
-        var rentalDeposit = subTotal * RENTAL_DEPOSIT_RATE;
-        var totalDeposit = RESPONSIBILITY_DEPOSIT + rentalDeposit;
-        var totalAmount = subTotal + totalDeposit;
+        // Calculate deposits using DepositPolicyService
+        var depositBreakdown = await _depositPolicyService
+            .CalculateDepositBreakdownAsync(vehicleModelId, subTotal);
+
+        var totalAmount = subTotal + depositBreakdown.TotalDeposit;
 
         // Generate breakdown
         var breakdown = await GenerateContractPriceDetailsAsync(
@@ -91,9 +95,9 @@ public class PriceCalculationService : IPriceCalculationService
             PeakDaysAmount = peakDaysAmount,
             MonthlyAmount = monthlyAmount,
             SubTotal = subTotal,
-            ResponsibilityDeposit = RESPONSIBILITY_DEPOSIT,
-            RentalDeposit = rentalDeposit,
-            TotalDeposit = totalDeposit,
+            ResponsibilityDeposit = depositBreakdown.ResponsibilityDeposit,
+            RentalDeposit = depositBreakdown.RentalDeposit,
+            TotalDeposit = depositBreakdown.TotalDeposit,
             TotalAmount = totalAmount,
             Breakdown = breakdown
         };
@@ -110,8 +114,8 @@ public class PriceCalculationService : IPriceCalculationService
 
         int holidayDays = 0;
 
-        // Count each day in range
-        for (var date = startDate.Date; date < endDate.Date; date = date.AddDays(1))
+        // Count each day in range (inclusive of both start and end dates)
+        for (var date = startDate.Date; date <= endDate.Date; date = date.AddDays(1))
         {
             // Check if this date falls within any holiday
             if (holidays.Any(h => date >= h.StartDate && date <= h.EndDate))
@@ -134,7 +138,7 @@ public class PriceCalculationService : IPriceCalculationService
         var breakdown = new List<PriceBreakdownDto>();
         int order = 1;
 
-        var totalDays = (returnDate.Date - pickupDate.Date).Days;
+        var totalDays = (returnDate.Date - pickupDate.Date).Days + 1;
         var peakDays = await CountHolidaysInRangeAsync(pickupDate, returnDate);
         var normalDays = totalDays - peakDays;
         bool isMonthlyRate = totalDays >= MONTHLY_THRESHOLD_DAYS;
@@ -183,26 +187,27 @@ public class PriceCalculationService : IPriceCalculationService
             }
         }
 
-        // Add deposits
+        // Add deposits using DepositPolicyService
         var subTotal = breakdown.Sum(b => b.LineTotal);
-        var rentalDeposit = subTotal * RENTAL_DEPOSIT_RATE;
+        var depositBreakdown = await _depositPolicyService
+            .CalculateDepositBreakdownAsync(vehicleModelId, subTotal);
 
         breakdown.Add(new PriceBreakdownDto
         {
             DisplayOrder = order++,
             LineDescription = "Tiền cọc trách nhiệm",
             Quantity = 1,
-            UnitPrice = RESPONSIBILITY_DEPOSIT,
-            LineTotal = RESPONSIBILITY_DEPOSIT
+            UnitPrice = depositBreakdown.ResponsibilityDeposit,
+            LineTotal = depositBreakdown.ResponsibilityDeposit
         });
 
         breakdown.Add(new PriceBreakdownDto
         {
             DisplayOrder = order++,
-            LineDescription = $"Tiền cọc thuê xe (50% giá thuê)",
+            LineDescription = $"Tiền cọc thuê xe",
             Quantity = 1,
-            UnitPrice = rentalDeposit,
-            LineTotal = rentalDeposit
+            UnitPrice = depositBreakdown.RentalDeposit,
+            LineTotal = depositBreakdown.RentalDeposit
         });
 
         return breakdown;

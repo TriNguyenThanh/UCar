@@ -106,10 +106,7 @@
                         </div>
                         <div class="card-action">
                             <a asp-action="Details" asp-route-id="@item.ContractId">Chi tiết</a>
-                            @if (item.Status == UCar.Models.Enums.RentalContractStatus.Pending)
-                            {
-                                <a asp-action="Sign" asp-route-id="@item.ContractId" class="blue-text">Ký hợp đồng</a>
-                            }
+                            @* Luồng mới: Khách không ký online, ký giấy tại quầy *@
                         </div>
                     </div>
                 </div>

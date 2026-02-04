@@ -47,13 +47,25 @@
                                             <span class="chip chip-info white-text orange lighten-2">Chờ duyệt</span>
                                             break;
                                         case UCar.Models.Enums.BookingStatus.Confirmed:
-                                            <span class="chip chip-success white-text green">Đã chốt</span>
+                                            <span class="chip chip-success white-text green">Đã xác nhận</span>
+                                            break;
+                                        case UCar.Models.Enums.BookingStatus.Deposited:
+                                            <span class="chip white-text blue">Đã đặt cọc</span>
+                                            break;
+                                        case UCar.Models.Enums.BookingStatus.InProgress:
+                                            <span class="chip white-text teal">Đang thực hiện</span>
                                             break;
                                         case UCar.Models.Enums.BookingStatus.Completed:
-                                            <span class="chip white-text blue">Hoàn thành</span>
+                                            <span class="chip white-text indigo">Hoàn thành</span>
                                             break;
                                         case UCar.Models.Enums.BookingStatus.Cancelled:
                                             <span class="chip white-text grey">Đã hủy</span>
+                                            break;
+                                        case UCar.Models.Enums.BookingStatus.Rejected:
+                                            <span class="chip white-text red">Từ chối</span>
+                                            break;
+                                        case UCar.Models.Enums.BookingStatus.Expired:
+                                            <span class="chip white-text brown">Hết hạn</span>
                                             break;
                                         default:
                                             <span class="chip">@item.Status</span>

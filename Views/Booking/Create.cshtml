@@ -24,18 +24,83 @@
                         <input type="hidden" asp-for="TotalAmount" />
 
                         <!-- Xe info summary -->
-                        <div class="row valign-wrapper" style="background-color: #f5f5f5; padding: 1rem; border-radius: 4px;">
+                        <div class="row valign-wrapper" style="background-color: #f5f5f5; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem;">
                             <div class="col s12 m7">
                                 <h5 style="margin-top: 0; font-weight: 600;">@Model.ModelName</h5>
                                 <p><i class="material-icons tiny">directions_car</i> Biển số: <strong>@Model.PlateNo</strong></p>
-                                <p class="blue-text" style="font-weight: bold; font-size: 1.2rem;">@Model.TotalAmount.ToString("N0")đ</p>
-                                <p class="grey-text">(@Model.EstimatedPrice.ToString("N0")đ / ngày)</p>
                             </div>
                             <div class="col s12 m5 right-align">
                                 <p><strong>Nhận:</strong> @Model.StartAt.ToString("dd/MM/yyyy HH:mm")</p>
                                 <p><strong>Trả:</strong> @Model.EndAt.ToString("dd/MM/yyyy HH:mm")</p>
-                                <p><strong>Tổng thời gian:</strong> @((Model.EndAt - Model.StartAt).Days + 1) ngày</p>
+                                <p><strong>Tổng thời gian:</strong> @Model.TotalDays ngày</p>
                             </div>
+                        </div>
+
+                        <!-- Chi tiết giá thuê -->
+                        <div class="card-panel" style="background-color: #fff9e6; border-left: 4px solid #ff9800;">
+                            <h6 style="font-weight: 600; margin-bottom: 1rem;"><i class="material-icons tiny">receipt</i> Chi tiết giá thuê</h6>
+                            
+                            @if (Model.IsMonthlyRate)
+                            {
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span>Thuê tháng (@Model.TotalDays ngày × giá tháng)</span>
+                                    <span class="right-align"><strong>@Model.MonthlyAmount.ToString("N0")đ</strong></span>
+                                </div>
+                            }
+                            else
+                            {
+                                @if (Model.NormalDays > 0)
+                                {
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span>Ngày thường: @Model.NormalDays ngày × @Model.BaseDailyPrice.ToString("N0")đ</span>
+                                        <span class="right-align"><strong>@Model.NormalDaysAmount.ToString("N0")đ</strong></span>
+                                    </div>
+                                }
+                                @if (Model.PeakDays > 0)
+                                {
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span class="orange-text">Ngày cao điểm/lễ: @Model.PeakDays ngày</span>
+                                        <span class="right-align orange-text"><strong>@Model.PeakDaysAmount.ToString("N0")đ</strong></span>
+                                    </div>
+                                }
+                            }
+                            
+                            <div class="divider" style="margin: 0.8rem 0;"></div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span style="font-weight: 600;">Tổng tiền thuê xe:</span>
+                                <span class="right-align" style="font-weight: 600; font-size: 1.1rem;">@Model.RentalAmount.ToString("N0")đ</span>
+                            </div>
+                        </div>
+
+                        <!-- Chi tiết tiền cọc -->
+                        <div class="card-panel" style="background-color: #e8f5e9; border-left: 4px solid #4caf50;">
+                            <h6 style="font-weight: 600; margin-bottom: 1rem;"><i class="material-icons tiny">account_balance_wallet</i> Tiền cọc</h6>
+                            
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>Cọc trách nhiệm</span>
+                                <span class="right-align"><strong>@Model.ResponsibilityDeposit.ToString("N0")đ</strong></span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>Cọc thuê xe</span>
+                                <span class="right-align"><strong>@Model.RentalDeposit.ToString("N0")đ</strong></span>
+                            </div>
+                            
+                            <div class="divider" style="margin: 0.8rem 0;"></div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span style="font-weight: 600;">Tổng tiền cọc:</span>
+                                <span class="right-align" style="font-weight: 600; font-size: 1.1rem;">@Model.TotalDeposit.ToString("N0")đ</span>
+                            </div>
+                        </div>
+
+                        <!-- Tổng thanh toán -->
+                        <div class="card-panel orange lighten-5" style="border-left: 4px solid #ff6f00;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 1.2rem; font-weight: 600;">TỔNG THANH TOÁN:</span>
+                                <span class="orange-text text-darken-3" style="font-size: 1.5rem; font-weight: 700;">@Model.TotalAmount.ToString("N0")đ</span>
+                            </div>
+                            <p class="grey-text" style="margin-top: 0.5rem; margin-bottom: 0; font-size: 0.9rem;">
+                                <i class="material-icons tiny">info</i> Tiền cọc sẽ được hoàn lại sau khi trả xe và kiểm tra không có vi phạm
+                            </p>
                         </div>
 
                         <div class="divider" style="margin: 2rem 0;"></div>
@@ -45,19 +110,24 @@
                         
                         <div class="input-field">
                             <i class="material-icons prefix">person</i>
-                            <input asp-for="CustomerName" type="text" readonly> <!-- Auto-filled, maybe make readonly? -->
-                            <label asp-for="CustomerName">Họ và tên</label>
+                            <input asp-for="CustomerName" type="text" readonly class="validate">
+                            <label asp-for="CustomerName" class="active">Họ và tên</label>
                         </div>
 
                         <div class="input-field">
                             <i class="material-icons prefix">phone</i>
-                            <input asp-for="CustomerPhone" type="text" readonly> <!-- Auto-filled, maybe make readonly? -->
-                            <label asp-for="CustomerPhone">Số điện thoại</label>
+                            <input asp-for="CustomerPhone" type="text" class="validate" value="@Model.CustomerPhone">
+                            <label asp-for="CustomerPhone" class="@(string.IsNullOrEmpty(Model.CustomerPhone) ? "" : "active")">Số điện thoại</label>
                         </div>
                         
                         <div class="input-field">
                             <i class="material-icons prefix">download</i>
-                            <input asp-for="PickUpLocation" type="text" readonly value="@branches.FirstOrDefault(p => p.BranchId == Model.BranchId)?.Name"> <!-- Auto-filled, maybe make readonly? -->
+                            <select asp-for="PickUpLocation">
+                                @foreach (var branch in branches)
+                                {
+                                    <option value="@branch.Name" selected="@(branch.BranchId == Model.BranchId)">@branch.Name</option>
+                                }
+                            </select>
                             <label asp-for="PickUpLocation">Nơi nhận xe</label>
                         </div>
 
@@ -66,10 +136,10 @@
                             <select asp-for="DropOffLocation">
                                 @foreach (var branch in branches)
                                 {
-                                    <option value="@branch.Name">@branch.Name</option>
+                                    <option value="@branch.Name" selected="@(branch.BranchId == Model.BranchId)">@branch.Name</option>
                                 }
                             </select>
-                            <label asp-for="DropOffLocation">Nơi trả xe </label>
+                            <label asp-for="DropOffLocation">Nơi trả xe</label>
                         </div>
 
                         <div asp-validation-summary="ModelOnly" class="red-text center-align"></div>
@@ -86,3 +156,16 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Materialize select dropdowns
+            var elems = document.querySelectorAll('select');
+            M.FormSelect.init(elems);
+            
+            // Update labels for pre-filled inputs
+            M.updateTextFields();
+        });
+    </script>
+}

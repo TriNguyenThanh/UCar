@@ -21,8 +21,109 @@ public class PaymentController : Controller
         _logger = logger;
     }
 
+    #region Pickup Payment - Thanh toán khi nhận xe (Luồng mới)
+    
     /// <summary>
-    /// Trang thanh toán cho hợp đồng
+    /// Trang thanh toán khi nhận xe
+    /// Hiển thị sau khi staff lập biên bản giao xe
+    /// GET: /Payment/Pickup/{contractId}
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> Pickup(Guid contractId)
+    {
+        var model = await _paymentService.GetPickupPaymentInfoAsync(contractId);
+        if (model == null)
+        {
+            TempData["ErrorMessage"] = "Không tìm thấy thông tin thanh toán hoặc hợp đồng chưa sẵn sàng";
+            return RedirectToAction("Index", "Handover");
+        }
+
+        return View(model);
+    }
+
+    /// <summary>
+    /// Xử lý thanh toán khi nhận xe
+    /// POST: /Payment/ProcessPickup
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ProcessPickup(PickupPaymentViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            var info = await _paymentService.GetPickupPaymentInfoAsync(model.ContractId);
+            if (info != null)
+            {
+                model.ContractCode = info.ContractCode;
+                model.CustomerName = info.CustomerName;
+                model.TotalRentalAmount = info.TotalRentalAmount;
+                model.DepositAmount = info.DepositAmount;
+            }
+            return View("Pickup", model);
+        }
+
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var result = await _paymentService.ProcessPickupPaymentAsync(model, userId);
+
+        if (result.Success)
+        {
+            TempData["SuccessMessage"] = "Thanh toán và giao xe thành công!";
+            // Chuyển đến trang chi tiết hợp đồng hoặc in phiếu giao xe
+            return RedirectToAction("Details", "Contract", new { id = model.ContractId });
+        }
+
+        TempData["ErrorMessage"] = result.Errors.FirstOrDefault() ?? "Có lỗi xảy ra";
+        return RedirectToAction("Pickup", new { contractId = model.ContractId });
+    }
+
+    /// <summary>
+    /// Xử lý thanh toán khi nhận xe - AJAX
+    /// POST: /Payment/ProcessPickupAjax
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ProcessPickupAjax(PickupPaymentViewModel model)
+    {
+        try
+        {
+            if (model.ContractId == Guid.Empty)
+            {
+                return Json(new { success = false, message = "ContractId không hợp lệ" });
+            }
+
+            // Lấy thông tin thanh toán để lấy số tiền đúng
+            var info = await _paymentService.GetPickupPaymentInfoAsync(model.ContractId);
+            if (info == null)
+            {
+                return Json(new { success = false, message = "Không tìm thấy thông tin thanh toán" });
+            }
+
+            // Dùng số tiền từ hệ thống, không cho client truyền vào
+            model.PaymentAmount = info.TotalPickupAmount;
+
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result = await _paymentService.ProcessPickupPaymentAsync(model, userId);
+
+            if (result.Success)
+            {
+                return Json(new { success = true, message = "Thanh toán và giao xe thành công!" });
+            }
+
+            return Json(new { success = false, message = result.Errors.FirstOrDefault() ?? "Có lỗi xảy ra" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in ProcessPickupAjax for contract {ContractId}", model.ContractId);
+            return Json(new { success = false, message = "Lỗi hệ thống. Vui lòng thử lại." });
+        }
+    }
+    
+    #endregion
+
+    #region Return Payment - Thanh toán khi trả xe
+
+    /// <summary>
+    /// Trang thanh toán cho hợp đồng (khi trả xe)
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> Payment(Guid contractId)
@@ -123,6 +224,8 @@ public class PaymentController : Controller
         var history = await _paymentService.GetPaymentHistoryAsync(contractId);
         return View(history);
     }
+    
+    #endregion
 
 
     public record TransactionWebhookRequest (decimal transferAmount, string code);

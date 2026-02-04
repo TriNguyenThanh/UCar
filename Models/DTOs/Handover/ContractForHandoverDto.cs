@@ -41,13 +41,13 @@ public class ContractForHandoverListDto
     
     private static string GetStatusDisplayName(RentalContractStatus status) => status switch
     {
-        RentalContractStatus.Active => "Chờ giao xe",
-        RentalContractStatus.AwaitingDelivery => "Chờ giao xe",
+        RentalContractStatus.Draft => "Chờ lập biên bản",
+        RentalContractStatus.PendingSigning => "Chờ thanh toán",
+        RentalContractStatus.Active => "Đang thuê",
         RentalContractStatus.InProgress => "Đang thuê",
-        RentalContractStatus.AwaitingReturn => "Chờ nhận xe",
         RentalContractStatus.PendingSettlement => "Chờ quyết toán",
         RentalContractStatus.Completed => "Hoàn tất",
-        RentalContractStatus.Violation => "Vi phạm",
+        RentalContractStatus.Disputed => "Tranh chấp",
         RentalContractStatus.Cancelled => "Đã hủy",
         _ => status.ToString()
     };

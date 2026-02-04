@@ -63,6 +63,16 @@ public class ReturnRecord
     [MaxLength(1000)]
     public string? Note { get; set; }
 
+    /// <summary>Khách hàng đã xác nhận biên bản trả xe</summary>
+    public bool CustomerConfirmed { get; set; }
+
+    /// <summary>Thời gian khách xác nhận</summary>
+    public DateTime? CustomerConfirmedAt { get; set; }
+
+    /// <summary>Ghi chú của khách hàng (nếu không đồng ý)</summary>
+    [MaxLength(1000)]
+    public string? CustomerNote { get; set; }
+
     // Navigation properties
     [ForeignKey(nameof(ContractId))]
     public RentalContract RentalContract { get; set; } = null!;

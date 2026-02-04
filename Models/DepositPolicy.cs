@@ -19,21 +19,29 @@ public class DepositPolicy
     [Required]
     public Guid VehicleTypeId { get; set; }
 
-    /// <summary>Phương thức tính tiền cọc: Percentage (phần trăm) hoặc FixedAmount (số tiền cố định)</summary>
+    // ===== RESPONSIBILITY DEPOSIT (Cọc trách nhiệm - Cố định) =====
+    
+    /// <summary>Cọc trách nhiệm cố định theo loại xe (VD: 2M cho Sedan, 5M cho SUV)</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal ResponsibilityDepositAmount { get; set; }
+
+    // ===== RENTAL DEPOSIT (Cọc thuê xe - Linh hoạt) =====
+    
+    /// <summary>Phương thức tính cọc thuê: Percentage (% giá thuê) hoặc FixedAmount (số tiền cố định)</summary>
     [Required]
-    public DepositCalculationType CalculationType { get; set; }
+    public DepositCalculationType RentalDepositCalculationType { get; set; }
 
     /// <summary>Giá trị tính toán: nếu Percentage thì là % (0-100), nếu FixedAmount thì là số tiền</summary>
     [Column(TypeName = "decimal(18,2)")]
-    public decimal Value { get; set; }
+    public decimal RentalDepositValue { get; set; }
 
-    /// <summary>Số tiền cọc tối thiểu</summary>
+    /// <summary>Số tiền cọc thuê tối thiểu</summary>
     [Column(TypeName = "decimal(18,2)")]
-    public decimal MinimumAmount { get; set; }
+    public decimal RentalDepositMinimum { get; set; }
 
-    /// <summary>Số tiền cọc tối đa</summary>
+    /// <summary>Số tiền cọc thuê tối đa</summary>
     [Column(TypeName = "decimal(18,2)")]
-    public decimal MaximumAmount { get; set; }
+    public decimal RentalDepositMaximum { get; set; }
 
     /// <summary>Điều kiện hoàn cọc 100%</summary>
     [MaxLength(1000)]

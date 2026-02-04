@@ -108,28 +108,34 @@ public class DepositPolicyService : IDepositPolicyService
                 return ServiceResult<Guid>.Fail("Loại xe không tồn tại");
             }
 
-            // Validate values
-            if (policy.CalculationType == DepositCalculationType.Percentage)
+            // Validate ResponsibilityDeposit
+            if (policy.ResponsibilityDepositAmount < 0)
             {
-                if (policy.Value < 0 || policy.Value > 100)
+                return ServiceResult<Guid>.Fail("Cọc trách nhiệm phải >= 0");
+            }
+
+            // Validate RentalDeposit values
+            if (policy.RentalDepositCalculationType == DepositCalculationType.Percentage)
+            {
+                if (policy.RentalDepositValue < 0 || policy.RentalDepositValue > 100)
                 {
-                    return ServiceResult<Guid>.Fail("Phần trăm cọc phải từ 0-100");
+                    return ServiceResult<Guid>.Fail("Phần trăm cọc thuê phải từ 0-100");
                 }
             }
             else
             {
-                if (policy.Value < 0)
+                if (policy.RentalDepositValue < 0)
                 {
-                    return ServiceResult<Guid>.Fail("Số tiền cọc phải >= 0");
+                    return ServiceResult<Guid>.Fail("Số tiền cọc thuê phải >= 0");
                 }
             }
 
-            if (policy.MinimumAmount < 0 || policy.MaximumAmount < 0)
+            if (policy.RentalDepositMinimum < 0 || policy.RentalDepositMaximum < 0)
             {
                 return ServiceResult<Guid>.Fail("Số tiền tối thiểu/tối đa phải >= 0");
             }
 
-            if (policy.MaximumAmount < policy.MinimumAmount)
+            if (policy.RentalDepositMaximum < policy.RentalDepositMinimum)
             {
                 return ServiceResult<Guid>.Fail("Số tiền tối đa phải >= số tiền tối thiểu");
             }
@@ -159,38 +165,45 @@ public class DepositPolicyService : IDepositPolicyService
                 return ServiceResult.Fail("Chính sách không tồn tại");
             }
 
-            // Validate values
-            if (policy.CalculationType == DepositCalculationType.Percentage)
+            // Validate ResponsibilityDeposit
+            if (policy.ResponsibilityDepositAmount < 0)
             {
-                if (policy.Value < 0 || policy.Value > 100)
+                return ServiceResult.Fail("Cọc trách nhiệm phải >= 0");
+            }
+
+            // Validate RentalDeposit values
+            if (policy.RentalDepositCalculationType == DepositCalculationType.Percentage)
+            {
+                if (policy.RentalDepositValue < 0 || policy.RentalDepositValue > 100)
                 {
-                    return ServiceResult.Fail("Phần trăm cọc phải từ 0-100");
+                    return ServiceResult.Fail("Phần trăm cọc thuê phải từ 0-100");
                 }
             }
             else
             {
-                if (policy.Value < 0)
+                if (policy.RentalDepositValue < 0)
                 {
-                    return ServiceResult.Fail("Số tiền cọc phải >= 0");
+                    return ServiceResult.Fail("Số tiền cọc thuê phải >= 0");
                 }
             }
 
-            if (policy.MinimumAmount < 0 || policy.MaximumAmount < 0)
+            if (policy.RentalDepositMinimum < 0 || policy.RentalDepositMaximum < 0)
             {
                 return ServiceResult.Fail("Số tiền tối thiểu/tối đa phải >= 0");
             }
 
-            if (policy.MaximumAmount < policy.MinimumAmount)
+            if (policy.RentalDepositMaximum < policy.RentalDepositMinimum)
             {
                 return ServiceResult.Fail("Số tiền tối đa phải >= số tiền tối thiểu");
             }
 
             // Update fields
             existing.PolicyName = policy.PolicyName;
-            existing.CalculationType = policy.CalculationType;
-            existing.Value = policy.Value;
-            existing.MinimumAmount = policy.MinimumAmount;
-            existing.MaximumAmount = policy.MaximumAmount;
+            existing.ResponsibilityDepositAmount = policy.ResponsibilityDepositAmount;
+            existing.RentalDepositCalculationType = policy.RentalDepositCalculationType;
+            existing.RentalDepositValue = policy.RentalDepositValue;
+            existing.RentalDepositMinimum = policy.RentalDepositMinimum;
+            existing.RentalDepositMaximum = policy.RentalDepositMaximum;
             existing.FullRefundCondition = policy.FullRefundCondition;
             existing.PartialRefundCondition = policy.PartialRefundCondition;
             existing.NoRefundCondition = policy.NoRefundCondition;
@@ -252,6 +265,56 @@ public class DepositPolicyService : IDepositPolicyService
 
     // ===== DEPOSIT CALCULATION =====
 
+    public async Task<DepositBreakdownDto> CalculateDepositBreakdownAsync(Guid vehicleModelId, decimal rentalAmount)
+    {
+        var policy = await GetActiveDepositPolicyByVehicleModelAsync(vehicleModelId);
+        
+        if (policy == null)
+        {
+            // Fallback: Default values
+            var defaultRentalDeposit = Math.Max(2_000_000, Math.Min(rentalAmount * 0.5m, 20_000_000));
+            return new DepositBreakdownDto
+            {
+                ResponsibilityDeposit = 2_000_000, // Default 2M
+                RentalDeposit = defaultRentalDeposit,
+                TotalDeposit = 2_000_000 + defaultRentalDeposit,
+                RefundProcessingDays = 15,
+                DepositRefundDueDate = DateTime.Now.AddDays(15)
+            };
+        }
+
+        // Calculate RentalDeposit based on policy
+        decimal rentalDeposit;
+        if (policy.RentalDepositCalculationType == DepositCalculationType.Percentage)
+        {
+            rentalDeposit = rentalAmount * (policy.RentalDepositValue / 100);
+        }
+        else
+        {
+            rentalDeposit = policy.RentalDepositValue;
+        }
+
+        // Apply min/max constraints
+        if (policy.RentalDepositMinimum > 0)
+        {
+            rentalDeposit = Math.Max(rentalDeposit, policy.RentalDepositMinimum);
+        }
+
+        if (policy.RentalDepositMaximum > 0)
+        {
+            rentalDeposit = Math.Min(rentalDeposit, policy.RentalDepositMaximum);
+        }
+
+        return new DepositBreakdownDto
+        {
+            ResponsibilityDeposit = policy.ResponsibilityDepositAmount,
+            RentalDeposit = rentalDeposit,
+            TotalDeposit = policy.ResponsibilityDepositAmount + rentalDeposit,
+            RefundProcessingDays = policy.RefundProcessingDays,
+            DepositRefundDueDate = DateTime.Now.AddDays(policy.RefundProcessingDays)
+        };
+    }
+
     public async Task<decimal> CalculateDepositAmountAsync(Guid vehicleModelId, decimal rentalAmount)
     {
         var policy = await GetActiveDepositPolicyByVehicleModelAsync(vehicleModelId);
@@ -262,31 +325,31 @@ public class DepositPolicyService : IDepositPolicyService
             return Math.Max(2_000_000, Math.Min(rentalAmount * 0.5m, 20_000_000));
         }
 
-        decimal depositAmount;
+        decimal rentalDeposit;
 
-        if (policy.CalculationType == DepositCalculationType.Percentage)
+        if (policy.RentalDepositCalculationType == DepositCalculationType.Percentage)
         {
             // Calculate percentage of rental amount
-            depositAmount = rentalAmount * (policy.Value / 100);
+            rentalDeposit = rentalAmount * (policy.RentalDepositValue / 100);
         }
         else
         {
             // Use fixed amount
-            depositAmount = policy.Value;
+            rentalDeposit = policy.RentalDepositValue;
         }
 
         // Apply min/max constraints
-        if (policy.MinimumAmount > 0)
+        if (policy.RentalDepositMinimum > 0)
         {
-            depositAmount = Math.Max(depositAmount, policy.MinimumAmount);
+            rentalDeposit = Math.Max(rentalDeposit, policy.RentalDepositMinimum);
         }
 
-        if (policy.MaximumAmount > 0)
+        if (policy.RentalDepositMaximum > 0)
         {
-            depositAmount = Math.Min(depositAmount, policy.MaximumAmount);
+            rentalDeposit = Math.Min(rentalDeposit, policy.RentalDepositMaximum);
         }
 
-        return depositAmount;
+        return rentalDeposit;
     }
 
     public async Task<int> DetermineRefundPercentageAsync(

@@ -25,15 +25,35 @@
         <div>
              @if (Model.Status == UCar.Models.Enums.BookingStatus.Pending)
             {
-                <span class="chip orange white-text">Đang chờ duyệt</span>
+                <span class="chip orange white-text">Chờ duyệt</span>
             }
             else if (Model.Status == UCar.Models.Enums.BookingStatus.Confirmed)
             {
                 <span class="chip green white-text">Đã xác nhận</span>
             }
+            else if (Model.Status == UCar.Models.Enums.BookingStatus.Deposited)
+            {
+                <span class="chip blue white-text">Đã đặt cọc</span>
+            }
+            else if (Model.Status == UCar.Models.Enums.BookingStatus.InProgress)
+            {
+                <span class="chip teal white-text">Đang thực hiện</span>
+            }
+            else if (Model.Status == UCar.Models.Enums.BookingStatus.Completed)
+            {
+                <span class="chip indigo white-text">Hoàn thành</span>
+            }
             else if (Model.Status == UCar.Models.Enums.BookingStatus.Cancelled)
             {
                 <span class="chip grey white-text">Đã hủy</span>
+            }
+            else if (Model.Status == UCar.Models.Enums.BookingStatus.Rejected)
+            {
+                <span class="chip red white-text">Từ chối</span>
+            }
+            else if (Model.Status == UCar.Models.Enums.BookingStatus.Expired)
+            {
+                <span class="chip brown white-text">Hết hạn</span>
             }
             else
             {
@@ -77,9 +97,58 @@
             <div class="card">
                 <div class="card-content">
                      <span class="card-title" style="font-weight: 600;">Chi phí (Dự kiến)</span>
-                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                         <span>Tổng cộng</span>
-                         <h4 class="orange-text" style="font-weight: 700; margin: 0;">@Model.EstimatedTotal.ToString("N0")đ</h4>
+                     
+                     <table class="striped">
+                         <tbody>
+                             @if (Model.NormalDays > 0)
+                             {
+                                 <tr>
+                                     <td>
+                                         <i class="material-icons tiny grey-text">event</i>
+                                         Thuê ngày thường (@Model.NormalDays ngày x @Model.DailyPrice.ToString("N0")đ)
+                                     </td>
+                                     <td class="right-align">@Model.NormalDaysAmount.ToString("N0")đ</td>
+                                 </tr>
+                             }
+                             @if (Model.PeakDays > 0)
+                             {
+                                 <tr>
+                                     <td>
+                                         <i class="material-icons tiny orange-text">star</i>
+                                         Thuê ngày lễ (@Model.PeakDays ngày x @((Model.DailyPrice * Model.PeakMultiplier).ToString("N0"))đ)
+                                         <span class="grey-text">x @Model.PeakMultiplier</span>
+                                     </td>
+                                     <td class="right-align">@Model.PeakDaysAmount.ToString("N0")đ</td>
+                                 </tr>
+                             }
+                             <tr style="border-top: 1px solid #ccc;">
+                                 <td><strong>Tổng tiền thuê</strong></td>
+                                 <td class="right-align"><strong>@Model.EstimatedTotal.ToString("N0")đ</strong></td>
+                             </tr>
+                             <tr>
+                                 <td><i class="material-icons tiny grey-text">security</i> Cọc trách nhiệm</td>
+                                 <td class="right-align">@Model.ResponsibilityDeposit.ToString("N0")đ</td>
+                             </tr>
+                             <tr>
+                                 <td><i class="material-icons tiny grey-text">account_balance_wallet</i> Cọc thuê xe (50%)</td>
+                                 <td class="right-align">@Model.RentalDeposit.ToString("N0")đ</td>
+                             </tr>
+                             <tr style="background-color: #fff3e0;">
+                                 <td><strong style="font-size: 1.1rem;">TỔNG THANH TOÁN KHI NHẬN XE</strong></td>
+                                 <td class="right-align">
+                                     <strong style="font-size: 1.2rem;" class="deep-orange-text">
+                                         @Model.TotalPickupAmount.ToString("N0")đ
+                                     </strong>
+                                 </td>
+                             </tr>
+                         </tbody>
+                     </table>
+                     
+                     <div class="card-panel blue-grey lighten-5" style="margin-top: 1rem;">
+                         <small>
+                             <i class="material-icons tiny">info</i>
+                             <strong>Lưu ý:</strong> Tiền cọc sẽ được hoàn lại khi trả xe nếu không có vi phạm.
+                         </small>
                      </div>
                 </div>
             </div>
@@ -120,11 +189,11 @@
             }
 
             <!-- Card Hợp đồng -->
-            @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff") ||
+            @if ((User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff")) && (
                 Model.Status == UCar.Models.Enums.BookingStatus.Confirmed || 
                  Model.Status == UCar.Models.Enums.BookingStatus.Deposited ||
                  Model.Status == UCar.Models.Enums.BookingStatus.InProgress ||
-                 Model.HasActiveContract)
+                 Model.HasActiveContract))
             {
                 <div class="card" style="border-left: 4px solid @(Model.HasActiveContract ? "#2196F3" : "#4CAF50");">
                     <div class="card-content">
@@ -149,14 +218,17 @@
                                     </span>
                                 </p>
                             </div>
-                            <a asp-controller="Contract" asp-action="Details" asp-route-id="@Model.ContractId" 
-                               class="btn waves-effect waves-light blue">
-                                <i class="material-icons left">visibility</i>Xem hợp đồng
-                            </a>
+                            
+                            @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff")){
+                                <a asp-controller="Contract" asp-action="Details" asp-route-id="@Model.ContractId" 
+                                class="btn waves-effect waves-light blue">
+                                    <i class="material-icons left">visibility</i>Xem hợp đồng
+                                </a>
+                            }
                         }
-                        else
+                        else 
                         {
-                            <!-- Chưa có hợp đồng -->
+                            <!-- Chưa có hợp đồng và đơn đặt phải được xác nhận -->
                             <p class="grey-text text-darken-1" style="margin-bottom: 1rem;">
                                 Đơn đặt xe đã được xác nhận. Tiến hành tạo hợp đồng để chuẩn bị giao xe.
                             </p>
