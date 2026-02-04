@@ -73,6 +73,8 @@ builder.Services.AddScoped<IDocumentTemplateService, DocumentTemplateService>();
 
 // Image Upload Service
 builder.Services.AddScoped<IImageUploadService, ImageUploadService>();
+// Register Analytics services (Module 9.0)
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 
 var app = builder.Build();
 

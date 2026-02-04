@@ -419,6 +419,9 @@ FodyWeavers.xsd
 *.msp
 package-lock.json
 .agent/*
+.vscode/*
+*.no.md
+.github/*
 
 # Environment variables
 *.env
