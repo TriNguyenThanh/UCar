@@ -1,0 +1,181 @@
+@model UCar.ViewModels.UserAccount.CreateUserAccountViewModel
+@using UCar.Models.Enums
+
+@{
+    ViewData["Title"] = "Tạo tài khoản mới";
+    ViewData["Description"] = "Tạo tài khoản người dùng mới cho hệ thống";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Breadcrumb -->
+    <nav style="margin-bottom: 1rem;">
+        <div class="nav-wrapper white" style="padding: 0 1rem; border-radius: 4px;">
+            <div class="col s12">
+                <a asp-action="Index" class="breadcrumb grey-text text-darken-2">Quản lý tài khoản</a>
+                <span class="breadcrumb grey-text text-darken-4">Tạo mới</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <div style="margin-bottom: 1.5rem;">
+        <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+            <i class="material-icons green-text" style="vertical-align: middle; margin-right: 8px;">person_add</i>
+            Tạo tài khoản mới
+        </h4>
+        <p class="grey-text text-darken-1" style="margin: 0;">
+            Điền thông tin để tạo tài khoản người dùng mới
+        </p>
+    </div>
+
+    <div class="row">
+        <div class="col s12 m8">
+            <div class="card">
+                <div class="card-content">
+                    <form asp-action="Create" method="post" id="createForm">
+                        @Html.AntiForgeryToken()
+                        
+                        <!-- Username -->
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <i class="material-icons prefix">person</i>
+                                <input type="text" asp-for="Username" id="Username" class="validate" required />
+                                <label asp-for="Username">Tên đăng nhập *</label>
+                                <span asp-validation-for="Username" class="red-text"></span>
+                                <span class="helper-text">Tên đăng nhập dùng để đăng nhập vào hệ thống</span>
+                            </div>
+                        </div>
+
+                        <!-- Email & Phone -->
+                        <div class="row">
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">email</i>
+                                <input type="email" asp-for="Email" id="Email" class="validate" />
+                                <label asp-for="Email">Email</label>
+                                <span asp-validation-for="Email" class="red-text"></span>
+                            </div>
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">phone</i>
+                                <input type="tel" asp-for="Phone" id="Phone" class="validate" />
+                                <label asp-for="Phone">Số điện thoại</label>
+                                <span asp-validation-for="Phone" class="red-text"></span>
+                            </div>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="row">
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">lock</i>
+                                <input type="password" asp-for="Password" id="Password" class="validate" required />
+                                <label asp-for="Password">Mật khẩu *</label>
+                                <span asp-validation-for="Password" class="red-text"></span>
+                                <span class="helper-text">Tối thiểu 6 ký tự</span>
+                            </div>
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">lock_outline</i>
+                                <input type="password" asp-for="ConfirmPassword" id="ConfirmPassword" class="validate" required />
+                                <label asp-for="ConfirmPassword">Xác nhận mật khẩu *</label>
+                                <span asp-validation-for="ConfirmPassword" class="red-text"></span>
+                            </div>
+                        </div>
+
+                        <!-- Role Selection -->
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <select asp-for="RoleId" id="RoleId" required>
+                                    <option value="" disabled selected>Chọn vai trò</option>
+                                    @foreach (var role in Model.AvailableRoles)
+                                    {
+                                        var description = role.Code switch
+                                        {
+                                            RoleCode.Admin => "Toàn quyền quản lý hệ thống",
+                                            RoleCode.BranchManager => "Quản lý chi nhánh và nhân viên",
+                                            RoleCode.Staff => "Nhân viên giao nhận xe, xử lý hợp đồng",
+                                            RoleCode.Customer => "Khách hàng thuê xe",
+                                            _ => ""
+                                        };
+                                        <option value="@role.RoleId" data-description="@description">@role.Name</option>
+                                    }
+                                </select>
+                                <label>Vai trò *</label>
+                                <span asp-validation-for="RoleId" class="red-text"></span>
+                            </div>
+                        </div>
+
+                        <!-- Active Status -->
+                        <div class="row">
+                            <div class="col s12">
+                                <label>
+                                    <input type="checkbox" asp-for="IsActive" class="filled-in" checked="checked" />
+                                    <span>Kích hoạt tài khoản ngay sau khi tạo</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Validation Summary -->
+                        <div asp-validation-summary="ModelOnly" class="red-text" style="margin-bottom: 1rem;"></div>
+
+                        <!-- Action Buttons -->
+                        <div class="row" style="margin-top: 2rem; margin-bottom: 0;">
+                            <div class="col s12">
+                                <button type="submit" class="btn waves-effect waves-light green">
+                                    <i class="material-icons left">check</i>Tạo tài khoản
+                                </button>
+                                <a asp-action="Index" class="btn-flat waves-effect">
+                                    <i class="material-icons left">close</i>Hủy
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Help -->
+        <div class="col s12 m4">
+            <div class="card blue lighten-5">
+                <div class="card-content">
+                    <span class="card-title" style="font-size: 1.2rem;">
+                        <i class="material-icons blue-text" style="vertical-align: middle;">help_outline</i>
+                        Hướng dẫn
+                    </span>
+                    <ul style="margin-top: 1rem;">
+                        <li style="margin-bottom: 0.5rem;">
+                            <strong>Tên đăng nhập:</strong> Phải là duy nhất, không chứa khoảng trắng
+                        </li>
+                        <li style="margin-bottom: 0.5rem;">
+                            <strong>Mật khẩu:</strong> Tối thiểu 6 ký tự
+                        </li>
+                        <li style="margin-bottom: 0.5rem;">
+                            <strong>Vai trò:</strong> Xác định quyền hạn của tài khoản trong hệ thống
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card amber lighten-5">
+                <div class="card-content">
+                    <span class="card-title" style="font-size: 1.2rem;">
+                        <i class="material-icons amber-text text-darken-2" style="vertical-align: middle;">info</i>
+                        Lưu ý
+                    </span>
+                    <p style="margin-top: 1rem;">
+                        Tài khoản tạo mới sẽ chưa liên kết với hồ sơ khách hàng hoặc nhân viên. 
+                        Để liên kết, hãy tạo hồ sơ tương ứng và chọn tài khoản này.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            M.FormSelect.init(document.querySelectorAll('select'));
+            M.updateTextFields();
+        });
+    </script>
+}

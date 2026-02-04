@@ -14,7 +14,7 @@ builder.Services.AddControllersWithViews(options =>
     options.ModelBinderProviders.Insert(0, new DateTimeModelBinderProvider());
 });
 builder.Services.AddDbContext<UCarDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("TriDb"))); //Anh em nhớ đổi chỗ này nhé
+    options.UseSqlServer(builder.Configuration.GetConnectionString("HieuDb"))); //Anh em nhớ đổi chỗ này nhé
 
 // Add authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -73,6 +73,10 @@ builder.Services.AddScoped<IDocumentTemplateService, DocumentTemplateService>();
 
 // Image Upload Service
 builder.Services.AddScoped<IImageUploadService, ImageUploadService>();
+
+// User Account Management services
+builder.Services.AddScoped<IUserAccountService, UserAccountService>();
+
 // Register Analytics services (Module 9.0)
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 

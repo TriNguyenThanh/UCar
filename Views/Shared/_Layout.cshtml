@@ -172,6 +172,7 @@
                             @if (User.IsInRole("Admin"))
                             {
                                 <li><a asp-controller="Operations" asp-action="Branches" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Branches" ? "active" : "")">Chi nhánh</a></li>
+                                <li><a asp-controller="UserAccount" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "UserAccount" ? "active" : "")">Tài khoản người dùng</a></li>
                             }
                             <li class="divider-item"></li>
                             <li><a asp-controller="Operations" asp-action="Tasks" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Tasks" ? "active" : "")">Nhiệm vụ</a></li>

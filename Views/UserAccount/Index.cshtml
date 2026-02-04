@@ -1,0 +1,277 @@
+@model List<UCar.ViewModels.UserAccount.UserAccountListViewModel>
+@using UCar.Models.Enums
+
+@{
+    ViewData["Title"] = "Quản lý tài khoản";
+    ViewData["Description"] = "Danh sách và quản lý tài khoản người dùng hệ thống";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Page Header -->
+    <div class="row" style="margin-bottom: 1.5rem;">
+        <div class="col s12 m6">
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">manage_accounts</i>
+                Quản lý tài khoản
+            </h4>
+            <p class="grey-text text-darken-1" style="margin: 0;">
+                Tổng cộng: <strong>@ViewBag.TotalCount</strong> tài khoản
+            </p>
+        </div>
+        <div class="col s12 m6" style="text-align: right;">
+            <a asp-action="Create" class="btn waves-effect waves-light">
+                <i class="material-icons left">person_add</i>
+                Tạo tài khoản mới
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card">
+        <div class="card-content">
+            <form method="get" asp-action="Index">
+                <div class="row" style="margin-bottom: 0;">
+                    <div class="input-field col s12 m3">
+                        <select name="role" id="roleFilter">
+                            <option value="">-- Tất cả vai trò --</option>
+                            @foreach (RoleCode code in Enum.GetValues(typeof(RoleCode)))
+                            {
+                                var isSelected = ViewBag.CurrentRole == code;
+                                var displayName = code switch
+                                {
+                                    RoleCode.Admin => "Quản trị viên",
+                                    RoleCode.BranchManager => "Quản lý chi nhánh",
+                                    RoleCode.Staff => "Nhân viên",
+                                    RoleCode.Customer => "Khách hàng",
+                                    _ => code.ToString()
+                                };
+                                if (isSelected)
+                                {
+                                    <option value="@code" selected>@displayName</option>
+                                }
+                                else
+                                {
+                                    <option value="@code">@displayName</option>
+                                }
+                            }
+                        </select>
+                        <label>Vai trò</label>
+                    </div>
+                    <div class="input-field col s12 m3">
+                        <select name="isActive" id="statusFilter">
+                            <option value="">-- Tất cả trạng thái --</option>
+                            @if (ViewBag.CurrentIsActive == true)
+                            {
+                                <option value="true" selected>Đang hoạt động</option>
+                                <option value="false">Đã khóa</option>
+                            }
+                            else if (ViewBag.CurrentIsActive == false)
+                            {
+                                <option value="true">Đang hoạt động</option>
+                                <option value="false" selected>Đã khóa</option>
+                            }
+                            else
+                            {
+                                <option value="true">Đang hoạt động</option>
+                                <option value="false">Đã khóa</option>
+                            }
+                        </select>
+                        <label>Trạng thái</label>
+                    </div>
+                    <div class="input-field col s12 m4">
+                        <i class="material-icons prefix">search</i>
+                        <input type="text" name="searchTerm" id="searchTerm" value="@ViewBag.SearchTerm" />
+                        <label for="searchTerm">Tìm kiếm (tên, email, SĐT...)</label>
+                    </div>
+                    <div class="input-field col s12 m2">
+                        <button type="submit" class="btn waves-effect waves-light" style="width: 100%;">
+                            <i class="material-icons left">filter_list</i>Lọc
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card">
+        <div class="card-content" style="padding: 0;">
+            @if (Model.Any())
+            {
+                <table class="striped highlight responsive-table">
+                    <thead>
+                        <tr>
+                            <th>Tài khoản</th>
+                            <th>Liên hệ</th>
+                            <th>Vai trò</th>
+                            <th>Hồ sơ liên kết</th>
+                            <th>Trạng thái</th>
+                            <th>Đăng nhập cuối</th>
+                            <th style="text-align: center;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model)
+                        {
+                            var roleColor = user.RoleCode switch
+                            {
+                                RoleCode.Admin => "red",
+                                RoleCode.BranchManager => "purple",
+                                RoleCode.Staff => "blue",
+                                RoleCode.Customer => "green",
+                                _ => "grey"
+                            };
+                            
+                            <tr>
+                                <td>
+                                    <strong>@user.Username</strong>
+                                    <br />
+                                    <small class="grey-text">ID: @user.UserId.ToString()[..8]...</small>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(user.Email))
+                                    {
+                                        <span><i class="material-icons tiny">email</i> @user.Email</span>
+                                        <br />
+                                    }
+                                    @if (!string.IsNullOrEmpty(user.Phone))
+                                    {
+                                        <span><i class="material-icons tiny">phone</i> @user.Phone</span>
+                                    }
+                                    @if (string.IsNullOrEmpty(user.Email) && string.IsNullOrEmpty(user.Phone))
+                                    {
+                                        <span class="grey-text">Chưa có</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @roleColor white-text" style="border-radius: 12px; padding: 4px 12px;">
+                                        @user.RoleName
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(user.LinkedProfileName))
+                                    {
+                                        <span>@user.LinkedProfileName</span>
+                                        <br />
+                                        <small class="grey-text">@user.LinkedProfileType</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="grey-text">Chưa liên kết</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (user.IsActive)
+                                    {
+                                        <span class="badge green white-text" style="border-radius: 12px; padding: 4px 12px;">
+                                            <i class="material-icons tiny">check_circle</i> Hoạt động
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge red white-text" style="border-radius: 12px; padding: 4px 12px;">
+                                            <i class="material-icons tiny">block</i> Đã khóa
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (user.LastLoginAt.HasValue)
+                                    {
+                                        <span>@user.LastLoginAt.Value.ToString("dd/MM/yyyy")</span>
+                                        <br />
+                                        <small class="grey-text">@user.LastLoginAt.Value.ToString("HH:mm")</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="grey-text">Chưa đăng nhập</span>
+                                    }
+                                </td>
+                                <td style="text-align: center;">
+                                    <a asp-action="Details" asp-route-id="@user.UserId" 
+                                       class="btn-small waves-effect waves-light blue tooltipped"
+                                       data-position="top" data-tooltip="Chi tiết">
+                                        <i class="material-icons">visibility</i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@user.UserId" 
+                                       class="btn-small waves-effect waves-light orange tooltipped"
+                                       data-position="top" data-tooltip="Chỉnh sửa">
+                                        <i class="material-icons">edit</i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="center-align" style="padding: 3rem;">
+                    <i class="material-icons grey-text" style="font-size: 4rem;">person_off</i>
+                    <p class="grey-text">Không tìm thấy tài khoản nào</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (ViewBag.TotalPages > 1)
+    {
+        <div class="center-align" style="margin-top: 1.5rem;">
+            <ul class="pagination">
+                @if (ViewBag.CurrentPage > 1)
+                {
+                    <li class="waves-effect">
+                        <a asp-action="Index" 
+                           asp-route-page="@(ViewBag.CurrentPage - 1)"
+                           asp-route-role="@ViewBag.CurrentRole"
+                           asp-route-isActive="@ViewBag.CurrentIsActive"
+                           asp-route-searchTerm="@ViewBag.SearchTerm">
+                            <i class="material-icons">chevron_left</i>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="disabled"><a href="#!"><i class="material-icons">chevron_left</i></a></li>
+                }
+
+                @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                {
+                    <li class="@(i == ViewBag.CurrentPage ? "active" : "waves-effect")">
+                        <a asp-action="Index" 
+                           asp-route-page="@i"
+                           asp-route-role="@ViewBag.CurrentRole"
+                           asp-route-isActive="@ViewBag.CurrentIsActive"
+                           asp-route-searchTerm="@ViewBag.SearchTerm">@i</a>
+                    </li>
+                }
+
+                @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+                {
+                    <li class="waves-effect">
+                        <a asp-action="Index" 
+                           asp-route-page="@(ViewBag.CurrentPage + 1)"
+                           asp-route-role="@ViewBag.CurrentRole"
+                           asp-route-isActive="@ViewBag.CurrentIsActive"
+                           asp-route-searchTerm="@ViewBag.SearchTerm">
+                            <i class="material-icons">chevron_right</i>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="disabled"><a href="#!"><i class="material-icons">chevron_right</i></a></li>
+                }
+            </ul>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            M.FormSelect.init(document.querySelectorAll('select'));
+            M.Tooltip.init(document.querySelectorAll('.tooltipped'));
+        });
+    </script>
+}

@@ -16,7 +16,7 @@ public class UCarDbContextFactory : IDesignTimeDbContextFactory<UCarDbContext>
             .AddJsonFile("appsettings.json", optional: false)
             .Build();
 
-        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        var connectionString = configuration.GetConnectionString("HieuDb");
         optionsBuilder.UseSqlServer(connectionString);
 
         return new UCarDbContext(optionsBuilder.Options);

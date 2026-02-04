@@ -1,0 +1,189 @@
+@model UCar.ViewModels.UserAccount.EditUserAccountViewModel
+@using UCar.Models.Enums
+
+@{
+    ViewData["Title"] = "Chỉnh sửa tài khoản";
+    ViewData["Description"] = "Chỉnh sửa thông tin tài khoản người dùng";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Breadcrumb -->
+    <nav style="margin-bottom: 1rem;">
+        <div class="nav-wrapper white" style="padding: 0 1rem; border-radius: 4px;">
+            <div class="col s12">
+                <a asp-action="Index" class="breadcrumb grey-text text-darken-2">Quản lý tài khoản</a>
+                <a asp-action="Details" asp-route-id="@Model.UserId" class="breadcrumb grey-text text-darken-2">@Model.Username</a>
+                <span class="breadcrumb grey-text text-darken-4">Chỉnh sửa</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <div style="margin-bottom: 1.5rem;">
+        <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+            <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">edit</i>
+            Chỉnh sửa tài khoản
+        </h4>
+        <p class="grey-text text-darken-1" style="margin: 0;">
+            Cập nhật thông tin tài khoản: <strong>@Model.Username</strong>
+        </p>
+    </div>
+
+    <div class="row">
+        <div class="col s12 m8">
+            <div class="card">
+                <div class="card-content">
+                    <form asp-action="Edit" method="post" id="editForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="UserId" />
+                        
+                        <!-- Username (readonly) -->
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <i class="material-icons prefix">person</i>
+                                <input type="text" asp-for="Username" id="Username" class="validate" readonly />
+                                <label asp-for="Username" class="active">Tên đăng nhập</label>
+                                <span class="helper-text">Tên đăng nhập không thể thay đổi</span>
+                            </div>
+                        </div>
+
+                        <!-- Email & Phone -->
+                        <div class="row">
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">email</i>
+                                <input type="email" asp-for="Email" id="Email" class="validate" />
+                                <label asp-for="Email" class="active">Email</label>
+                                <span asp-validation-for="Email" class="red-text"></span>
+                            </div>
+                            <div class="input-field col s12 m6">
+                                <i class="material-icons prefix">phone</i>
+                                <input type="tel" asp-for="Phone" id="Phone" class="validate" />
+                                <label asp-for="Phone" class="active">Số điện thoại</label>
+                                <span asp-validation-for="Phone" class="red-text"></span>
+                            </div>
+                        </div>
+
+                        <!-- Role Selection -->
+                        <div class="row">
+                            <div class="input-field col s12">
+                                <select asp-for="RoleId" id="RoleId" required>
+                                    <option value="" disabled>Chọn vai trò</option>
+                                    @foreach (var role in Model.AvailableRoles)
+                                    {
+                                        var isSelected = role.RoleId == Model.RoleId;
+                                        var description = role.Code switch
+                                        {
+                                            RoleCode.Admin => "Toàn quyền quản lý hệ thống",
+                                            RoleCode.BranchManager => "Quản lý chi nhánh và nhân viên",
+                                            RoleCode.Staff => "Nhân viên giao nhận xe, xử lý hợp đồng",
+                                            RoleCode.Customer => "Khách hàng thuê xe",
+                                            _ => ""
+                                        };
+                                        <option value="@role.RoleId" selected="@isSelected" data-description="@description">@role.Name</option>
+                                    }
+                                </select>
+                                <label>Vai trò *</label>
+                                <span asp-validation-for="RoleId" class="red-text"></span>
+                            </div>
+                        </div>
+
+                        <!-- Active Status -->
+                        <div class="row">
+                            <div class="col s12">
+                                <label>
+                                    <input type="checkbox" asp-for="IsActive" class="filled-in" />
+                                    <span>Tài khoản đang hoạt động</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Validation Summary -->
+                        <div asp-validation-summary="ModelOnly" class="red-text" style="margin-bottom: 1rem;"></div>
+
+                        <!-- Action Buttons -->
+                        <div class="row" style="margin-top: 2rem; margin-bottom: 0;">
+                            <div class="col s12">
+                                <button type="submit" class="btn waves-effect waves-light blue">
+                                    <i class="material-icons left">save</i>Lưu thay đổi
+                                </button>
+                                <a asp-action="Details" asp-route-id="@Model.UserId" class="btn-flat waves-effect">
+                                    <i class="material-icons left">close</i>Hủy
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Account Info -->
+        <div class="col s12 m4">
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title" style="font-size: 1.2rem;">
+                        <i class="material-icons grey-text" style="vertical-align: middle;">info</i>
+                        Thông tin tài khoản
+                    </span>
+                    <table class="striped" style="margin-top: 1rem;">
+                        <tbody>
+                            <tr>
+                                <td class="grey-text">ID</td>
+                                <td><code style="font-size: 0.8rem;">@Model.UserId.ToString()[..8]...</code></td>
+                            </tr>
+                            <tr>
+                                <td class="grey-text">Ngày tạo</td>
+                                <td>@Model.CreatedAt.ToString("dd/MM/yyyy")</td>
+                            </tr>
+                            @if (Model.LastLoginAt.HasValue)
+                            {
+                                <tr>
+                                    <td class="grey-text">Đăng nhập lần cuối</td>
+                                    <td>@Model.LastLoginAt.Value.ToString("dd/MM/yyyy HH:mm")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card amber lighten-5">
+                <div class="card-content">
+                    <span class="card-title" style="font-size: 1.2rem;">
+                        <i class="material-icons amber-text text-darken-2" style="vertical-align: middle;">warning</i>
+                        Lưu ý
+                    </span>
+                    <p style="margin-top: 1rem;">
+                        Thay đổi vai trò sẽ ảnh hưởng đến quyền truy cập của người dùng ngay lập tức.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title" style="font-size: 1.2rem;">
+                        <i class="material-icons grey-text" style="vertical-align: middle;">flash_on</i>
+                        Thao tác nhanh
+                    </span>
+                    <div style="margin-top: 1rem;">
+                        <a asp-action="ResetPassword" asp-route-id="@Model.UserId" 
+                           class="btn-flat waves-effect orange-text" style="width: 100%; text-align: left;">
+                            <i class="material-icons left">lock_reset</i>Đặt lại mật khẩu
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            M.FormSelect.init(document.querySelectorAll('select'));
+            M.updateTextFields();
+        });
+    </script>
+}
