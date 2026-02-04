@@ -62,6 +62,12 @@ public class ContractDetailsViewModel
     public DateTime? CustomerSignedAt { get; set; }
     public string? ConfirmedByName { get; set; }
     public DateTime? ConfirmedAt { get; set; }
+    
+    // ===== Thanh toán (Luồng mới) =====
+    /// <summary>Đã có biên bản giao xe</summary>
+    public bool HasHandoverRecord { get; set; }
+    /// <summary>Đã thanh toán hóa đơn giao xe</summary>
+    public bool HasPaidDeliveryInvoice { get; set; }
 
     // ===== Hủy =====
     public string? CancellationReason { get; set; }
@@ -84,26 +90,37 @@ public class ContractDetailsViewModel
     public string CreatedByName { get; set; } = string.Empty;
     public DateTime? UpdatedAt { get; set; }
 
-    // ===== Trạng thái logic =====
-    public bool CanEdit => Status == RentalContractStatus.Draft || Status == RentalContractStatus.Pending;
-    public bool CanSign => Status == RentalContractStatus.Pending && !CustomerSigned;
-    public bool CanConfirm => Status == RentalContractStatus.Signed || (Status == RentalContractStatus.Pending && CustomerSigned);
-    public bool CanCancel => Status == RentalContractStatus.Draft || Status == RentalContractStatus.Pending || Status == RentalContractStatus.Signed;
+    // ===== Trạng thái logic - Luồng mới =====
+    public bool CanEdit => Status == RentalContractStatus.Draft || Status == RentalContractStatus.PendingSigning;
+    public bool CanSign => Status == RentalContractStatus.PendingSigning && !CustomerSigned; // Ký giấy tại quầy
+    /// <summary>
+    /// Có thể thanh toán: Đang ở PendingSigning và chưa thanh toán hóa đơn giao xe
+    /// </summary>
+    public bool CanPayPickup => Status == RentalContractStatus.PendingSigning && HasHandoverRecord && !HasPaidDeliveryInvoice;
+    /// <summary>
+    /// Có thể xác nhận: Không dùng nữa - xác nhận được tích hợp vào luồng thanh toán
+    /// </summary>
+    public bool CanConfirm => false; // Luồng mới: Xác nhận tự động khi thanh toán xong
+    public bool CanCancel => Status == RentalContractStatus.Draft || Status == RentalContractStatus.PendingSigning;
     public bool CanPrint => Status != RentalContractStatus.Draft;
-    public bool CanHandover => Status == RentalContractStatus.Active || Status == RentalContractStatus.AwaitingDelivery;
+    /// <summary>
+    /// Có thể lập biên bản: Status là Draft (chưa lập biên bản)
+    /// </summary>
+    public bool CanCreateHandover => Status == RentalContractStatus.Draft && !HasHandoverRecord;
+    /// <summary>
+    /// Có thể bàn giao: Chỉ để tương thích ngược, ưu tiên dùng CanCreateHandover hoặc CanPayPickup
+    /// </summary>
+    public bool CanHandover => Status == RentalContractStatus.Draft || (Status == RentalContractStatus.PendingSigning && !HasPaidDeliveryInvoice);
     
     private string GetStatusDisplay() => Status switch
     {
         RentalContractStatus.Draft => "Bản nháp",
-        RentalContractStatus.Pending => "Chờ ký",
-        RentalContractStatus.Signed => "Đã ký",
+        RentalContractStatus.PendingSigning => "Chờ ký",
         RentalContractStatus.Active => "Đang hoạt động",
-        RentalContractStatus.AwaitingDelivery => "Chờ giao xe",
         RentalContractStatus.InProgress => "Đang thuê",
-        RentalContractStatus.AwaitingReturn => "Chờ trả xe",
         RentalContractStatus.PendingSettlement => "Chờ quyết toán",
         RentalContractStatus.Completed => "Hoàn tất",
-        RentalContractStatus.Violation => "Vi phạm",
+        RentalContractStatus.Disputed => "Tranh chấp",
         RentalContractStatus.Cancelled => "Đã hủy",
         _ => "Không xác định"
     };
@@ -111,15 +128,12 @@ public class ContractDetailsViewModel
     private string GetStatusClass() => Status switch
     {
         RentalContractStatus.Draft => "chip",
-        RentalContractStatus.Pending => "chip chip-warning",
-        RentalContractStatus.Signed => "chip chip-info",
+        RentalContractStatus.PendingSigning => "chip chip-warning",
         RentalContractStatus.Active => "chip chip-primary",
-        RentalContractStatus.AwaitingDelivery => "chip chip-info",
         RentalContractStatus.InProgress => "chip chip-success",
-        RentalContractStatus.AwaitingReturn => "chip chip-warning",
         RentalContractStatus.PendingSettlement => "chip chip-warning",
         RentalContractStatus.Completed => "chip chip-success",
-        RentalContractStatus.Violation => "chip chip-error",
+        RentalContractStatus.Disputed => "chip chip-error",
         RentalContractStatus.Cancelled => "chip chip-error",
         _ => "chip"
     };

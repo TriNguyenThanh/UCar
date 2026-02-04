@@ -99,14 +99,33 @@ public class ReturnRecordDetailDto
     public List<ChargeDto> AdditionalCharges { get; set; } = new();
     public decimal TotalCharges => AdditionalCharges.Sum(c => c.Amount);
     
-    // Rental cost info
+    // Rental cost info (ĐÃ THANH TOÁN KHI GIAO XE - chỉ để hiển thị tham khảo)
     public int RentalDays { get; set; }
     public decimal RentalUnitPrice { get; set; }
-    public decimal RentalAmount { get; set; }
-    public decimal DepositAmount { get; set; }
+    public decimal RentalAmount { get; set; } // Tiền thuê - ĐÃ THANH TOÁN
+    
+    // Deposit info
+    public decimal DepositAmount { get; set; } // Tổng cọc = Cọc TN + Cọc thuê
+    public decimal ResponsibilityDeposit { get; set; } // Cọc trách nhiệm
+    public decimal RentalDeposit { get; set; } // Cọc thuê xe
+    
+    // Accessory damage
     public decimal AccessoryDamageCost => AccessoriesReturned.Where(a => !a.IsReturnedOk).Sum(a => a.EstimatedValue);
-    public decimal GrandTotal => RentalAmount + TotalCharges + AccessoryDamageCost;
-    public decimal AmountDue => GrandTotal - DepositAmount;
+    
+    // === LOGIC MỚI: Tính tiền khi trả xe ===
+    // Tổng phí phát sinh = Phụ phí + Chi phí phụ kiện hư hỏng
+    public decimal TotalSurcharges => TotalCharges + AccessoryDamageCost;
+    
+    // Số tiền cần hoàn = Cọc - Phí phát sinh
+    // Dương: Hoàn tiền cho khách
+    // Âm: Khách phải trả thêm
+    public decimal RefundAmount => DepositAmount - TotalSurcharges;
+    
+    // AmountDue: Số tiền khách phải trả (dương = khách trả, âm = hoàn khách)
+    public decimal AmountDue => -RefundAmount; // Đảo dấu: dương = khách trả thêm, âm = hoàn khách
+    
+    // GrandTotal giữ lại để tương thích (nhưng không dùng để tính tiền)
+    public decimal GrandTotal => TotalSurcharges; // Chỉ tính phí phát sinh, KHÔNG tính tiền thuê
     
     // Payment status
     public bool IsPaid { get; set; }

@@ -11,6 +11,11 @@ public class PaymentTransaction
 
     public Guid? ContractId { get; set; }
 
+    /// <summary>
+    /// ID của Invoice được thanh toán (nullable vì có thể là payment cũ chưa có invoice)
+    /// </summary>
+    public Guid? InvoiceId { get; set; }
+
     [Required]
     public Guid CustomerId { get; set; }
 
@@ -41,6 +46,9 @@ public class PaymentTransaction
     // Navigation properties
     [ForeignKey(nameof(ContractId))]
     public RentalContract? RentalContract { get; set; }
+
+    [ForeignKey(nameof(InvoiceId))]
+    public Invoice? Invoice { get; set; }
 
     [ForeignKey(nameof(CustomerId))]
     public Customer Customer { get; set; } = null!;

@@ -13,10 +13,12 @@ namespace UCar.Controllers;
 public class HandoverController : Controller
 {
     private readonly IHandoverService _handoverService;
+    private readonly IImageUploadService _imageUploadService;
 
-    public HandoverController(IHandoverService handoverService)
+    public HandoverController(IHandoverService handoverService, IImageUploadService imageUploadService)
     {
         _handoverService = handoverService;
+        _imageUploadService = imageUploadService;
     }
 
     /// <summary>Lấy User ID từ authentication cookie</summary>
@@ -84,8 +86,9 @@ public class HandoverController : Controller
     }
 
     /// <summary>
-    /// Xác nhận giao xe
+    /// Xác nhận lập biên bản giao xe - Luồng mới
     /// POST: /Handover/CheckOut
+    /// Sau khi lập biên bản → Chuyển đến trang thanh toán để ký + thanh toán
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -102,13 +105,51 @@ public class HandoverController : Controller
         var result = await _handoverService.ConfirmCheckOutAsync(dto, userId);
         if (!result.Success)
         {
-            TempData["ErrorMessage"] = result.Errors.First();
+            // Kiểm tra nếu lỗi là "đã giao xe" thì redirect đến Pickup thay vì hiển thị lỗi
+            // Đây là trường hợp user quay lại (browser back) và form resubmit
+            var errorMsg = result.Errors.FirstOrDefault() ?? "";
+            if (errorMsg.Contains("đã được giao xe") || errorMsg.Contains("đã giao xe"))
+            {
+                return RedirectToAction("Pickup", "Payment", new { contractId = dto.ContractId });
+            }
+            
+            TempData["ErrorMessage"] = errorMsg;
             var form = await _handoverService.GetCheckOutFormAsync(dto.ContractId);
             return View(form);
         }
 
-        TempData["SuccessMessage"] = result.Message;
-        return RedirectToAction(nameof(HandoverDocument), new { contractId = dto.ContractId });
+        TempData["SuccessMessage"] = "Đã lập biên bản giao xe. Vui lòng tiến hành ký hợp đồng và thanh toán.";
+        // Chuyển đến trang thanh toán khi nhận xe
+        return RedirectToAction("Pickup", "Payment", new { contractId = dto.ContractId });
+    }
+
+    /// <summary>
+    /// API upload ảnh xe
+    /// POST: /Handover/UploadImages
+    /// </summary>
+    [HttpPost]
+    public async Task<IActionResult> UploadImages(Guid contractId, string imageType)
+    {
+        if (Request.Form.Files.Count == 0)
+            return BadRequest(new { success = false, message = "Không có file nào được upload" });
+
+        var imagePaths = await _imageUploadService.UploadVehicleImagesAsync(
+            contractId, 
+            Request.Form.Files, 
+            imageType);
+
+        return Ok(new { success = true, paths = imagePaths });
+    }
+
+    /// <summary>
+    /// API xóa ảnh xe
+    /// DELETE: /Handover/DeleteImage
+    /// </summary>
+    [HttpDelete]
+    public async Task<IActionResult> DeleteImage([FromBody] string imagePath)
+    {
+        var result = await _imageUploadService.DeleteImageAsync(imagePath);
+        return Ok(new { success = result });
     }
 
     /// <summary>

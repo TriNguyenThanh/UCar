@@ -2,6 +2,8 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using UCar.Data;
 using UCar.Interfaces;
 using UCar.Models.Enums;
 using UCar.ViewModels.Booking;
@@ -13,22 +15,25 @@ public class BookingController : Controller
 {
     private readonly IBookingService _bookingService;
     private readonly IVehicleCatalogService _vehicleCatalogService;
-    private readonly IPriceCalculationService _priceCalculationService;
-    private readonly ILogger<BookingController> _logger;
     private readonly ICustomerService _customerService;
+    private readonly IPriceCalculationService _priceCalculationService;
+    private readonly UCarDbContext _context;
+    private readonly ILogger<BookingController> _logger;
 
     public BookingController(
         IBookingService bookingService, 
         IVehicleCatalogService vehicleCatalogService,
-        IPriceCalculationService priceCalculationService,
         ICustomerService customerService,
+        IPriceCalculationService priceCalculationService,
+        UCarDbContext context,
         ILogger<BookingController> logger)
     {
         _bookingService = bookingService;
         _vehicleCatalogService = vehicleCatalogService;
-        _priceCalculationService = priceCalculationService;
-        _logger = logger;
         _customerService = customerService;
+        _priceCalculationService = priceCalculationService;
+        _context = context;
+        _logger = logger;
     }
 
     private Guid GetCurrentUserId()
@@ -40,13 +45,9 @@ public class BookingController : Controller
 
     // GET: /Booking
     // Admin/Staff sees all, Customer sees theirs (redirect)
-    // GET: /Booking
-    // Admin/Staff sees all, Customer sees theirs (redirect)
-    public async Task<IActionResult> Index()
+    public IActionResult Index()
     {
-        ViewBag.Branches = await _bookingService.GetAllBranches();
-  
-        if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff"))
+        if (User.IsInRole("Admin") || User.IsInRole("Staff"))
         {
             return RedirectToAction(nameof(Manage));
         }
@@ -59,7 +60,7 @@ public class BookingController : Controller
     {
         // Prepare filter dropdowns
         await PrepareFilterDropdownsAsync();
-
+        
         if (model.StartDate.HasValue && model.EndDate.HasValue)
         {
             // Normalize DateTimes
@@ -67,7 +68,7 @@ public class BookingController : Controller
             var end = model.EndDate.Value.Date + (model.EndTime ?? TimeSpan.Zero);
 
             ViewBag.Results = await _bookingService.SearchVehiclesAsync(
-                start, end, model.VehicleTypeId, model.Make, model.Seats, model.BranchId);
+                start, end, model.VehicleTypeId, model.Make, model.Seats);
             ViewBag.SearchPerformed = true;
         }
         else
@@ -89,7 +90,26 @@ public class BookingController : Controller
         var vehicleInfo = await _bookingService.GetVehicleForBookingAsync(vehicleId, start, end);
         if (vehicleInfo == null) return NotFound("Xe không tồn tại hoặc không khả dụng.");
 
-        var customerPhone = await _customerService.GetPhoneNumberAsync(GetCurrentUserId());
+        // Get current customer details
+        var customerId = GetCurrentUserId();
+        var customerDetails = await _customerService.GetCustomerDetailsAsync(customerId);
+        
+        // Fallback: If customer profile not found, get info from User claims
+        string customerName = customerDetails?.FullName ?? User.Identity?.Name ?? "";
+        string customerPhone = customerDetails?.Phone ?? User.FindFirst(ClaimTypes.MobilePhone)?.Value ?? "";
+
+        // Get vehicle model ID for price calculation
+        var vehicle = await _bookingService.GetVehicleForBookingAsync(vehicleId, start, end);
+        if (vehicle == null) return NotFound("Xe không tồn tại.");
+
+        // Get detailed price calculation from Module 3 service
+        var vehicleEntity = await _context.Vehicles.Include(v => v.Model).FirstOrDefaultAsync(v => v.VehicleId == vehicleId);
+        if (vehicleEntity == null) return NotFound("Xe không tồn tại.");
+        
+        var priceEstimate = await _priceCalculationService.CalculateEstimateAsync(
+            vehicleEntity.Model.ModelId, 
+            start, 
+            end);
 
         var vm = new BookingCreateVM
         {
@@ -97,19 +117,38 @@ public class BookingController : Controller
             ModelName = vehicleInfo.ModelName,
             PlateNo = vehicleInfo.PlateNo,
             ImageUrl = vehicleInfo.ImageUrl,
+            BranchId = vehicleInfo.BranchId,
             StartAt = start,
             EndAt = end,
-            EstimatedPrice = vehicleInfo.EstimatedTotal,
-            TotalAmount = vehicleInfo.EstimatedTotal,
-            BranchId = vehicleInfo.BranchId,
-
-            // Pre-fill user info (mock or fetch from UserService if available, here just pass from User claims if possible)
-            CustomerName = User.Identity?.Name ?? "",
-            CustomerPhone = customerPhone ?? ""
+            
+            // Pricing details from Module 3
+            TotalDays = priceEstimate?.TotalDays ?? 0,
+            NormalDays = priceEstimate?.NormalDays ?? 0,
+            PeakDays = priceEstimate?.PeakDays ?? 0,
+            BaseDailyPrice = priceEstimate?.BaseDailyPrice ?? vehicleInfo.DailyPrice,
+            NormalDaysAmount = priceEstimate?.NormalDaysAmount ?? 0,
+            PeakDaysAmount = priceEstimate?.PeakDaysAmount ?? 0,
+            MonthlyAmount = priceEstimate?.MonthlyAmount ?? 0,
+            IsMonthlyRate = priceEstimate?.IsMonthlyRate ?? false,
+            RentalAmount = priceEstimate?.SubTotal ?? vehicleInfo.EstimatedTotal,
+            
+            // Deposit details
+            ResponsibilityDeposit = priceEstimate?.ResponsibilityDeposit ?? 2_000_000,
+            RentalDeposit = priceEstimate?.RentalDeposit ?? 0,
+            TotalDeposit = priceEstimate?.TotalDeposit ?? 0,
+            
+            // Totals
+            EstimatedPrice = priceEstimate?.TotalAmount ?? vehicleInfo.EstimatedTotal,
+            TotalAmount = priceEstimate?.TotalAmount ?? vehicleInfo.EstimatedTotal,
+            
+            // Pre-fill user info from customer details or user claims
+            CustomerName = customerName,
+            CustomerPhone = customerPhone
         };
 
+        // Load branches for dropdown
         ViewBag.Branches = await _bookingService.GetAllBranches();
-        ViewBag.CustomerPhone = customerPhone ?? "";
+
         return View(vm);
     }
 
@@ -119,7 +158,7 @@ public class BookingController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(BookingCreateVM model)
     {
-        if (!ModelState.IsValid) 
+        if (!ModelState.IsValid)
         {
             ViewBag.Branches = await _bookingService.GetAllBranches();
             return View(model);
@@ -128,7 +167,7 @@ public class BookingController : Controller
         try
         {
             var bookingId = await _bookingService.CreateBookingAsync(GetCurrentUserId(), model);
-            TempData["SuccessMessage"] = "Yêu cầu đặt xe thành công!";
+            TempData["SuccessMessage"] = "To yêu cầu đặt xe thành công!";
             return RedirectToAction(nameof(Details), new { id = bookingId });
         }
         catch (Exception ex)
@@ -148,9 +187,8 @@ public class BookingController : Controller
         return View(list);
     }
 
-    // GET: /Booking/
-    
-    [Authorize(Roles = "Admin,BranchManager,Staff")]
+    // GET: /Booking/Manage
+    [Authorize(Roles = "Admin,Staff")]
     public async Task<IActionResult> Manage(BookingStatus? status)
     {
         var list = await _bookingService.GetAllBookingsAsync(status);
@@ -160,7 +198,7 @@ public class BookingController : Controller
     // GET: /Booking/Details/5
     public async Task<IActionResult> Details(Guid id)
     {
-        bool isAdmin = User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff");
+        bool isAdmin = User.IsInRole("Admin") || User.IsInRole("Staff");
         var vm = await _bookingService.GetBookingDetailAsync(id, GetCurrentUserId(), isAdmin);
         
         if (vm == null) return NotFound();
@@ -169,7 +207,7 @@ public class BookingController : Controller
 
     // POST: /Booking/Confirm
     [HttpPost]
-    [Authorize(Roles = "Admin,BranchManager,Staff")]
+    [Authorize(Roles = "Admin,Staff")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Confirm(Guid bookingId)
     {
@@ -204,7 +242,7 @@ public class BookingController : Controller
     
     // POST: /Booking/Reject
     [HttpPost]
-    [Authorize(Roles = "Admin,BranchManager,Staff")]
+    [Authorize(Roles = "Admin,Staff")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Reject(BookingActionVM model)
     {
@@ -233,36 +271,5 @@ public class BookingController : Controller
 
         // Seats dropdown (common values)
         ViewBag.SeatsList = new SelectList(new[] { 4, 5, 7, 8, 16 });
-        // Branches dropdown
-        var branches = await _bookingService.GetAllBranches();
-        ViewBag.BranchesList = new SelectList(branches, "BranchId", "Name");
-    }
-
-    // POST: /Booking/CalculatePrice
-    [HttpPost]
-    [AllowAnonymous]
-    public async Task<JsonResult> CalculatePrice(Guid vehicleModelId, DateTime startDate, DateTime endDate)
-    {
-        try
-        {
-            var estimate = await _priceCalculationService.CalculateEstimateAsync(
-                vehicleModelId, 
-                startDate, 
-                endDate
-            );
-
-            if (estimate == null)
-            {
-                return Json(new { success = false, message = "Không thể tính giá cho xe này" });
-            }
-
-            return Json(new { success = true, data = estimate });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error calculating price for vehicleModelId {VehicleModelId}", vehicleModelId);
-            return Json(new { success = false, message = "Lỗi khi tính giá: " + ex.Message });
-        }
     }
 }
-    

@@ -2,29 +2,21 @@ namespace UCar.Models.Enums;
 
 /// <summary>
 /// Trạng thái hợp đồng thuê xe
+/// Luồng mới: Draft → PendingSigning → Active → Completed
 /// </summary>
 public enum RentalContractStatus
 {
-    /// <summary>Bản nháp (chưa hoàn tất, chưa ký)</summary>
+    /// <summary>Bản nháp (tạo sau khi xác nhận booking, chưa giao xe)</summary>
     Draft,
 
-    /// <summary>Chờ xác nhận/ký (đã tạo, chờ khách ký)</summary>
-    Pending,
+    /// <summary>Chờ ký (đã lập biên bản, in hợp đồng, chờ khách ký giấy)</summary>
+    PendingSigning,
 
-    /// <summary>Đã ký/Xác nhận (khách đã đồng ý điều khoản)</summary>
-    Signed,
-
-    /// <summary>Đang hoạt động (đã xác nhận, chờ giao xe)</summary>
+    /// <summary>Đang hoạt động (đã ký, đã thanh toán, đang thuê xe)</summary>
     Active,
-    
-    /// <summary>Chờ giao xe</summary>
-    AwaitingDelivery,
     
     /// <summary>Đang thuê (đã giao xe, chờ trả)</summary>
     InProgress,
-    
-    /// <summary>Chờ nhận xe</summary>
-    AwaitingReturn,
     
     /// <summary>Chờ quyết toán (đã nhận xe, chờ thanh toán phụ phí)</summary>
     PendingSettlement,
@@ -32,8 +24,8 @@ public enum RentalContractStatus
     /// <summary>Hoàn tất</summary>
     Completed,
     
-    /// <summary>Vi phạm</summary>
-    Violation,
+    /// <summary>Vi phạm / Tranh chấp</summary>
+    Disputed,
     
     /// <summary>Đã hủy</summary>
     Cancelled

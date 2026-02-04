@@ -16,11 +16,13 @@ public class ContractController : Controller
 {
     private readonly IContractService _contractService;
     private readonly ILogger<ContractController> _logger;
+    private readonly IPriceCalculationService _priceCalculationService;
 
-    public ContractController(IContractService contractService, ILogger<ContractController> logger)
+    public ContractController(IContractService contractService, ILogger<ContractController> logger, IPriceCalculationService priceCalculationService)
     {
         _contractService = contractService;
         _logger = logger;
+        _priceCalculationService = priceCalculationService;
     }
 
     #region Helpers
@@ -64,13 +66,15 @@ public class ContractController : Controller
     /// <summary>
     /// Danh sách hợp đồng của tôi (Customer)
     /// GET: /Contract/MyContracts
+    /// LUỒNG MỚI: Khách không được xem hợp đồng online
     /// </summary>
     [Authorize(Roles = "Customer")]
-    public async Task<IActionResult> MyContracts(ContractSearchViewModel filter)
+    public IActionResult MyContracts(ContractSearchViewModel filter)
     {
-        var userId = GetCurrentUserId();
-        var result = await _contractService.GetMyContractsAsync(userId, filter);
-        return View(result);
+        // Luồng mới: Khách hàng không được xem hợp đồng online
+        // Hợp đồng chỉ được xem và ký tại quầy
+        TempData["Error"] = "Tính năng xem hợp đồng online không còn khả dụng. Vui lòng liên hệ chi nhánh để được hỗ trợ.";
+        return RedirectToAction("MyBookings", "Booking");
     }
 
     /// <summary>
@@ -164,12 +168,26 @@ public class ContractController : Controller
             model.DepositAmount = bookingInfo.DepositSuggest;
             model.Terms = options.DefaultTerms;
 
-            // Calculate
-            var (days, rentalAmount, total) = _contractService.CalculateRentalAmount(
-                bookingInfo.StartAt, bookingInfo.EndAt, bookingInfo.UnitPrice, 0);
-            model.RentalDays = days;
-            model.RentalAmount = rentalAmount;
-            model.TotalAmount = total;
+            // Calculate detailed pricing using IPriceCalculationService
+            var vehicle = options.Vehicles.FirstOrDefault(v => v.VehicleId == bookingInfo.VehicleId);
+            if (vehicle != null)
+            {
+                var priceEstimate = await _priceCalculationService.CalculateEstimateAsync(
+                    vehicle.ModelId, bookingInfo.StartAt, bookingInfo.EndAt);
+                
+                model.RentalDays = priceEstimate.TotalDays;
+                model.NormalDays = priceEstimate.NormalDays;
+                model.PeakDays = priceEstimate.PeakDays;
+                model.BaseDailyPrice = priceEstimate.BaseDailyPrice;
+                model.PeakMultiplier = priceEstimate.PeakMultiplier;
+                model.NormalDaysAmount = priceEstimate.NormalDaysAmount;
+                model.PeakDaysAmount = priceEstimate.PeakDaysAmount;
+                model.RentalAmount = priceEstimate.SubTotal;
+                model.ResponsibilityDeposit = priceEstimate.ResponsibilityDeposit;
+                model.RentalDeposit = priceEstimate.RentalDeposit;
+                model.TotalDeposit = priceEstimate.TotalDeposit;
+                model.TotalAmount = priceEstimate.TotalAmount;
+            }
 
             ViewBag.BookingInfo = bookingInfo;
         }
@@ -237,9 +255,9 @@ public class ContractController : Controller
     /// Xem chi tiết hợp đồng
     /// GET: /Contract/Details/{id}
     /// </summary>
-    public async Task<IActionResult> Details(Guid id)
+    public async Task<IActionResult> Details(Guid id, string? code = null)
     {
-        var contract = await _contractService.GetContractDetailsAsync(id);
+        var contract = await _contractService.GetContractDetailsAsync(id, code);
         if (contract == null)
         {
             TempData["Error"] = "Không tìm thấy hợp đồng.";
@@ -337,58 +355,30 @@ public class ContractController : Controller
     /// <summary>
     /// Form ký hợp đồng (Customer)
     /// GET: /Contract/Sign/{id}
+    /// LUỒNG MỚI: Không cho phép ký online - Khách ký giấy tại quầy
     /// </summary>
     [Authorize(Roles = "Customer")]
-    public async Task<IActionResult> Sign(Guid id)
+    public IActionResult Sign(Guid id)
     {
-        var model = await _contractService.GetContractForSignAsync(id);
-        if (model == null)
-        {
-            TempData["Error"] = "Không tìm thấy hợp đồng hoặc hợp đồng không ở trạng thái chờ ký.";
-            return RedirectToAction(nameof(MyContracts));
-        }
-
-        return View(model);
+        // Luồng mới: Không cho phép ký online
+        // Khách hàng ký hợp đồng giấy tại quầy khi nhận xe
+        TempData["Error"] = "Tính năng ký hợp đồng online không còn khả dụng. Vui lòng đến chi nhánh để ký hợp đồng giấy khi nhận xe.";
+        return RedirectToAction(nameof(MyContracts));
     }
 
     /// <summary>
     /// Xử lý ký hợp đồng
     /// POST: /Contract/Sign/{id}
+    /// LUỒNG MỚI: Không cho phép ký online
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Customer")]
-    public async Task<IActionResult> Sign(Guid id, ContractSignViewModel model)
+    public IActionResult Sign(Guid id, ContractSignViewModel model)
     {
-        if (!model.AgreeToTerms)
-        {
-            ModelState.AddModelError("AgreeToTerms", "Vui lòng đồng ý với điều khoản hợp đồng.");
-            var vm = await _contractService.GetContractForSignAsync(id);
-            return View(vm);
-        }
-
-        try
-        {
-            id = model.ContractId;
-            
-            var userId = GetCurrentUserId();
-            var success = await _contractService.SignContractAsync(id, userId);
-
-            if (!success)
-            {
-                TempData["Error"] = "Không thể ký hợp đồng.";
-                return RedirectToAction(nameof(MyContracts));
-            }
-
-            TempData["Success"] = "Đã ký hợp đồng thành công! Vui lòng chờ nhân viên xác nhận.";
-            return RedirectToAction(nameof(Details), new { id });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error signing contract {ContractId}", id);
-            TempData["Error"] = "Có lỗi xảy ra. Vui lòng thử lại.";
-            return RedirectToAction(nameof(MyContracts));
-        }
+        // Luồng mới: Không cho phép ký online
+        TempData["Error"] = "Tính năng ký hợp đồng online không còn khả dụng. Vui lòng đến chi nhánh để ký hợp đồng giấy khi nhận xe.";
+        return RedirectToAction(nameof(MyContracts));
     }
 
     /// <summary>
@@ -600,10 +590,30 @@ public class ContractController : Controller
     /// API: Tính toán tiền thuê
     /// </summary>
     [HttpGet]
-    public IActionResult CalculateAmount(DateTime start, DateTime end, decimal unitPrice, decimal extraCharges = 0)
+    public async Task<IActionResult> CalculateAmount(Guid modelId, DateTime start, DateTime end, decimal extraCharges = 0)
     {
-        var (days, rentalAmount, total) = _contractService.CalculateRentalAmount(start, end, unitPrice, extraCharges);
-        return Json(new { days, rentalAmount, total });
+        try
+        {
+            var priceEstimate = await _priceCalculationService.CalculateEstimateAsync(modelId, start, end);
+            return Json(new 
+            { 
+                days = priceEstimate.TotalDays,
+                normalDays = priceEstimate.NormalDays,
+                peakDays = priceEstimate.PeakDays,
+                normalDaysAmount = priceEstimate.NormalDaysAmount,
+                peakDaysAmount = priceEstimate.PeakDaysAmount,
+                rentalAmount = priceEstimate.SubTotal,
+                responsibilityDeposit = priceEstimate.ResponsibilityDeposit,
+                rentalDeposit = priceEstimate.RentalDeposit,
+                totalDeposit = priceEstimate.TotalDeposit,
+                total = priceEstimate.TotalAmount + extraCharges
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calculating amount for model {ModelId}", modelId);
+            return Json(new { error = ex.Message });
+        }
     }
 
     /// <summary>

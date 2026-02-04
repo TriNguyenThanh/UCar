@@ -1,0 +1,175 @@
+@model List<Invoice>
+@using UCar.Models.Enums
+@{
+    ViewData["Title"] = "Hóa đơn của tôi";
+}
+
+<!-- Page Header -->
+<div class="row">
+    <div class="col s12">
+        <div class="card">
+            <div class="card-content">
+                <span class="card-title">
+                    <i class="material-icons left">receipt</i>
+                    Hóa đơn của tôi
+                </span>
+                <p class="grey-text">Xem danh sách hóa đơn và thanh toán trực tuyến</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Invoices List -->
+<div class="row">
+    <div class="col s12">
+        <div class="card">
+            <div class="card-content">
+                @if (!Model.Any())
+                {
+                    <div class="center-align" style="padding: 40px 0;">
+                        <i class="material-icons large grey-text">receipt_long</i>
+                        <h5 class="grey-text">Chưa có hóa đơn nào</h5>
+                        <p class="grey-text">Các hóa đơn sẽ xuất hiện sau khi bạn ký hợp đồng thuê xe</p>
+                    </div>
+                }
+                else
+                {
+                    <table class="striped responsive-table">
+                        <thead>
+                            <tr>
+                                <th>Mã hóa đơn</th>
+                                <th>Loại hóa đơn</th>
+                                <th>Ngày phát hành</th>
+                                <th>Hạn thanh toán</th>
+                                <th class="right-align">Tổng tiền</th>
+                                <th class="right-align">Đã thanh toán</th>
+                                <th class="right-align">Còn lại</th>
+                                <th>Trạng thái</th>
+                                <th class="center-align">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var invoice in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@invoice.InvoiceNumber</strong>
+                                    </td>
+                                    <td>
+                                        @switch (invoice.InvoiceType)
+                                        {
+                                            case InvoiceType.Deposit:
+                                                <span class="new badge blue" data-badge-caption="">Đặt cọc</span>
+                                                break;
+                                            case InvoiceType.Rental:
+                                                <span class="new badge green" data-badge-caption="">Tiền thuê</span>
+                                                break;
+                                            case InvoiceType.Surcharge:
+                                                <span class="new badge orange" data-badge-caption="">Phụ phí</span>
+                                                break;
+                                            case InvoiceType.Penalty:
+                                                <span class="new badge red" data-badge-caption="">Phạt</span>
+                                                break;
+                                            case InvoiceType.Refund:
+                                                <span class="new badge purple" data-badge-caption="">Hoàn cọc</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>@invoice.IssuedDate.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        @if (invoice.DueDate.HasValue)
+                                        {
+                                            <span>@invoice.DueDate.Value.ToString("dd/MM/yyyy")</span>
+                                            @if (invoice.DueDate.Value < DateTime.Now && invoice.Status != InvoiceStatus.Paid && invoice.Status != InvoiceStatus.Cancelled)
+                                            {
+                                                <span class="red-text"><br/>(Quá hạn)</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="grey-text">-</span>
+                                        }
+                                    </td>
+                                    <td class="right-align">
+                                        <strong>@invoice.TotalAmount.ToString("N0")đ</strong>
+                                    </td>
+                                    <td class="right-align">
+                                        @invoice.AmountPaid.ToString("N0")đ
+                                    </td>
+                                    <td class="right-align">
+                                        @if (invoice.AmountDue > 0)
+                                        {
+                                            <strong class="red-text">@invoice.AmountDue.ToString("N0")đ</strong>
+                                        }
+                                        else
+                                        {
+                                            <span class="grey-text">0đ</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @switch (invoice.Status)
+                                        {
+                                            case InvoiceStatus.Issued:
+                                                <span class="badge blue lighten-4 blue-text text-darken-2">Đã phát hành</span>
+                                                break;
+                                            case InvoiceStatus.PartiallyPaid:
+                                                <span class="badge amber lighten-4 amber-text text-darken-2">Thanh toán 1 phần</span>
+                                                break;
+                                            case InvoiceStatus.Paid:
+                                                <span class="badge green lighten-4 green-text text-darken-2">Đã thanh toán</span>
+                                                break;
+                                            case InvoiceStatus.Overdue:
+                                                <span class="badge red lighten-4 red-text text-darken-2">Quá hạn</span>
+                                                break;
+                                            case InvoiceStatus.Cancelled:
+                                                <span class="badge grey lighten-2 grey-text text-darken-1">Đã hủy</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td class="center-align">
+                                        @if (invoice.Status != InvoiceStatus.Paid && invoice.Status != InvoiceStatus.Cancelled)
+                                        {
+                                            <a href="@Url.Action("Pay", new { id = invoice.InvoiceId })" 
+                                               class="btn-small waves-effect waves-light teal">
+                                                <i class="material-icons left">payment</i>
+                                                Thanh toán
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="grey-text">-</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Help Card -->
+<div class="row">
+    <div class="col s12">
+        <div class="card blue lighten-5">
+            <div class="card-content">
+                <span class="card-title blue-text text-darken-2">
+                    <i class="material-icons left">info</i>
+                    Hướng dẫn thanh toán
+                </span>
+                <ul class="browser-default">
+                    <li><strong>Hóa đơn đặt cọc:</strong> Cần thanh toán trong vòng 24h sau khi ký hợp đồng để giữ xe</li>
+                    <li><strong>Hóa đơn tiền thuê:</strong> Thanh toán khi nhận xe</li>
+                    <li><strong>Hóa đơn phụ phí/phạt:</strong> Thanh toán khi trả xe (nếu có)</li>
+                    <li><strong>Hóa đơn hoàn cọc:</strong> Tiền sẽ được hoàn lại vào tài khoản sau 7 ngày làm việc</li>
+                </ul>
+                <p class="blue-text text-darken-2" style="margin-top: 15px;">
+                    <i class="material-icons tiny">phone</i>
+                    Liên hệ hotline: <strong>1900-xxxx</strong> nếu cần hỗ trợ thanh toán
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

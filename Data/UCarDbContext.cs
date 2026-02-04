@@ -49,6 +49,11 @@ public class UCarDbContext : DbContext
     public DbSet<IncidentCost> IncidentCosts { get; set; }
     public DbSet<IncidentDocument> IncidentDocuments { get; set; }
 
+    // Invoice Management (Module 7)
+    public DbSet<Invoice> Invoices { get; set; }
+    public DbSet<InvoiceLineItem> InvoiceLineItems { get; set; }
+    public DbSet<InvoiceAdjustment> InvoiceAdjustments { get; set; }
+
     // Supporting
     public DbSet<CustomerDocument> CustomerDocuments { get; set; }
 
@@ -175,6 +180,24 @@ public class UCarDbContext : DbContext
         modelBuilder.Entity<OperationalTask>()
             .Property(ot => ot.Status)
             .HasConversion<string>();
+
+        // Invoice (Module 7)
+        modelBuilder.Entity<Invoice>()
+            .Property(i => i.InvoiceType)
+            .HasConversion<string>();
+        modelBuilder.Entity<Invoice>()
+            .Property(i => i.Status)
+            .HasConversion<string>();
+
+        // InvoiceLineItem (Module 7)
+        modelBuilder.Entity<InvoiceLineItem>()
+            .Property(ili => ili.ItemType)
+            .HasConversion<string>();
+
+        // InvoiceAdjustment (Module 7)
+        modelBuilder.Entity<InvoiceAdjustment>()
+            .Property(ia => ia.AdjustmentType)
+            .HasConversion<string>();
     }
 
     private void ConfigureUniqueConstraints(ModelBuilder modelBuilder)
@@ -222,6 +245,11 @@ public class UCarDbContext : DbContext
         // ReturnRecord - ContractId is unique (one-to-one)
         modelBuilder.Entity<ReturnRecord>()
             .HasIndex(rr => rr.ContractId)
+            .IsUnique();
+
+        // Invoice - InvoiceNumber is unique (Module 7)
+        modelBuilder.Entity<Invoice>()
+            .HasIndex(i => i.InvoiceNumber)
             .IsUnique();
     }
 
@@ -437,6 +465,48 @@ public class UCarDbContext : DbContext
             .HasOne(pt => pt.Customer)
             .WithMany(c => c.PaymentTransactions)
             .HasForeignKey(pt => pt.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Invoice -> RentalContract (Module 7)
+        modelBuilder.Entity<Invoice>()
+            .HasOne(i => i.Contract)
+            .WithMany()
+            .HasForeignKey(i => i.ContractId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Invoice -> Customer (Module 7)
+        modelBuilder.Entity<Invoice>()
+            .HasOne(i => i.Customer)
+            .WithMany()
+            .HasForeignKey(i => i.CustomerId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Invoice -> UserAccount (IssuedBy) (Module 7)
+        modelBuilder.Entity<Invoice>()
+            .HasOne(i => i.IssuedByUser)
+            .WithMany()
+            .HasForeignKey(i => i.IssuedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // InvoiceLineItem -> Invoice (Module 7)
+        modelBuilder.Entity<InvoiceLineItem>()
+            .HasOne(ili => ili.Invoice)
+            .WithMany(i => i.LineItems)
+            .HasForeignKey(ili => ili.InvoiceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // InvoiceAdjustment -> Invoice (Module 7)
+        modelBuilder.Entity<InvoiceAdjustment>()
+            .HasOne(ia => ia.Invoice)
+            .WithMany(i => i.Adjustments)
+            .HasForeignKey(ia => ia.InvoiceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // InvoiceAdjustment -> StaffProfile (AdjustedBy) (Module 7)
+        modelBuilder.Entity<InvoiceAdjustment>()
+            .HasOne(ia => ia.AdjustedByStaff)
+            .WithMany()
+            .HasForeignKey(ia => ia.AdjustedBy)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Incident -> Vehicle

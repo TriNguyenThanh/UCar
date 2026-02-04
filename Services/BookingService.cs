@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using UCar.Data;
 using UCar.Interfaces;
 using UCar.Models;
-using UCar.Models.DTOs.Operations;
+using UCar.Models.DTOs;
 using UCar.Models.Enums;
 using UCar.ViewModels.Booking;
 
@@ -12,20 +12,29 @@ public class BookingService : IBookingService
 {
     private readonly UCarDbContext _context;
     private readonly ILogger<BookingService> _logger;
-    private readonly IBranchAccessService _branchAccess;
+    private readonly IContractService _contractService;
+    private readonly IPriceCalculationService _priceCalculationService;
+    private readonly IDepositPolicyService _depositPolicyService;
 
-    public BookingService(UCarDbContext context, ILogger<BookingService> logger, IBranchAccessService branchAccess)
+    public BookingService(
+        UCarDbContext context, 
+        ILogger<BookingService> logger,
+        IContractService contractService,
+        IPriceCalculationService priceCalculationService,
+        IDepositPolicyService depositPolicyService)
     {
         _context = context;
         _logger = logger;
-        _branchAccess = branchAccess;
+        _contractService = contractService;
+        _priceCalculationService = priceCalculationService;
+        _depositPolicyService = depositPolicyService;
     }
 
     public async Task<List<VehicleSearchResultVM>> SearchVehiclesAsync(
-        DateTime start,
-        DateTime end,
-        Guid? vehicleTypeId = null,
-        string? make = null,
+        DateTime start, 
+        DateTime end, 
+        Guid? vehicleTypeId = null, 
+        string? make = null, 
         int? seats = null,
         Guid? branchId = null)
     {
@@ -36,18 +45,9 @@ public class BookingService : IBookingService
         // Chỉ lấy xe Available hoặc Reserved (có thể đặt trước)
         var query = _context.Vehicles
             .Include(v => v.Model)
-            .Include(v => v.Model.VehicleType)
-            .Include(v => v.Model.VehicleType.Prices)
+                .ThenInclude(m => m.VehicleType)
             .Where(v => v.CurrentStatus == VehicleStatus.Available || 
                         v.CurrentStatus == VehicleStatus.Reserved);
-
-        // *** BRANCH ACCESS FILTER ***
-        // BranchManager và Staff chỉ thấy xe thuộc chi nhánh mình
-        var userBranchId = _branchAccess.GetCurrentUserBranchId();
-        if (userBranchId.HasValue)
-        {
-            query = query.Where(v => v.BranchId == userBranchId.Value);
-        }
 
         // Apply filters
         if (vehicleTypeId.HasValue)
@@ -66,6 +66,7 @@ public class BookingService : IBookingService
         {
             query = query.Where(v => v.BranchId == branchId.Value);
         }
+
         var candidates = await query.ToListAsync();
         var results = new List<VehicleSearchResultVM>();
 
@@ -89,13 +90,18 @@ public class BookingService : IBookingService
 
             if (!isBusy)
             {
-                // Calculate Price - temporarily use first active price from any model
-                // TODO: Implement proper price lookup by VehicleModel
+                // Calculate Price - Look up by VehicleModelId (new schema)
                 var priceEntity = await _context.Prices
-                    .FirstOrDefaultAsync(p => p.VehicleModelId == v.ModelId && p.IsActive);
+                    .Where(p => p.IsActive && p.VehicleModelId == v.Model.ModelId)
+                    .OrderByDescending(p => p.ValidFrom)
+                    .FirstOrDefaultAsync();
+                    
                 decimal dailyPrice = priceEntity?.BaseDailyPrice ?? 0;
-                var days = (end - start).TotalDays;
-                if (days < 1) days = 1;
+                var totalDays = (int)Math.Ceiling((end - start).TotalDays);
+                if (totalDays < 1) totalDays = 1;
+
+                // Basic calculation: normal days pricing (không tính holiday cho search)
+                decimal estimatedTotal = dailyPrice * totalDays;
 
                 results.Add(new VehicleSearchResultVM
                 {
@@ -106,13 +112,12 @@ public class BookingService : IBookingService
                     PlateNo = v.PlateNo,
                     Color = v.Color ?? "N/A",
                     Year = v.ManufactureYear,
-                    IsAvailable = true, // We filtered busy already
+                    IsAvailable = true,
                     DailyPrice = dailyPrice,
-                    EstimatedTotal = dailyPrice * (decimal)days,
+                    EstimatedTotal = estimatedTotal,
                     Seats = v.Model.Seats, 
                     Transmission = v.Model.Transmission?.ToString() ?? "N/A",
-                    ImageUrl = "https://placehold.co/600x400?text=" + v.Model.ModelName.Replace(" ", "+"),
-                    BranchId = v.BranchId
+                    ImageUrl = "https://placehold.co/600x400?text=" + v.Model.ModelName.Replace(" ", "+")
                 });
             }
         }
@@ -124,17 +129,22 @@ public class BookingService : IBookingService
     {
         var v = await _context.Vehicles
             .Include(v => v.Model)
-            .Include(v => v.Model.VehicleType)
-            .Include(v => v.Model.VehicleType.Prices)
+                .ThenInclude(m => m.VehicleType)
             .FirstOrDefaultAsync(x => x.VehicleId == vehicleId);
 
         if (v == null) return null;
 
+        // Calculate Price - Look up by VehicleModelId (new schema)
         var priceEntity = await _context.Prices
-            .FirstOrDefaultAsync(p => p.VehicleModelId == v.ModelId && p.IsActive);
+            .Where(p => p.IsActive && p.VehicleModelId == v.Model.ModelId)
+            .OrderByDescending(p => p.ValidFrom)
+            .FirstOrDefaultAsync();
+            
         decimal dailyPrice = priceEntity?.BaseDailyPrice ?? 0;
-        var days = (int)Math.Ceiling((end - start).TotalDays);
-        if (days < 1) days = 1;
+        var totalDays = (int)Math.Ceiling((end - start).TotalDays);
+        if (totalDays < 1) totalDays = 1;
+
+        decimal estimatedTotal = dailyPrice * totalDays;
 
         return new VehicleSearchResultVM
         {
@@ -146,9 +156,9 @@ public class BookingService : IBookingService
             Color = v.Color ?? "N/A",
             Year = v.ManufactureYear,
             DailyPrice = dailyPrice,
-            EstimatedTotal = dailyPrice * days,
-            IsAvailable = true,
+            EstimatedTotal = estimatedTotal,
             BranchId = v.BranchId,
+            IsAvailable = true
         };
     }
 
@@ -223,15 +233,6 @@ public class BookingService : IBookingService
             .ThenInclude(v => v.Model)
             .AsQueryable();
 
-        // *** BRANCH ACCESS FILTER ***
-        // BranchManager và Staff chỉ thấy booking của xe thuộc chi nhánh mình
-        var userBranchId = _branchAccess.GetCurrentUserBranchId();
-        if (userBranchId.HasValue)
-        {
-            query = query.Where(b => b.AssignedVehicle != null && 
-                                    b.AssignedVehicle.BranchId == userBranchId.Value);
-        }
-
         if (status.HasValue) query = query.Where(b => b.Status == status.Value);
         if (fromDate.HasValue) query = query.Where(b => b.StartAt >= fromDate.Value);
 
@@ -259,7 +260,8 @@ public class BookingService : IBookingService
             .Include(b => b.Customer)
             .ThenInclude(c => c.UserAccount)
             .Include(b => b.AssignedVehicle)
-            .ThenInclude(v => v.Model)
+            .ThenInclude(v => v!.Model)
+            .ThenInclude(m => m.VehicleType)
             .Include(b => b.VehicleType)
             .FirstOrDefaultAsync(b => b.BookingId == bookingId);
 
@@ -267,6 +269,28 @@ public class BookingService : IBookingService
 
         // Security check
         if (!isAdminOrStaff && booking.Customer.UserId != userId) return null;
+
+        // Lấy giá dự kiến từ model đã gán hoặc lấy giá từ Price mặc định
+        var vehicleModelId = booking.AssignedVehicle?.ModelId;
+        PriceEstimateDto? priceEstimate = null;
+        
+        if (vehicleModelId.HasValue)
+        {
+            priceEstimate = await _priceCalculationService.CalculateEstimateAsync(
+                vehicleModelId.Value,
+                booking.StartAt,
+                booking.EndAt);
+        }
+
+        // Lấy thông tin cọc từ VehicleModel (nếu có xe được gán)
+        var modelId = booking.AssignedVehicle?.ModelId;
+        DepositPolicy? depositPolicy = null;
+        if (modelId.HasValue)
+        {
+            depositPolicy = await _depositPolicyService.GetActiveDepositPolicyByVehicleModelAsync(modelId.Value);
+        }
+        var responsibilityDeposit = depositPolicy?.ResponsibilityDepositAmount ?? 0;
+        var rentalDeposit = (priceEstimate?.TotalAmount ?? booking.EstimatedTotal) * 0.5m; // 50% tiền thuê
 
         return new BookingDetailVM
         {
@@ -288,7 +312,20 @@ public class BookingService : IBookingService
             StartAt = booking.StartAt,
             EndAt = booking.EndAt,
             TotalDays = (int)Math.Ceiling((booking.EndAt - booking.StartAt).TotalDays),
-            EstimatedTotal = booking.EstimatedTotal,
+            // ĐÃ SỬA: Dùng SubTotal (tiền thuê thuần) thay vì TotalAmount (đã bao gồm cọc)
+            EstimatedTotal = priceEstimate?.SubTotal ?? booking.EstimatedTotal,
+            
+            // Chi tiết giá dự kiến
+            NormalDays = priceEstimate?.NormalDays ?? (int)Math.Ceiling((booking.EndAt - booking.StartAt).TotalDays),
+            PeakDays = priceEstimate?.PeakDays ?? 0,
+            DailyPrice = priceEstimate?.BaseDailyPrice ?? 0,
+            PeakMultiplier = priceEstimate?.PeakMultiplier ?? 1.0m,
+            NormalDaysAmount = priceEstimate?.NormalDaysAmount ?? booking.EstimatedTotal,
+            PeakDaysAmount = priceEstimate?.PeakDaysAmount ?? 0,
+            // SỬA: Lấy cọc từ priceEstimate nếu có, nếu không thì từ depositPolicy
+            ResponsibilityDeposit = priceEstimate?.ResponsibilityDeposit ?? responsibilityDeposit,
+            RentalDeposit = priceEstimate?.RentalDeposit ?? rentalDeposit,
+            
             Status = booking.Status,
             CreatedAt = booking.CreatedAt,
             
@@ -335,7 +372,19 @@ public class BookingService : IBookingService
         // booking.HandlerId = staffId; // If we had such field on Booking, or log it
         
         await _context.SaveChangesAsync();
-        _logger.LogInformation($"Booking {bookingId} Confirmed by Staff {staffId}");
+        _logger.LogInformation("Booking {BookingId} Confirmed by Staff {StaffId}", bookingId, staffId);
+
+        // LUỒNG MỚI: Tự động tạo Contract Draft sau khi xác nhận Booking
+        try
+        {
+            var contractId = await _contractService.CreateDraftContractFromBookingAsync(bookingId, staffId);
+            _logger.LogInformation("Contract Draft {ContractId} created automatically from Booking {BookingId}", contractId, bookingId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create Contract Draft from Booking {BookingId}. Manual creation required.", bookingId);
+            // Không throw - booking đã được confirm, contract có thể tạo manual sau
+        }
     }
 
     public async Task RejectBookingAsync(Guid bookingId, Guid staffId, string reason)
@@ -369,37 +418,37 @@ public class BookingService : IBookingService
     public async Task<bool> CheckAvailabilityAsync(Guid vehicleId, DateTime start, DateTime end, Guid? excludeBookingId = null)
     {
         // Các trạng thái đang chiếm xe: Pending, Confirmed, Deposited, InProgress
-        var blockingStatuses = new[]
-        {
-            BookingStatus.Pending,
-            BookingStatus.Confirmed,
+        var blockingStatuses = new[] 
+        { 
+            BookingStatus.Pending, 
+            BookingStatus.Confirmed, 
             BookingStatus.Deposited,
-            BookingStatus.InProgress
+            BookingStatus.InProgress 
         };
-
+        
         // Overlap formula: (StartA < EndB) && (EndA > StartB)
-        bool overlap = await _context.Bookings.AnyAsync(b =>
+        bool overlap = await _context.Bookings.AnyAsync(b => 
             b.AssignedVehicleId == vehicleId &&
             blockingStatuses.Contains(b.Status) &&
             b.StartAt < end && b.EndAt > start &&
             (!excludeBookingId.HasValue || b.BookingId != excludeBookingId.Value)
         );
-
+        
         return !overlap;
     }
-    
-    public async Task<List<BranchDto>> GetAllBranches()
+
+    public async Task<List<Models.DTOs.Operations.BranchDto>> GetAllBranches()
     {
-        List<BranchDto> branches = new List<BranchDto>();
-        branches = await _context.Branches
-            .Select(b => new BranchDto
+        return await _context.Branches
+            .Select(b => new Models.DTOs.Operations.BranchDto
             {
                 BranchId = b.BranchId,
                 Name = b.Name,
-                Address = b.Address
+                Address = b.Address,
+                PhoneContact = b.PhoneContact,
+                StaffCount = b.StaffProfiles.Count,
+                VehicleCount = b.Vehicles.Count
             })
             .ToListAsync();
-
-        return branches;
     }
 }

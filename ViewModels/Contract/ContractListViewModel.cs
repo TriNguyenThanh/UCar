@@ -61,15 +61,12 @@ public class ContractListViewModel
     private string GetStatusDisplay() => Status switch
     {
         RentalContractStatus.Draft => "Bản nháp",
-        RentalContractStatus.Pending => "Chờ ký",
-        RentalContractStatus.Signed => "Đã ký",
+        RentalContractStatus.PendingSigning => "Chờ ký",
         RentalContractStatus.Active => "Đang hoạt động",
-        RentalContractStatus.AwaitingDelivery => "Chờ giao xe",
         RentalContractStatus.InProgress => "Đang thuê",
-        RentalContractStatus.AwaitingReturn => "Chờ trả xe",
         RentalContractStatus.PendingSettlement => "Chờ quyết toán",
         RentalContractStatus.Completed => "Hoàn tất",
-        RentalContractStatus.Violation => "Vi phạm",
+        RentalContractStatus.Disputed => "Tranh chấp",
         RentalContractStatus.Cancelled => "Đã hủy",
         _ => "Không xác định"
     };
@@ -77,15 +74,12 @@ public class ContractListViewModel
     private string GetStatusClass() => Status switch
     {
         RentalContractStatus.Draft => "chip",
-        RentalContractStatus.Pending => "chip chip-warning",
-        RentalContractStatus.Signed => "chip chip-info",
+        RentalContractStatus.PendingSigning => "chip chip-warning",
         RentalContractStatus.Active => "chip chip-primary",
-        RentalContractStatus.AwaitingDelivery => "chip chip-info",
         RentalContractStatus.InProgress => "chip chip-success",
-        RentalContractStatus.AwaitingReturn => "chip chip-warning",
         RentalContractStatus.PendingSettlement => "chip chip-warning",
         RentalContractStatus.Completed => "chip chip-success",
-        RentalContractStatus.Violation => "chip chip-error",
+        RentalContractStatus.Disputed => "chip chip-error",
         RentalContractStatus.Cancelled => "chip chip-error",
         _ => "chip"
     };
