@@ -206,6 +206,16 @@ public class HandoverController : Controller
     #region Incidents (D13)
 
     /// <summary>
+    /// Danh sách tất cả sự cố
+    /// GET: /Handover/AllIncidents
+    /// </summary>
+    public async Task<IActionResult> AllIncidents()
+    {
+        var incidents = await _handoverService.GetAllIncidentsAsync();
+        return View(incidents);
+    }
+
+    /// <summary>
     /// Danh sách sự cố của hợp đồng
     /// GET: /Handover/Incidents/{contractId}
     /// </summary>
@@ -234,8 +244,18 @@ public class HandoverController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateIncident(IncidentCreateDto dto)
     {
+        // Validate IncidentType
+        if (!dto.IncidentType.HasValue)
+        {
+            ModelState.AddModelError("IncidentType", "Vui lòng chọn loại sự cố");
+        }
+
         if (!ModelState.IsValid)
+        {
+            // Giữ lại ContractId để view có thể sử dụng
+            ViewBag.ContractId = dto.ContractId;
             return View(dto);
+        }
 
         var userId = GetCurrentUserId();
         var result = await _handoverService.CreateIncidentAsync(dto, userId);
@@ -243,6 +263,7 @@ public class HandoverController : Controller
         if (!result.Success)
         {
             TempData["ErrorMessage"] = result.Errors.First();
+            ViewBag.ContractId = dto.ContractId;
             return View(dto);
         }
 
@@ -284,7 +305,10 @@ public class HandoverController : Controller
     public async Task<IActionResult> CreateViolation(ViolationCreateDto dto)
     {
         if (!ModelState.IsValid)
+        {
+            ViewBag.ContractId = dto.ContractId;
             return View(dto);
+        }
 
         var userId = GetCurrentUserId();
         var result = await _handoverService.CreateViolationAsync(dto, userId);
@@ -292,6 +316,7 @@ public class HandoverController : Controller
         if (!result.Success)
         {
             TempData["ErrorMessage"] = result.Errors.First();
+            ViewBag.ContractId = dto.ContractId;
             return View(dto);
         }
 

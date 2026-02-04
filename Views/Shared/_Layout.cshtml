@@ -112,7 +112,7 @@
                             </a>
                         </li>
                         
-                        <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons left">event</i>Đặt xe</a></li>
+                        @* <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons left">event</i>Đặt xe</a></li> *@
                     }
 
                     @* TODO: Implement ReportsController
@@ -182,6 +182,8 @@
         <li class="divider"></li>
         <li><a asp-controller="Handover" asp-action="Overdue"><i class="material-icons">warning</i>Quá hạn</a></li>
         <li><a asp-controller="Handover" asp-action="Documents"><i class="material-icons">description</i>Biên bản</a>
+        </li>
+        <li><a asp-controller="Handover" asp-action="AllIncidents"><i class="material-icons">report_problem</i>Sự cố</a>
         </li>
     </ul>
     
@@ -374,7 +376,7 @@
                     </ul>
                 </li>
                 
-                <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons">event</i>Đặt xe</a></li>
+                @* <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons">event</i>Đặt xe</a></li> *@
             }
 
             @* TODO: Implement ReportsController
@@ -430,6 +432,25 @@
 
     <!-- Initialize Materialize Components -->
     <script>
+        // ===== GLOBAL CONFIG cho Materialize Components =====
+        window.UCarConfig = {
+            datepickerI18n: {
+                cancel: 'Hủy',
+                clear: 'Xóa',
+                done: 'Chọn',
+                months: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+                monthsShort: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'],
+                weekdays: ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'],
+                weekdaysShort: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+                weekdaysAbbrev: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+            },
+            timepickerI18n: {
+                cancel: 'Hủy',
+                clear: 'Xóa',
+                done: 'Chọn'
+            }
+        };
+        
         document.addEventListener('DOMContentLoaded', function () {
             // Initialize sidenav
             var sidenavElems = document.querySelectorAll('.sidenav');
@@ -454,27 +475,14 @@
             var dateElems = document.querySelectorAll('.datepicker');
             M.Datepicker.init(dateElems, {
                 format: 'dd/mm/yyyy',
-                i18n: {
-                    cancel: 'Hủy',
-                    clear: 'Xóa',
-                    done: 'Chọn',
-                    months: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
-                    monthsShort: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'],
-                    weekdays: ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'],
-                    weekdaysShort: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
-                    weekdaysAbbrev: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
-                }
+                i18n: UCarConfig.datepickerI18n
             });
 
             // Initialize timepickers
             var timeElems = document.querySelectorAll('.timepicker');
             M.Timepicker.init(timeElems, {
                 twelveHour: false,
-                i18n: {
-                    cancel: 'Hủy',
-                    clear: 'Xóa',
-                    done: 'Chọn'
-                }
+                i18n: UCarConfig.timepickerI18n
             });
 
             // Initialize tooltips

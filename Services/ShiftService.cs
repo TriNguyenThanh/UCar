@@ -37,13 +37,15 @@ public class ShiftService : IShiftService
 
     public async Task<IEnumerable<ShiftDto>> GetShiftsAsync(Guid? branchId = null)
     {
-        var query = _context.Shifts.Include(s => s.Branch).AsQueryable();
+        var query = _context.Shifts.Include(s => s.Branch).Where(s => s.IsActive).AsQueryable();
 
         if (branchId.HasValue)
             query = query.Where(s => s.BranchId == null || s.BranchId == branchId.Value);
+        // When branchId is null, return all shifts (no additional filter)
 
         return await query
-            .OrderBy(s => s.StartTime)
+            .OrderBy(s => s.Branch != null ? s.Branch.Name : "")
+            .ThenBy(s => s.StartTime)
             .Select(s => new ShiftDto
             {
                 ShiftId = s.ShiftId,
@@ -157,6 +159,7 @@ public class ShiftService : IShiftService
         var query = _context.ShiftAssignments
             .Include(sa => sa.Shift)
             .Include(sa => sa.Staff)
+                .ThenInclude(s => s.Branch)
             .AsQueryable();
 
         if (filter.BranchId.HasValue)
@@ -184,6 +187,7 @@ public class ShiftService : IShiftService
                 StaffId = sa.StaffId,
                 StaffName = sa.Staff.FullName,
                 StaffCode = sa.Staff.StaffCode,
+                BranchName = sa.Staff.Branch != null ? sa.Staff.Branch.Name : "",
                 WorkDate = sa.WorkDate,
                 Notes = sa.Notes
             })
@@ -194,6 +198,7 @@ public class ShiftService : IShiftService
     {
         var assignments = await GetScheduleAsync(filter);
         var events = new List<CalendarEventDto>();
+        var showBranchName = !filter.BranchId.HasValue; // Show branch name when viewing all branches
 
         // Get distinct shifts for color mapping
         var shiftIds = assignments.Select(a => a.ShiftId).Distinct().ToList();
@@ -209,10 +214,15 @@ public class ShiftService : IShiftService
             if (a.EndTime < a.StartTime)
                 endDateTime = endDateTime.AddDays(1);
 
+            // Format title with branch name if viewing all branches
+            var title = showBranchName && !string.IsNullOrEmpty(a.BranchName)
+                ? $"{a.StaffName} ({a.BranchName}) - {a.ShiftName}"
+                : $"{a.StaffName} - {a.ShiftName}";
+
             events.Add(new CalendarEventDto
             {
                 Id = a.AssignmentId.ToString(),
-                Title = $"{a.StaffName} - {a.ShiftName}",
+                Title = title,
                 Start = startDateTime.ToString("yyyy-MM-ddTHH:mm:ss"),
                 End = endDateTime.ToString("yyyy-MM-ddTHH:mm:ss"),
                 BackgroundColor = colorMap.GetValueOrDefault(a.ShiftId, "#2196F3"),
@@ -223,6 +233,7 @@ public class ShiftService : IShiftService
                     staffId = a.StaffId,
                     staffCode = a.StaffCode,
                     shiftId = a.ShiftId,
+                    branchName = a.BranchName,
                     notes = a.Notes
                 }
             });

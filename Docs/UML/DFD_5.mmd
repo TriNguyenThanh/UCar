@@ -1,22 +1,14 @@
 flowchart LR
-  classDef ext fill:#fff,stroke:#111,stroke-width:1px;
-  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px;
-  classDef store fill:#f3fff3,stroke:#1f7a1f,stroke-width:1.2px;
-  classDef internal fill:#fff,stroke:#555,stroke-width:1px,stroke-dasharray: 4 3;
+  classDef ext fill:#DEFFF8,stroke:#46EDC8,stroke-width:1px,color:#0b5b4a;
+  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px,color:#1f1f6b;
+  classDef store fill:#FFF3BF,stroke:#F2C94C,stroke-width:1.2px,color:#6b5200;
 
   KH[Khách hàng]:::ext
   CA[Cơ quan công an / CSGT]:::ext
 
-  P4i[[4.0 Quản lý đặt xe]]:::internal
-  P1i[[1.0 Quản lý khách hàng]]:::internal
-  P3i[[3.0 Quản lý bảng giá và chính sách]]:::internal
-  P6i[[6.0 Quản lý giao nhận xe]]:::internal
-  P7i[[7.0 Quản lý thanh toán và hóa đơn]]:::internal
-  P9i[[9.0 Lập báo cáo và phân tích]]:::internal
-  P10i[[10.0 Quản trị hệ thống và tuân thủ]]:::internal
 
-  D6[(D6 Hồ sơ hợp đồng thuê)]:::store
-  D13[(D13 Hồ sơ sự cố và vi phạm)]:::store
+  D6[(Hồ sơ hợp đồng thuê)]:::store
+  D13[(Hồ sơ sự cố và vi phạm)]:::store
 
   P51((5.1 Tạo và quản lý hợp đồng thuê)):::proc
   P52((5.2 Quản lý điều khoản và phụ lục)):::proc
@@ -25,21 +17,13 @@ flowchart LR
 
   KH -->|Yêu cầu thay đổi hợp đồng| P53
   CA -->|Thông tin vụ việc| P54
-  P7i -->|Trạng thái thanh toán| P51
 
-  P4i -->|Thông tin đặt xe| P51
-  P1i -->|Thông tin khách hàng| P51
-  P3i -->|Điều khoản và chính sách thuê| P52
-  P10i -->|Mẫu hợp đồng| P51
 
-  P51 <--> |Hồ sơ hợp đồng thuê| D6
-  P52 <--> |Hồ sơ hợp đồng thuê| D6
-  P53 <--> |Hồ sơ hợp đồng thuê| D6
+  P51 <--> D6
+  P52 <--> D6
+  P53 <--> D6
 
-  P54 <--> |Hồ sơ sự cố và vi phạm| D13
+  P54 <--> D13
 
   P51 -->|Hợp đồng thuê xe| KH
   P51 -->|Hợp đồng thuê xe| CA
-  P51 -->|Thông tin hợp đồng| P6i
-  P51 -->|Thông tin thanh toán| P7i
-  P54 -->|Dữ liệu hợp đồng| P9i

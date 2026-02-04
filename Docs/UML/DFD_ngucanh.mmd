@@ -4,7 +4,6 @@ flowchart LR
 
   KH[Khách hàng]:::ext
   NH[Ngân hàng / Cổng thanh toán]:::ext
-  GPS[Hệ thống GPS / Telematics]:::ext
   VETC[Hệ thống thu phí tự động VETC/ePass]:::ext
   CA[Cơ quan công an / CSGT]:::ext
 
@@ -12,31 +11,28 @@ flowchart LR
 
   KH -->|Thông tin đăng ký| P0
   KH -->|Giấy tờ định danh| P0
-  KH -->|Yêu cầu đặt xe| P0
-  KH -->|Yêu cầu điều chỉnh đặt xe| P0
-  KH -->|Yêu cầu thay đổi hợp đồng| P0
-  KH -->|Yêu cầu nhận xe| P0
-  KH -->|Yêu cầu trả xe| P0
+  KH -->|Thông tin yêu cầu đặt xe| P0
+  KH -->|Thông tin điều chỉnh đặt xe| P0
+  KH -->|Thông tin thay đổi hợp đồng| P0
+  KH -->|Thông tin nhận xe| P0
+  KH -->|Thông tin trả xe| P0
   KH -->|Thông báo sự cố| P0
   KH -->|Thông tin thanh toán| P0
 
-  P0 -->|Xác nhận khách hàng| KH
-  P0 -->|Báo giá thuê xe| KH
-  P0 -->|Xác nhận đặt xe| KH
+  P0 -->|Thông tin xác nhận khách hàng| KH
+  P0 -->|Thông tin báo giá thuê xe| KH
+  P0 -->|Thông tin xác nhận đặt xe| KH
   P0 -->|Hợp đồng thuê xe| KH
   P0 -->|Biên bản giao nhận| KH
   P0 -->|Hóa đơn biên nhận| KH
 
-  P0 -->|Yêu cầu giao dịch| NH
+  P0 -->| Thông tin yêu cầu giao dịch| NH
   NH -->|Kết quả giao dịch| P0
 
-  P0 -->|Yêu cầu định vị| GPS
-  GPS -->|Dữ liệu hành trình| P0
-
-  P0 -->|Yêu cầu tra soát phí cầu đường| VETC
+  P0 -->|Thông tin yêu cầu tra soát phí cầu đường| VETC
   VETC -->|Dữ liệu phí cầu đường| P0
 
-  CA -->|Yêu cầu cung cấp thông tin người điều khiển| P0
+  CA -->|Yêu cầu thông tin người điều khiển| P0
   CA -->|Biên bản tạm giữ phương tiện| P0
   CA -->|Thông tin vụ việc| P0
   CA -->|Quyết định xử phạt| P0

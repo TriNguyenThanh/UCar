@@ -1,0 +1,342 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36" version="29.3.6">
+  <diagram id="UCar_Ultimate_ERD" name="UCar Ultimate ERD">
+    <mxGraphModel dx="1737" dy="993" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2000" pageHeight="2000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Ent_Roles" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="Roles" vertex="1">
+          <mxGeometry height="60" width="120" x="100" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Att_R_1" parent="1" style="ellipse;whiteSpace=wrap;html=1;fontStyle=4;" value="RoleId" vertex="1">
+          <mxGeometry height="40" width="90" x="20" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="Att_R_2" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="RoleName" vertex="1">
+          <mxGeometry height="40" width="90" x="130" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Lnk_R1" edge="1" parent="1" source="Ent_Roles" style="endArrow=none;html=1;" target="Att_R_1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Lnk_R2" edge="1" parent="1" source="Ent_Roles" style="endArrow=none;html=1;" target="Att_R_2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_Users" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="UserAccounts" vertex="1">
+          <mxGeometry height="60" width="120" x="450" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_User_Role" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Has" vertex="1">
+          <mxGeometry height="60" width="80" x="290" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_UR_1" edge="1" parent="1" source="Ent_Roles" style="endArrow=none;html=1;" target="Rel_User_Role" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_UR_N" edge="1" parent="1" source="Rel_User_Role" style="endArrow=none;html=1;" target="Ent_Users" value="N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Att_U_1" parent="1" style="ellipse;whiteSpace=wrap;html=1;fontStyle=4;" value="UserId" vertex="1">
+          <mxGeometry height="40" width="90" x="400" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Att_U_2" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="Email/Pwd" vertex="1">
+          <mxGeometry height="40" width="90" x="510" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Lnk_U1" edge="1" parent="1" source="Ent_Users" style="endArrow=none;html=1;" target="Att_U_1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Lnk_U2" edge="1" parent="1" source="Ent_Users" style="endArrow=none;html=1;" target="Att_U_2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_Staff" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;fillColor=#d5e8d4;strokeColor=#82b366;" value="StaffProfiles" vertex="1">
+          <mxGeometry height="60" width="120" x="750" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_IsStaff" parent="1" style="rhombus;whiteSpace=wrap;html=1;fontSize=11;" value="IsA" vertex="1">
+          <mxGeometry height="40" width="60" x="630" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_US" edge="1" parent="1" source="Ent_Users" style="endArrow=none;html=1;" target="Rel_IsStaff">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_SU" edge="1" parent="1" source="Rel_IsStaff" style="endArrow=none;html=1;" target="Ent_Staff">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_Shifts" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;fillColor=#d5e8d4;strokeColor=#82b366;" value="Shifts" vertex="1">
+          <mxGeometry height="60" width="120" x="750" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_Works" parent="1" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Works" vertex="1">
+          <mxGeometry height="60" width="80" x="770" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_SW_1" edge="1" parent="1" source="Ent_Staff" style="endArrow=none;html=1;" target="Rel_Works" value="N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_SW_2" edge="1" parent="1" source="Rel_Works" style="endArrow=none;html=1;" target="Ent_Shifts" value="N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Att_Works_Date" parent="1" style="ellipse;whiteSpace=wrap;html=1;dashed=1;" value="Date" vertex="1">
+          <mxGeometry height="40" width="70" x="850" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="Lnk_W1" edge="1" parent="1" source="Rel_Works" style="endArrow=none;html=1;" target="Att_Works_Date">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_Customers" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;fillColor=#d5e8d4;strokeColor=#82b366;" value="Customers" vertex="1">
+          <mxGeometry height="60" width="120" x="450" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_IsCust" parent="1" style="rhombus;whiteSpace=wrap;html=1;fontSize=11;" value="IsA" vertex="1">
+          <mxGeometry height="40" width="60" x="480" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_UC" edge="1" parent="1" source="Ent_Users" style="endArrow=none;html=1;" target="Rel_IsCust">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_CU" edge="1" parent="1" source="Rel_IsCust" style="endArrow=none;html=1;" target="Ent_Customers">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_CustDocs" parent="1" style="shape=ext;double=1;rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;fillColor=#fff2cc;strokeColor=#d6b656;" value="CustomerDocs" vertex="1">
+          <mxGeometry height="60" width="120" x="180" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_HasDocs" parent="1" style="shape=rhombus;double=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="Provides" vertex="1">
+          <mxGeometry height="50" width="80" x="340" y="305" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_CD_1" edge="1" parent="1" source="Ent_Customers" style="endArrow=none;html=1;" target="Rel_HasDocs" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_CD_2" edge="1" parent="1" source="Rel_HasDocs" style="endArrow=none;html=1;" target="Ent_CustDocs" value="N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_Branches" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;" value="Branches" vertex="1">
+          <mxGeometry height="60" width="120" x="1000" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_WorksAt" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="WorksAt" vertex="1">
+          <mxGeometry height="60" width="70" x="900" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_SBr" edge="1" parent="1" source="Ent_Staff" style="endArrow=none;html=1;" target="Rel_WorksAt" value="N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_BrS" edge="1" parent="1" source="Rel_WorksAt" style="endArrow=none;html=1;" target="Ent_Branches" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_Vehicles" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;fillColor=#e1d5e7;strokeColor=#9673a6;" value="Vehicles" vertex="1">
+          <mxGeometry height="60" width="120" x="1000" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_Owns" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Owns" vertex="1">
+          <mxGeometry height="60" width="70" x="1025" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_BO" edge="1" parent="1" source="Ent_Branches" style="endArrow=none;html=1;" target="Rel_Owns" value="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_VO" edge="1" parent="1" source="Rel_Owns" style="endArrow=none;html=1;" target="Ent_Vehicles" value="N">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_Models" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;" value="VehicleModels" vertex="1">
+          <mxGeometry height="60" width="120" x="1250" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_IsModel" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="IsA" vertex="1">
+          <mxGeometry height="50" width="70" x="1150" y="305" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_VMod" edge="1" parent="1" source="Ent_Vehicles" style="endArrow=none;html=1;" target="Rel_IsModel">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_ModV" edge="1" parent="1" source="Rel_IsModel" style="endArrow=none;html=1;" target="Ent_Models">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_Types" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;" value="VehicleTypes" vertex="1">
+          <mxGeometry height="60" width="120" x="1500" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_IsType" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Type" vertex="1">
+          <mxGeometry height="50" width="70" x="1400" y="305" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_ModTyp" edge="1" parent="1" source="Ent_Models" style="endArrow=none;html=1;" target="Rel_IsType">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_TypMod" edge="1" parent="1" source="Rel_IsType" style="endArrow=none;html=1;" target="Ent_Types">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_Maint" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;" value="Maintenance" vertex="1">
+          <mxGeometry height="60" width="120" x="1000" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_Maintains" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Maintains" vertex="1">
+          <mxGeometry height="50" width="70" x="1025" y="380" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_VM" edge="1" parent="1" source="Ent_Vehicles" style="endArrow=none;html=1;" target="Rel_Maintains">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_MV" edge="1" parent="1" source="Rel_Maintains" style="endArrow=none;html=1;" target="Ent_Maint">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_SurPol" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;" value="SurchargePolicies" vertex="1">
+          <mxGeometry height="40" width="120" x="1500" y="450" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_Applies" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Applies" vertex="1">
+          <mxGeometry height="40" width="70" x="1525" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Pol" edge="1" parent="1" source="Ent_Types" style="endArrow=none;html=1;" target="Rel_Applies">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Pol2" edge="1" parent="1" source="Rel_Applies" style="endArrow=none;html=1;" target="Ent_SurPol">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_DepPol" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;" value="DepositPolicies" vertex="1">
+          <mxGeometry height="40" width="120" x="1650" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_HolConf" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;" value="HolidayConfigs" vertex="1">
+          <mxGeometry height="40" width="120" x="1650" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_Bookings" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;fillColor=#f8cecc;strokeColor=#b85450;" value="Bookings" vertex="1">
+          <mxGeometry height="60" width="120" x="450" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_Requests" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Requests" vertex="1">
+          <mxGeometry height="60" width="70" x="475" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_CB" edge="1" parent="1" source="Ent_Customers" style="endArrow=none;html=1;" target="Rel_Requests">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_BC" edge="1" parent="1" source="Rel_Requests" style="endArrow=none;html=1;" target="Ent_Bookings">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_Contracts" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;fillColor=#f8cecc;strokeColor=#b85450;" value="RentalContracts" vertex="1">
+          <mxGeometry height="70" width="130" x="750" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_Gen" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Generates" vertex="1">
+          <mxGeometry height="60" width="80" x="620" y="505" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_BCon" edge="1" parent="1" source="Ent_Bookings" style="endArrow=none;html=1;" target="Rel_Gen">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_ConB" edge="1" parent="1" source="Rel_Gen" style="endArrow=none;html=1;" target="Ent_Contracts">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_Inv" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Involved" vertex="1">
+          <mxGeometry height="60" width="70" x="900" y="490" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_VCon" edge="1" parent="1" source="Ent_Vehicles" style="endArrow=none;html=1;entryX=0.5;entryY=1;" target="Rel_Inv">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1060" y="520" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Conn_ConV" edge="1" parent="1" source="Rel_Inv" style="endArrow=none;html=1;" target="Ent_Contracts">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_Collat" parent="1" style="shape=ext;double=1;rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;" value="CollateralItems" vertex="1">
+          <mxGeometry height="40" width="120" x="755" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_HasCol" parent="1" style="shape=rhombus;double=1;whiteSpace=wrap;html=1;" value="Has" vertex="1">
+          <mxGeometry height="40" width="70" x="780" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Col" edge="1" parent="1" source="Ent_Contracts" style="endArrow=none;html=1;" target="Rel_HasCol">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Col2" edge="1" parent="1" source="Rel_HasCol" style="endArrow=none;html=1;" target="Ent_Collat">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_Charges" parent="1" style="shape=ext;double=1;rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;" value="ExtraCharges" vertex="1">
+          <mxGeometry height="40" width="120" x="900" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_HasChar" parent="1" style="shape=rhombus;double=1;whiteSpace=wrap;html=1;" value="Has" vertex="1">
+          <mxGeometry height="40" width="60" x="880" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Char" edge="1" parent="1" source="Ent_Contracts" style="endArrow=none;html=1;" target="Rel_HasChar">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Char2" edge="1" parent="1" source="Rel_HasChar" style="endArrow=none;html=1;" target="Ent_Charges">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_Viol" parent="1" style="shape=ext;double=1;rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;" value="Violations" vertex="1">
+          <mxGeometry height="40" width="120" x="610" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_HasViol" parent="1" style="shape=rhombus;double=1;whiteSpace=wrap;html=1;" value="Has" vertex="1">
+          <mxGeometry height="40" width="60" x="690" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Viol" edge="1" parent="1" source="Ent_Contracts" style="endArrow=none;html=1;" target="Rel_HasViol">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Viol2" edge="1" parent="1" source="Rel_HasViol" style="endArrow=none;html=1;" target="Ent_Viol">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_HO" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;" value="HandoverRecords" vertex="1">
+          <mxGeometry height="60" width="130" x="100" y="505" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_Starts" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Starts" vertex="1">
+          <mxGeometry height="60" width="80" x="270" y="505" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_HO" edge="1" parent="1" source="Ent_Bookings" style="endArrow=none;html=1;" target="Rel_Starts">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_HO2" edge="1" parent="1" source="Rel_Starts" style="endArrow=none;html=1;" target="Ent_HO">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_HOAcc" parent="1" style="shape=ext;double=1;rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;" value="Accessories" vertex="1">
+          <mxGeometry height="40" width="120" x="105" y="620" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_HasAcc" parent="1" style="shape=rhombus;double=1;whiteSpace=wrap;html=1;" value="Check" vertex="1">
+          <mxGeometry height="40" width="70" x="130" y="575" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Acc" edge="1" parent="1" source="Ent_HO" style="endArrow=none;html=1;" target="Rel_HasAcc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Acc2" edge="1" parent="1" source="Rel_HasAcc" style="endArrow=none;html=1;" target="Ent_HOAcc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_Ret" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;" value="ReturnRecords" vertex="1">
+          <mxGeometry height="60" width="120" x="450" y="700" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_Ends" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Ends" vertex="1">
+          <mxGeometry height="60" width="70" x="600" y="630" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Ret" edge="1" parent="1" source="Ent_Contracts" style="endArrow=none;html=1;" target="Rel_Ends">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Ret2" edge="1" parent="1" source="Rel_Ends" style="endArrow=none;html=1;" target="Ent_Ret">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_Pay" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;" value="Transactions" vertex="1">
+          <mxGeometry height="60" width="120" x="450" y="800" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_Pays" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Incurs" vertex="1">
+          <mxGeometry height="40" width="70" x="475" y="760" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Pay" edge="1" parent="1" source="Ent_Contracts" style="endArrow=none;html=1;" target="Rel_Pays">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="800" y="780" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Conn_Pay2" edge="1" parent="1" source="Rel_Pays" style="endArrow=none;html=1;" target="Ent_Pay">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_Inc" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=14;fillColor=#f8cecc;strokeColor=#b85450;" value="Incidents" vertex="1">
+          <mxGeometry height="60" width="120" x="1250" y="510" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_HasInc" parent="1" style="rhombus;whiteSpace=wrap;html=1;" value="Has" vertex="1">
+          <mxGeometry height="50" width="70" x="1150" y="515" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Inc" edge="1" parent="1" source="Ent_Contracts" style="endArrow=none;html=1;" target="Rel_HasInc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Inc2" edge="1" parent="1" source="Rel_HasInc" style="endArrow=none;html=1;" target="Ent_Inc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_IncCost" parent="1" style="shape=ext;double=1;rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;" value="Costs" vertex="1">
+          <mxGeometry height="40" width="80" x="1200" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_IncDoc" parent="1" style="shape=ext;double=1;rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;" value="Docs" vertex="1">
+          <mxGeometry height="40" width="80" x="1300" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="Ent_IncFine" parent="1" style="shape=ext;double=1;rounded=0;whiteSpace=wrap;html=1;fontStyle=1;fontSize=12;" value="Fines" vertex="1">
+          <mxGeometry height="40" width="80" x="1400" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="Rel_IncDet" parent="1" style="shape=rhombus;double=1;whiteSpace=wrap;html=1;" value="Detail" vertex="1">
+          <mxGeometry height="40" width="70" x="1275" y="590" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Det1" edge="1" parent="1" source="Ent_Inc" style="endArrow=none;html=1;" target="Rel_IncDet">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Det2" edge="1" parent="1" source="Rel_IncDet" style="endArrow=none;html=1;" target="Ent_IncCost">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Det3" edge="1" parent="1" source="Rel_IncDet" style="endArrow=none;html=1;" target="Ent_IncDoc">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Conn_Det4" edge="1" parent="1" source="Rel_IncDet" style="endArrow=none;html=1;" target="Ent_IncFine">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

@@ -1,39 +1,27 @@
 flowchart LR
-  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px;
-  classDef store fill:#f3fff3,stroke:#1f7a1f,stroke-width:1.2px;
-  classDef internal fill:#fff,stroke:#555,stroke-width:1px,stroke-dasharray: 4 3;
+  classDef ext fill:#DEFFF8,stroke:#46EDC8,stroke-width:1px,color:#0b5b4a;
+  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px,color:#1f1f6b;
+  classDef store fill:#FFF3BF,stroke:#F2C94C,stroke-width:1.2px,color:#6b5200;
 
-  P1i[[1.0 Quản lý khách hàng]]:::internal
-  P2i[[2.0 Quản lý xe]]:::internal
-  P3i[[3.0 Quản lý bảng giá và chính sách]]:::internal
-  P4i[[4.0 Quản lý đặt xe]]:::internal
-  P5i[[5.0 Quản lý hợp đồng thuê]]:::internal
-  P6i[[6.0 Quản lý giao nhận xe]]:::internal
-  P7i[[7.0 Quản lý thanh toán và hóa đơn]]:::internal
-  P8i[[8.0 Quản lý vận hành và nhân sự]]:::internal
-  P10i[[10.0 Quản trị hệ thống và tuân thủ]]:::internal
+  BQT[Ban quản trị]:::ext
 
-  D10[(D10 Dữ liệu báo cáo)]:::store
+
+  D10[(Dữ liệu báo cáo)]:::store
 
   P91((9.1 Lập báo cáo doanh thu lợi nhuận và chi phí)):::proc
   P92((9.2 Lập báo cáo tỷ lệ sử dụng xe)):::proc
   P93((9.3 Lập báo cáo khách hàng)):::proc
 
-  P1i -->|Dữ liệu khách hàng| P93
-  P2i -->|Dữ liệu xe| P92
-  P3i -->|Dữ liệu chính sách| P91
-  P4i -->|Dữ liệu đặt xe| P92
-  P5i -->|Dữ liệu hợp đồng| P91
-  P6i -->|Dữ liệu giao nhận| P92
-  P7i -->|Dữ liệu doanh thu| P91
-  P8i -->|Dữ liệu nhân sự| P91
 
-  P91 <--> |Dữ liệu báo cáo| D10
-  P92 <--> |Dữ liệu báo cáo| D10
-  P93 <--> |Dữ liệu báo cáo| D10
+  P91 <--> D10
+  P92 <--> D10
+  P93 <--> D10
 
-  P91 -->|Báo cáo quản trị| P8i
-  P92 -->|Báo cáo quản trị| P8i
-  P93 -->|Báo cáo quản trị| P8i
+  BQT -->|Thông tin yêu cầu báo cáo doanh thu lợi nhuận và chi phí| P91
+  P91 -->|Dữ liệu báo cáo doanh thu lợi nhuận và chi phí| BQT
 
-  P91 -->|Báo cáo tuân thủ| P10i
+  BQT -->|Thông tin yêu cầu báo cáo tỷ lệ sử dụng xe| P92
+  P92 -->|Dữ liệu báo cáo tỷ lệ sử dụng xe| BQT
+
+  BQT -->|Thông tin yêu cầu báo cáo khách hàng| P93
+  P93 -->|Dữ liệu báo cáo khách hàng| BQT

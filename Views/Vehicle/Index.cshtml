@@ -147,14 +147,28 @@
                             <tr>
                                 <td><strong>@vehicle.PlateNo</strong></td>
                                 <td>
-                                    <div>
-                                        <strong>@vehicle.Make @vehicle.ModelName</strong>
-                                        <br>
-                                        <small class="grey-text">
-                                            @vehicle.Seats chỗ •
-                                            @(vehicle.Transmission == TransmissionType.Auto ? "Tự động" : "Số sàn") •
-                                            @(vehicle.FuelType ?? "N/A")
-                                        </small>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        @if (!string.IsNullOrEmpty(vehicle.ImageFileName))
+                                        {
+                                            <img src="/images/vehicle-models/@vehicle.ImageFileName" 
+                                                 alt="@vehicle.Make @vehicle.ModelName" 
+                                                 style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px;">
+                                        }
+                                        else
+                                        {
+                                            <img src="https://placehold.co/600x400/e0e0e0/757575?text=No+Image" 
+                                                 alt="No image" 
+                                                 style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px;">
+                                        }
+                                        <div>
+                                            <strong>@vehicle.Make @vehicle.ModelName</strong>
+                                            <br>
+                                            <small class="grey-text">
+                                                @vehicle.Seats chỗ •
+                                                @(vehicle.Transmission == TransmissionType.Auto ? "Tự động" : "Số sàn") •
+                                                @(vehicle.FuelType ?? "N/A")
+                                            </small>
+                                        </div>
                                     </div>
                                 </td>
                                 <td>@vehicle.VehicleTypeName</td>

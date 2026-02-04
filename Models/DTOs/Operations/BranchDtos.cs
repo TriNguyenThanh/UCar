@@ -12,6 +12,8 @@ public class BranchDto
     public string? PhoneContact { get; set; }
     public int StaffCount { get; set; }
     public int VehicleCount { get; set; }
+    public Guid? ManagerId { get; set; }
+    public string? ManagerName { get; set; }
 }
 
 public class BranchCreateDto

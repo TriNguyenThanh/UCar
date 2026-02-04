@@ -41,6 +41,7 @@ public class VehicleSummary
     public VehicleStatus Status { get; set; }
     public decimal DailyPrice { get; set; }
     public string PlateNo { get; set; } = string.Empty;
+    public string? ImageFileName { get; set; }
 }
 
 public class BookingSummary

@@ -7,6 +7,33 @@
     var branches = ViewBag.Branches as IEnumerable<BranchDto> ?? Enumerable.Empty<BranchDto>();
     var staff = ViewBag.Staff as IEnumerable<StaffListDto> ?? Enumerable.Empty<StaffListDto>();
     var isBranchManager = ViewBag.IsBranchManager as bool? ?? false;
+
+    // Group tasks by status for Kanban
+    var newTasks = Model.Items.Where(t => t.Status == OpTaskStatus.New).ToList();
+    var assignedTasks = Model.Items.Where(t => t.Status == OpTaskStatus.Assigned).ToList();
+    var inProgressTasks = Model.Items.Where(t => t.Status == OpTaskStatus.InProgress).ToList();
+    var completedTasks = Model.Items.Where(t => t.Status == OpTaskStatus.Completed).ToList();
+
+    // Helper functions
+    string GetTypeIcon(TaskType type) => type switch
+    {
+        TaskType.Delivery => "local_shipping",
+        TaskType.Return => "assignment_return",
+        TaskType.Maintenance => "build",
+        TaskType.Rescue => "car_crash",
+        TaskType.Inspection => "fact_check",
+        _ => "task"
+    };
+
+    string GetTypeColor(TaskType type) => type switch
+    {
+        TaskType.Delivery => "#2196F3",
+        TaskType.Return => "#4CAF50",
+        TaskType.Maintenance => "#ff9800",
+        TaskType.Rescue => "#f44336",
+        TaskType.Inspection => "#9C27B0",
+        _ => "#757575"
+    };
 }
 
 <div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
@@ -17,174 +44,493 @@
                 <i class="material-icons green-text" style="vertical-align: middle; margin-right: 8px;">assignment</i>
                 Quản lý nhiệm vụ vận hành
             </h4>
-            <p class="grey-text text-darken-1" style="margin: 0;">DFD 8.2 - Phân công nhân viên giao nhận, bảo dưỡng,
-                cứu hộ</p>
+            <p class="grey-text text-darken-1" style="margin: 0;">DFD 8.2 - Phân công nhân viên giao nhận, bảo dưỡng, cứu hộ</p>
         </div>
         <a asp-action="CreateTask" class="btn waves-effect waves-light green">
             <i class="material-icons left">add</i>Tạo nhiệm vụ
         </a>
     </div>
 
-
+    <!-- Stats Row -->
+    <div class="row">
+        <div class="col s6 m3">
+            <div class="card stats-card" data-border-color="#9e9e9e">
+                <i class="material-icons stats-icon grey-text">fiber_new</i>
+                <div class="stats-value">@newTasks.Count</div>
+                <div class="stats-label">Mới</div>
+            </div>
+        </div>
+        <div class="col s6 m3">
+            <div class="card stats-card" data-border-color="#2196F3">
+                <i class="material-icons stats-icon blue-text">person_add</i>
+                <div class="stats-value">@assignedTasks.Count</div>
+                <div class="stats-label">Đã phân công</div>
+            </div>
+        </div>
+        <div class="col s6 m3">
+            <div class="card stats-card" data-border-color="#ff9800">
+                <i class="material-icons stats-icon orange-text">sync</i>
+                <div class="stats-value">@inProgressTasks.Count</div>
+                <div class="stats-label">Đang thực hiện</div>
+            </div>
+        </div>
+        <div class="col s6 m3">
+            <div class="card stats-card" data-border-color="#4CAF50">
+                <i class="material-icons stats-icon green-text">check_circle</i>
+                <div class="stats-value">@completedTasks.Count</div>
+                <div class="stats-label">Hoàn thành</div>
+            </div>
+        </div>
+    </div>
 
     <!-- Filter -->
     <div class="card">
-        <div class="card-content">
-            <form method="get" asp-action="Tasks">
-                <div class="row" style="margin-bottom: 0;">
-                    <div class="input-field col s12 m2">
-                        <select name="TaskType" id="TaskType">
-                            <option value="">Tất cả loại</option>
-                            <option value="@TaskType.Delivery" selected="@(filter.TaskType == TaskType.Delivery)">Giao
-                                xe</option>
-                            <option value="@TaskType.Return" selected="@(filter.TaskType == TaskType.Return)">Nhận xe
-                            </option>
-                            <option value="@TaskType.Maintenance" selected="@(filter.TaskType == TaskType.Maintenance)">
-                                Bảo dưỡng</option>
-                            <option value="@TaskType.Rescue" selected="@(filter.TaskType == TaskType.Rescue)">Cứu hộ
-                            </option>
-                        </select>
-                        <label for="TaskType">Loại</label>
-                    </div>
-                    <div class="input-field col s12 m2">
-                        <select name="Status" id="Status">
-                            <option value="">Tất cả trạng thái</option>
-                            <option value="@OpTaskStatus.New" selected="@(filter.Status == OpTaskStatus.New)">Mới
-                            </option>
-                            <option value="@OpTaskStatus.Assigned" selected="@(filter.Status == OpTaskStatus.Assigned)">
-                                Đã phân công</option>
-                            <option value="@OpTaskStatus.InProgress"
-                                selected="@(filter.Status == OpTaskStatus.InProgress)">Đang thực hiện</option>
-                            <option value="@OpTaskStatus.Completed"
-                                selected="@(filter.Status == OpTaskStatus.Completed)">Hoàn thành</option>
-                        </select>
-                        <label for="Status">Trạng thái</label>
-                    </div>
-                    @if (!isBranchManager)
-                    {
-                    <div class="input-field col s12 m2">
-                        <select name="BranchId" id="BranchId">
-                            <option value="">Tất cả chi nhánh</option>
-                            @foreach (var b in branches)
-                            {
-                                <option value="@b.BranchId" selected="@(filter.BranchId == b.BranchId)">@b.Name</option>
-                            }
-                        </select>
-                        <label for="BranchId">Chi nhánh</label>
-                    </div>
-                    }
-                    <div class="input-field col s12 m3">
-                        <i class="material-icons prefix">date_range</i>
-                        <input type="date" name="DateFrom" id="DateFrom"
-                            value="@filter.DateFrom?.ToString("yyyy-MM-dd")" />
-                        <label for="DateFrom" class="active">Từ ngày</label>
-                    </div>
-                    <div class="col s12 m3" style="padding-top: 1.5rem;">
-                        <button type="submit" class="btn waves-effect waves-light green">
-                            <i class="material-icons left">filter_list</i>Lọc
-                        </button>
-                        <a asp-action="Tasks" class="btn-flat">Xóa</a>
-                    </div>
+        <div class="card-content" style="padding: 1rem 1.5rem;">
+            <form method="get" asp-action="Tasks" style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <div class="input-field" style="margin: 0; min-width: 140px;">
+                    <select name="TaskType" id="TaskType">
+                        <option value="">Tất cả loại</option>
+                        <option value="@TaskType.Delivery" selected="@(filter.TaskType == TaskType.Delivery)">🚚 Giao xe</option>
+                        <option value="@TaskType.Return" selected="@(filter.TaskType == TaskType.Return)">📥 Nhận xe</option>
+                        <option value="@TaskType.Maintenance" selected="@(filter.TaskType == TaskType.Maintenance)">🔧 Bảo dưỡng</option>
+                        <option value="@TaskType.Rescue" selected="@(filter.TaskType == TaskType.Rescue)">🆘 Cứu hộ</option>
+                    </select>
                 </div>
+                @if (!isBranchManager)
+                {
+                <div class="input-field" style="margin: 0; min-width: 150px;">
+                    <select name="BranchId" id="BranchId">
+                        <option value="">Tất cả chi nhánh</option>
+                        @foreach (var b in branches)
+                        {
+                            <option value="@b.BranchId" selected="@(filter.BranchId == b.BranchId)">@b.Name</option>
+                        }
+                    </select>
+                </div>
+                }
+                <div class="input-field" style="margin: 0; min-width: 150px;">
+                    <input type="date" name="DateFrom" id="DateFrom" value="@filter.DateFrom?.ToString("yyyy-MM-dd")" 
+                           placeholder="Từ ngày" style="margin: 0;" />
+                </div>
+                <button type="submit" class="btn waves-effect waves-light green">
+                    <i class="material-icons left">filter_list</i>Lọc
+                </button>
+                <a asp-action="Tasks" class="btn-flat">Xóa bộ lọc</a>
             </form>
         </div>
     </div>
 
-    <!-- Task List -->
-    <div class="card">
-        <div class="card-content" style="padding: 0;">
-            @if (Model.Items.Any())
-            {
-                <table class="striped highlight responsive-table">
-                    <thead>
-                        <tr>
-                            <th>Loại</th>
-                            <th>Tiêu đề</th>
-                            <th>Thời gian</th>
-                            <th>Nhân viên</th>
-                            <th>Trạng thái</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var task in Model.Items)
+    <!-- Kanban Board -->
+    <div class="kanban-board">
+        <!-- Column: New -->
+        <div class="kanban-column">
+            <div class="kanban-column-header" style="background: #f5f5f5; border-top: 3px solid #9e9e9e;">
+                <i class="material-icons grey-text">fiber_new</i>
+                <span>Mới</span>
+                <span class="badge">@newTasks.Count</span>
+            </div>
+            <div class="kanban-column-content">
+                @foreach (var task in newTasks)
+                {
+                    <a asp-action="TaskDetails" asp-route-id="@task.TaskId" class="kanban-card" data-type-color="@GetTypeColor(task.TaskType)">
+                        <div class="kanban-card-header">
+                            <span class="task-type" style="color: @GetTypeColor(task.TaskType);">
+                                <i class="material-icons tiny">@GetTypeIcon(task.TaskType)</i>
+                                @task.TaskTypeName
+                            </span>
+                        </div>
+                        <div class="kanban-card-title">@task.Title</div>
+                        @if (!string.IsNullOrEmpty(task.VehiclePlateNo))
                         {
-                            var statusClass = task.Status switch
-                            {
-                                OpTaskStatus.New => "chip",
-                                OpTaskStatus.Assigned => "chip chip-info",
-                                OpTaskStatus.InProgress => "chip chip-warning",
-                                OpTaskStatus.Completed => "chip chip-success",
-                                OpTaskStatus.Cancelled => "chip",
-                                OpTaskStatus.Failed => "chip chip-error",
-                                _ => "chip"
-                            };
-                            var typeIcon = task.TaskType switch
-                            {
-                                TaskType.Delivery => "local_shipping",
-                                TaskType.Return => "assignment_return",
-                                TaskType.Maintenance => "build",
-                                TaskType.Rescue => "car_crash",
-                                TaskType.Inspection => "fact_check",
-                                _ => "task"
-                            };
-                            <tr>
-                                <td>
-                                    <i class="material-icons tiny">@typeIcon</i>
-                                    @task.TaskTypeName
-                                </td>
-                                <td>
-                                    <strong>@task.Title</strong>
-                                    @if (!string.IsNullOrEmpty(task.VehiclePlateNo))
-                                    {
-                                        <br />
-
-                                        <small class="grey-text">@task.VehiclePlateNo</small>
-                                    }
-                                </td>
-                                <td>
-                                    @task.ScheduledAt.ToString("dd/MM HH:mm")
-                                    @if (!string.IsNullOrEmpty(task.Location))
-                                    {
-                                        <br />
-
-                                        <small class="grey-text"><i class="material-icons tiny">location_on</i>
-                                            @task.Location</small>
-                                    }
-                                </td>
-                                <td>
-                                    @(task.AssignedToStaffName ?? "-")
-                                </td>
-                                <td>
-                                    <span class="@statusClass">@task.StatusName</span>
-                                </td>
-                                <td>
-                                    <a asp-action="TaskDetails" asp-route-id="@task.TaskId"
-                                        class="btn-flat btn-small waves-effect">
-                                        <i class="material-icons">visibility</i>
-                                    </a>
-                                </td>
-                            </tr>
+                            <div class="kanban-card-vehicle">
+                                <i class="material-icons tiny">directions_car</i>
+                                @task.VehiclePlateNo
+                            </div>
                         }
-                    </tbody>
-                </table>
-            }
-            else
-            {
-                <div class="empty-state">
-                    <i class="material-icons">assignment</i>
-                    <h5>Không có nhiệm vụ</h5>
-                    <p>Chưa có nhiệm vụ vận hành nào.</p>
-                </div>
-            }
+                        <div class="kanban-card-footer">
+                            <span><i class="material-icons tiny">schedule</i> @task.ScheduledAt.ToString("dd/MM HH:mm")</span>
+                            @if (!string.IsNullOrEmpty(task.Location))
+                            {
+                                <span title="@task.Location"><i class="material-icons tiny">location_on</i></span>
+                            }
+                        </div>
+                    </a>
+                }
+                @if (!newTasks.Any())
+                {
+                    <div class="kanban-empty">
+                        <i class="material-icons">inbox</i>
+                        <span>Không có nhiệm vụ</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Column: Assigned -->
+        <div class="kanban-column">
+            <div class="kanban-column-header" style="background: #e3f2fd; border-top: 3px solid #2196F3;">
+                <i class="material-icons blue-text">person_add</i>
+                <span>Đã phân công</span>
+                <span class="badge blue">@assignedTasks.Count</span>
+            </div>
+            <div class="kanban-column-content">
+                @foreach (var task in assignedTasks)
+                {
+                    <a asp-action="TaskDetails" asp-route-id="@task.TaskId" class="kanban-card" data-type-color="@GetTypeColor(task.TaskType)">
+                        <div class="kanban-card-header">
+                            <span class="task-type" style="color: @GetTypeColor(task.TaskType);">
+                                <i class="material-icons tiny">@GetTypeIcon(task.TaskType)</i>
+                                @task.TaskTypeName
+                            </span>
+                        </div>
+                        <div class="kanban-card-title">@task.Title</div>
+                        @if (!string.IsNullOrEmpty(task.VehiclePlateNo))
+                        {
+                            <div class="kanban-card-vehicle">
+                                <i class="material-icons tiny">directions_car</i>
+                                @task.VehiclePlateNo
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(task.AssignedToStaffName))
+                        {
+                            <div class="kanban-card-staff">
+                                <div class="staff-avatar">@task.AssignedToStaffName.Substring(0, 1).ToUpper()</div>
+                                <span>@task.AssignedToStaffName</span>
+                            </div>
+                        }
+                        <div class="kanban-card-footer">
+                            <span><i class="material-icons tiny">schedule</i> @task.ScheduledAt.ToString("dd/MM HH:mm")</span>
+                            @if (!string.IsNullOrEmpty(task.Location))
+                            {
+                                <span title="@task.Location"><i class="material-icons tiny">location_on</i></span>
+                            }
+                        </div>
+                    </a>
+                }
+                @if (!assignedTasks.Any())
+                {
+                    <div class="kanban-empty">
+                        <i class="material-icons">inbox</i>
+                        <span>Không có nhiệm vụ</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Column: In Progress -->
+        <div class="kanban-column">
+            <div class="kanban-column-header" style="background: #fff3e0; border-top: 3px solid #ff9800;">
+                <i class="material-icons orange-text">sync</i>
+                <span>Đang thực hiện</span>
+                <span class="badge orange">@inProgressTasks.Count</span>
+            </div>
+            <div class="kanban-column-content">
+                @foreach (var task in inProgressTasks)
+                {
+                    <a asp-action="TaskDetails" asp-route-id="@task.TaskId" class="kanban-card" data-type-color="@GetTypeColor(task.TaskType)">
+                        <div class="kanban-card-header">
+                            <span class="task-type" style="color: @GetTypeColor(task.TaskType);">
+                                <i class="material-icons tiny">@GetTypeIcon(task.TaskType)</i>
+                                @task.TaskTypeName
+                            </span>
+                        </div>
+                        <div class="kanban-card-title">@task.Title</div>
+                        @if (!string.IsNullOrEmpty(task.VehiclePlateNo))
+                        {
+                            <div class="kanban-card-vehicle">
+                                <i class="material-icons tiny">directions_car</i>
+                                @task.VehiclePlateNo
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(task.AssignedToStaffName))
+                        {
+                            <div class="kanban-card-staff">
+                                <div class="staff-avatar">@task.AssignedToStaffName.Substring(0, 1).ToUpper()</div>
+                                <span>@task.AssignedToStaffName</span>
+                            </div>
+                        }
+                        <div class="kanban-card-footer">
+                            <span><i class="material-icons tiny">schedule</i> @task.ScheduledAt.ToString("dd/MM HH:mm")</span>
+                            @if (!string.IsNullOrEmpty(task.Location))
+                            {
+                                <span title="@task.Location"><i class="material-icons tiny">location_on</i></span>
+                            }
+                        </div>
+                    </a>
+                }
+                @if (!inProgressTasks.Any())
+                {
+                    <div class="kanban-empty">
+                        <i class="material-icons">inbox</i>
+                        <span>Không có nhiệm vụ</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Column: Completed -->
+        <div class="kanban-column">
+            <div class="kanban-column-header" style="background: #e8f5e9; border-top: 3px solid #4CAF50;">
+                <i class="material-icons green-text">check_circle</i>
+                <span>Hoàn thành</span>
+                <span class="badge green">@completedTasks.Count</span>
+            </div>
+            <div class="kanban-column-content">
+                @foreach (var task in completedTasks)
+                {
+                    <a asp-action="TaskDetails" asp-route-id="@task.TaskId" class="kanban-card completed" data-type-color="@GetTypeColor(task.TaskType)">
+                        <div class="kanban-card-header">
+                            <span class="task-type" style="color: @GetTypeColor(task.TaskType);">
+                                <i class="material-icons tiny">@GetTypeIcon(task.TaskType)</i>
+                                @task.TaskTypeName
+                            </span>
+                            <i class="material-icons tiny green-text">check</i>
+                        </div>
+                        <div class="kanban-card-title">@task.Title</div>
+                        @if (!string.IsNullOrEmpty(task.VehiclePlateNo))
+                        {
+                            <div class="kanban-card-vehicle">
+                                <i class="material-icons tiny">directions_car</i>
+                                @task.VehiclePlateNo
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(task.AssignedToStaffName))
+                        {
+                            <div class="kanban-card-staff">
+                                <div class="staff-avatar">@task.AssignedToStaffName.Substring(0, 1).ToUpper()</div>
+                                <span>@task.AssignedToStaffName</span>
+                            </div>
+                        }
+                        <div class="kanban-card-footer">
+                            <span><i class="material-icons tiny">schedule</i> @task.ScheduledAt.ToString("dd/MM HH:mm")</span>
+                        </div>
+                    </a>
+                }
+                @if (!completedTasks.Any())
+                {
+                    <div class="kanban-empty">
+                        <i class="material-icons">inbox</i>
+                        <span>Không có nhiệm vụ</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="card" style="margin-top: 1rem;">
+        <div class="card-content" style="padding: 0.75rem 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+                <span class="grey-text" style="font-weight: 500;">Loại nhiệm vụ:</span>
+                <span style="display: flex; align-items: center; gap: 4px;">
+                    <i class="material-icons tiny" style="color: #2196F3;">local_shipping</i> Giao xe
+                </span>
+                <span style="display: flex; align-items: center; gap: 4px;">
+                    <i class="material-icons tiny" style="color: #4CAF50;">assignment_return</i> Nhận xe
+                </span>
+                <span style="display: flex; align-items: center; gap: 4px;">
+                    <i class="material-icons tiny" style="color: #ff9800;">build</i> Bảo dưỡng
+                </span>
+                <span style="display: flex; align-items: center; gap: 4px;">
+                    <i class="material-icons tiny" style="color: #f44336;">car_crash</i> Cứu hộ
+                </span>
+            </div>
         </div>
     </div>
 </div>
 
+@section Styles {
+<style>
+    .kanban-board {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        padding-bottom: 1rem;
+    }
+
+    .kanban-column {
+        flex: 1;
+        min-width: 280px;
+        max-width: 320px;
+        background: #fafafa;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .kanban-column-header {
+        padding: 0.75rem 1rem;
+        border-radius: 8px 8px 0 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+    }
+
+    .kanban-column-header .badge {
+        margin-left: auto;
+        font-size: 0.85rem;
+        padding: 2px 8px;
+        border-radius: 12px;
+        color: white;
+        background: #9e9e9e;
+    }
+
+    .kanban-column-content {
+        padding: 0.75rem;
+        flex: 1;
+        min-height: 400px;
+        max-height: calc(100vh - 400px);
+        overflow-y: auto;
+    }
+
+    .kanban-card {
+        display: block;
+        background: white;
+        border-radius: 8px;
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        transition: all 0.2s ease;
+        text-decoration: none;
+        color: inherit;
+        border: 1px solid var(--card-color, #e0e0e0);
+    }
+
+    .kanban-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+        border-width: 2px;
+        padding: calc(0.75rem - 1px);
+    }
+
+    .kanban-card.completed {
+        opacity: 0.7;
+    }
+
+    .kanban-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+
+    .kanban-card-header .task-type {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+    }
+
+    .kanban-card-title {
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+        color: #333;
+        line-height: 1.3;
+    }
+
+    .kanban-card-vehicle {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+        background: #f5f5f5;
+        padding: 4px 8px;
+        border-radius: 4px;
+        width: fit-content;
+    }
+
+    .kanban-card-staff {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .kanban-card-staff .staff-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #e0e0e0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #666;
+    }
+
+    .kanban-card-staff span {
+        font-size: 0.85rem;
+        color: #666;
+    }
+
+    .kanban-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.8rem;
+        color: #999;
+        padding-top: 0.5rem;
+        border-top: 1px solid #f0f0f0;
+        margin-top: 0.5rem;
+    }
+
+    .kanban-card-footer span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .kanban-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        color: #bdbdbd;
+    }
+
+    .kanban-empty i {
+        font-size: 2.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .kanban-empty span {
+        font-size: 0.9rem;
+    }
+
+    /* Responsive */
+    @@media (max-width: 992px) {
+        .kanban-board {
+            flex-wrap: nowrap;
+        }
+        .kanban-column {
+            min-width: 260px;
+        }
+    }
+</style>
+}
+
 @section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            M.FormSelect.init(document.querySelectorAll('select'));
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        M.FormSelect.init(document.querySelectorAll('select'));
+
+        // Apply border color from data attribute
+        document.querySelectorAll('.kanban-card[data-type-color]').forEach(function(card) {
+            card.style.setProperty('--card-color', card.dataset.typeColor);
+        });
+
+        // Apply border color for stats cards
+        document.querySelectorAll('.stats-card[data-border-color]').forEach(function(card) {
+            card.style.setProperty('--stats-border-color', card.dataset.borderColor);
+        });
 
         @if (TempData["SuccessMessage"] != null)
         {
@@ -194,6 +540,6 @@
         {
             <text>UCarToast.error('@TempData["ErrorMessage"]');</text>
         }
-            });
-    </script>
+    });
+</script>
 }

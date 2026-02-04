@@ -37,6 +37,20 @@
                                 @branch.PhoneContact
                             </p>
                         }
+                        @if (!string.IsNullOrEmpty(branch.ManagerName))
+                        {
+                            <p style="margin-top: 0.5rem;">
+                                <i class="material-icons tiny blue-text">person</i>
+                                <strong>Quản lý:</strong> @branch.ManagerName
+                            </p>
+                        }
+                        else
+                        {
+                            <p class="grey-text" style="margin-top: 0.5rem;">
+                                <i class="material-icons tiny">person_off</i>
+                                Chưa có quản lý
+                            </p>
+                        }
                         <div style="margin-top: 1rem;">
                             <a asp-controller="Staff" asp-action="Index" asp-route-BranchId="@branch.BranchId" 
                                class="chip chip-primary btn" style="cursor: pointer; text-decoration: none;">

@@ -852,6 +852,50 @@ public class HandoverService : IHandoverService
 
     #region Incidents (D13)
 
+    public async Task<IEnumerable<IncidentDto>> GetAllIncidentsAsync()
+    {
+        var incidents = await _context.Incidents
+            .Include(i => i.Vehicle)
+                .ThenInclude(v => v.Model)
+            .Include(i => i.RentalContract)
+            .Include(i => i.Customer)
+            .Include(i => i.FineDetail)
+            .Include(i => i.ImpoundDetail)
+            .OrderByDescending(i => i.OccurredAt)
+            .ToListAsync();
+
+        return incidents.Select(i => new IncidentDto
+        {
+            IncidentId = i.IncidentId,
+            IncidentType = i.IncidentType,
+            VehicleId = i.VehicleId,
+            PlateNo = i.Vehicle?.PlateNo ?? "",
+            VehicleName = i.Vehicle?.Model != null ? $"{i.Vehicle.Model.Make} {i.Vehicle.Model.ModelName}" : "",
+            ContractId = i.ContractId,
+            ContractCode = "HD-" + i.ContractId.ToString().Substring(0, 8).ToUpper(),
+            CustomerId = i.CustomerId,
+            CustomerName = i.Customer?.FullName,
+            OccurredAt = i.OccurredAt,
+            Location = i.Location,
+            Description = i.Description,
+            Status = i.Status,
+            EstimatedCost = i.EstimatedCost,
+            FineDetail = i.FineDetail != null ? new FineDetailDto
+            {
+                TicketNumber = i.FineDetail.TicketNumber,
+                AgencyName = i.FineDetail.AgencyName,
+                DueDate = i.FineDetail.DueDate,
+                FineAmount = i.FineDetail.FineAmount
+            } : null,
+            ImpoundDetail = i.ImpoundDetail != null ? new ImpoundDetailDto
+            {
+                ImpoundLotAddress = i.ImpoundDetail.ImpoundLotAddress,
+                ImpoundedAt = i.ImpoundDetail.ImpoundedAt,
+                ReleasedAt = i.ImpoundDetail.ReleasedAt
+            } : null
+        });
+    }
+
     public async Task<IEnumerable<IncidentDto>> GetIncidentsByContractAsync(Guid contractId)
     {
         var incidents = await _context.Incidents
@@ -859,6 +903,8 @@ public class HandoverService : IHandoverService
                 .ThenInclude(v => v.Model)
             .Include(i => i.RentalContract)
             .Include(i => i.Customer)
+            .Include(i => i.FineDetail)
+            .Include(i => i.ImpoundDetail)
             .Where(i => i.ContractId == contractId)
             .OrderByDescending(i => i.OccurredAt)
             .ToListAsync();
@@ -877,7 +923,20 @@ public class HandoverService : IHandoverService
             Location = i.Location,
             Description = i.Description,
             Status = i.Status,
-            EstimatedCost = i.EstimatedCost
+            EstimatedCost = i.EstimatedCost,
+            FineDetail = i.FineDetail != null ? new FineDetailDto
+            {
+                TicketNumber = i.FineDetail.TicketNumber,
+                AgencyName = i.FineDetail.AgencyName,
+                DueDate = i.FineDetail.DueDate,
+                FineAmount = i.FineDetail.FineAmount
+            } : null,
+            ImpoundDetail = i.ImpoundDetail != null ? new ImpoundDetailDto
+            {
+                ImpoundLotAddress = i.ImpoundDetail.ImpoundLotAddress,
+                ImpoundedAt = i.ImpoundDetail.ImpoundedAt,
+                ReleasedAt = i.ImpoundDetail.ReleasedAt
+            } : null
         });
     }
 
@@ -891,10 +950,13 @@ public class HandoverService : IHandoverService
         if (contract == null)
             return ServiceResult<Guid>.Fail("Không tìm thấy hợp đồng");
 
+        if (!dto.IncidentType.HasValue)
+            return ServiceResult<Guid>.Fail("Vui lòng chọn loại sự cố");
+
         var incident = new Incident
         {
             IncidentId = Guid.NewGuid(),
-            IncidentType = dto.IncidentType,
+            IncidentType = dto.IncidentType.Value,
             VehicleId = contract.VehicleId,
             ContractId = dto.ContractId,
             CustomerId = contract.CustomerId,
@@ -907,6 +969,38 @@ public class HandoverService : IHandoverService
         };
 
         _context.Incidents.Add(incident);
+        
+        // Thêm chi tiết phạt nguội nếu là Fine
+        if (dto.IncidentType == IncidentType.Fine && dto.FineDetail != null)
+        {
+            var fineDetail = new IncidentFineDetail
+            {
+                IncidentId = incident.IncidentId,
+                TicketNumber = dto.FineDetail.TicketNumber,
+                AgencyName = dto.FineDetail.AgencyName,
+                DueDate = dto.FineDetail.DueDate,
+                FineAmount = dto.FineDetail.FineAmount ?? 0
+            };
+            _context.Set<IncidentFineDetail>().Add(fineDetail);
+            
+            // Cập nhật EstimatedCost từ FineAmount nếu chưa có
+            if (incident.EstimatedCost == 0 && dto.FineDetail.FineAmount.HasValue)
+                incident.EstimatedCost = dto.FineDetail.FineAmount.Value;
+        }
+        
+        // Thêm chi tiết tạm giữ xe nếu là Impound
+        if (dto.IncidentType == IncidentType.Impound && dto.ImpoundDetail != null)
+        {
+            var impoundDetail = new IncidentImpoundDetail
+            {
+                IncidentId = incident.IncidentId,
+                ImpoundLotAddress = dto.ImpoundDetail.ImpoundLotAddress,
+                ImpoundedAt = dto.ImpoundDetail.ImpoundedAt,
+                ReleasedAt = dto.ImpoundDetail.ReleasedAt
+            };
+            _context.Set<IncidentImpoundDetail>().Add(impoundDetail);
+        }
+        
         await _context.SaveChangesAsync();
 
         return ServiceResult<Guid>.Ok(incident.IncidentId, "Đã ghi nhận sự cố thành công");

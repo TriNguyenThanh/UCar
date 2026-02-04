@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using UCar.Models.Enums;
+using UCar.ValidationAttributes;
 
 namespace UCar.Models.DTOs.Operations;
 
@@ -61,8 +62,13 @@ public class TaskCreateDto
     public string Title { get; set; } = string.Empty;
 
     public Guid? ContractId { get; set; }
+    
+    [RequiredForTaskTypes(TaskType.Delivery, TaskType.Return, TaskType.Maintenance, TaskType.Rescue)]
     public Guid? VehicleId { get; set; }
+    
     public Guid? AssignedToStaffId { get; set; }
+    
+    [Required(ErrorMessage = "Vui lòng chọn chi nhánh")]
     public Guid? BranchId { get; set; }
 
     [Required(ErrorMessage = "Vui lòng chọn thời gian")]
