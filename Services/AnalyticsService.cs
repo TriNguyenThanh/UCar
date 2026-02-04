@@ -42,69 +42,51 @@ public class AnalyticsService : IAnalyticsService
             .Where(i => i.IssuedDate >= fromDate && i.IssuedDate <= toDate)
             .ToListAsync();
 
-        // ===== DOANH THU TỪ INVOICES (không bao gồm đặt cọc) =====
-        var revenueInvoices = invoices.Where(i => i.InvoiceType != InvoiceType.Deposit && i.InvoiceType != InvoiceType.Refund).ToList();
+        // ===== DOANH THU TỪ CONTRACTS (nguồn chính - thống nhất) =====
+        // Luôn dùng Contracts để đảm bảo đồng nhất số liệu
+        var activeContracts = await _context.RentalContracts
+            .Where(c => c.CreatedAt >= fromDate && c.CreatedAt <= toDate)
+            .Where(c => c.Status == RentalContractStatus.Completed || 
+                       c.Status == RentalContractStatus.Active || 
+                       c.Status == RentalContractStatus.InProgress ||
+                       c.Status == RentalContractStatus.PendingSettlement)
+            .ToListAsync();
         
-        // Nếu có Rental invoices → Dùng dữ liệu invoice
-        // Nếu không có → Fallback sang dữ liệu từ Contracts (doanh thu dự kiến)
-        if (revenueInvoices.Any())
-        {
-            report.TotalRevenue = revenueInvoices.Sum(i => i.TotalAmount);
-            report.TotalPaid = revenueInvoices.Sum(i => i.AmountPaid);
-            report.TotalDue = revenueInvoices.Sum(i => i.AmountDue);
-        }
-        else
-        {
-            // Fallback: Tính từ Contracts đã hoàn thành hoặc đang active/chờ quyết toán
-            // PendingSettlement = xe đã trả, đang chờ thanh toán final invoice
-            var contracts = await _context.RentalContracts
-                .Where(c => c.CreatedAt >= fromDate && c.CreatedAt <= toDate)
-                .Where(c => c.Status == RentalContractStatus.Completed || 
-                           c.Status == RentalContractStatus.Active || 
-                           c.Status == RentalContractStatus.InProgress ||
-                           c.Status == RentalContractStatus.PendingSettlement)
-                .ToListAsync();
-            
-            report.TotalRevenue = contracts.Sum(c => c.TotalAmountFinal);
-            // Ước tính đã thu = deposit đã thanh toán (từ deposit invoices đã paid)
-            var depositsPaid = invoices.Where(i => i.InvoiceType == InvoiceType.Deposit).Sum(i => i.AmountPaid);
-            report.TotalPaid = depositsPaid; // Chỉ có deposit đã thu
-            report.TotalDue = report.TotalRevenue; // Tiền thuê chưa thu (chưa có rental invoice)
-        }
-
-        // Tiền thuê cơ bản (từ Rental invoices)
+        // ===== TỔNG DOANH THU = Giá trị hợp đồng =====
+        report.TotalRevenue = activeContracts.Sum(c => c.TotalAmountFinal);
+        
+        // ===== CƠ CẤU DOANH THU (từ Contracts) =====
+        // Tiền thuê = Ngày thường + Ngày cao điểm
+        report.NormalDaysRevenue = activeContracts.Sum(c => c.NormalDaysAmount);
+        report.PeakDaysRevenue = activeContracts.Sum(c => c.PeakDaysAmount);
+        report.RentalRevenue = report.NormalDaysRevenue + report.PeakDaysRevenue;
+        
+        // Phụ phí (từ Contracts.ExtraCharges)
+        report.SurchargeRevenue = activeContracts.Sum(c => c.ExtraCharges);
+        
+        // Phí phạt (từ Invoices - vì penalties được ghi nhận khi trả xe)
         var rentalInvoices = invoices.Where(i => i.InvoiceType == InvoiceType.Rental).ToList();
-        report.RentalRevenue = rentalInvoices.Sum(i => i.BaseRentalAmount);
-
-        // Phụ phí (từ Surcharge invoices + phần surcharge trong Rental)
-        report.SurchargeRevenue = invoices
-            .Where(i => i.InvoiceType == InvoiceType.Surcharge)
-            .Sum(i => i.TotalAmount) + rentalInvoices.Sum(i => i.SurchargesTotal);
-
-        // Phí phạt (từ Penalty invoices + phần penalty trong Rental)
         report.PenaltyRevenue = invoices
             .Where(i => i.InvoiceType == InvoiceType.Penalty)
             .Sum(i => i.TotalAmount) + rentalInvoices.Sum(i => i.PenaltiesTotal);
-
-        // Thuế
-        report.TaxRevenue = revenueInvoices.Sum(i => i.TaxAmount);
-
+        
+        // Thuế (tạm tính 0 nếu chưa có invoices)
+        report.TaxRevenue = rentalInvoices.Sum(i => i.TaxAmount);
+        
         // Giảm giá
-        report.DiscountAmount = revenueInvoices.Sum(i => i.DiscountAmount);
-
-        // Lấy tất cả contracts trong khoảng thời gian
-        var allContracts = await _context.RentalContracts
-            .Where(c => c.CreatedAt >= fromDate && c.CreatedAt <= toDate)
-            .ToListAsync();
-
-        report.NormalDaysRevenue = allContracts.Sum(c => c.NormalDaysAmount);
-        report.PeakDaysRevenue = allContracts.Sum(c => c.PeakDaysAmount);
+        report.DiscountAmount = rentalInvoices.Sum(i => i.DiscountAmount);
+        
+        // ===== ĐÃ THU / CÒN PHẢI THU =====
+        // Đã thu = tổng AmountPaid từ tất cả invoices (bao gồm cả Deposit đã thanh toán)
+        report.TotalPaid = invoices.Sum(i => i.AmountPaid);
+        report.TotalDue = report.TotalRevenue - report.TotalPaid;
+        if (report.TotalDue < 0) report.TotalDue = 0;
 
         // ===== ĐẶT CỌC (Riêng biệt - không phải doanh thu) =====
         var depositInvoices = invoices.Where(i => i.InvoiceType == InvoiceType.Deposit).ToList();
         var refundInvoices = invoices.Where(i => i.InvoiceType == InvoiceType.Refund).ToList();
         
-        // TotalAmount = số tiền cọc yêu cầu, dùng TotalAmount vì deposit invoices thường có AmountPaid = 0 ban đầu
+        // Đã thu cọc = TotalAmount của deposit invoices (số tiền cọc đã yêu cầu và thu)
         report.TotalDeposits = depositInvoices.Sum(i => i.TotalAmount);
         report.DepositsRefunded = refundInvoices.Sum(i => i.TotalAmount);
         report.DepositsHeld = report.TotalDeposits - report.DepositsRefunded;
@@ -112,52 +94,35 @@ public class AnalyticsService : IAnalyticsService
         report.DepositsForfeited = 0; // Sẽ implement khi có logic khấu trừ cọc
 
         // ===== THỐNG KÊ HỢP ĐỒNG =====
+        // Lấy tất cả contracts (bao gồm cả Draft, Cancelled) để thống kê
+        var allContracts = await _context.RentalContracts
+            .Where(c => c.CreatedAt >= fromDate && c.CreatedAt <= toDate)
+            .ToListAsync();
+        
         report.TotalContracts = allContracts.Count;
         report.CompletedContracts = allContracts.Count(c => c.Status == RentalContractStatus.Completed);
         report.ActiveContracts = allContracts.Count(c => 
             c.Status == RentalContractStatus.Active || 
-            c.Status == RentalContractStatus.InProgress);
+            c.Status == RentalContractStatus.InProgress ||
+            c.Status == RentalContractStatus.PendingSettlement);
 
-        // Doanh thu theo tháng - ưu tiên invoices, fallback sang contracts
-        if (revenueInvoices.Any())
-        {
-            // Có rental invoices → tính từ invoices đã load (không cần query lại)
-            var monthlyData = revenueInvoices
-                .GroupBy(i => new { i.IssuedDate.Year, i.IssuedDate.Month })
-                .Select(g => new MonthlyRevenueDto
-                {
-                    Month = $"{g.Key.Month:00}/{g.Key.Year}",
-                    Revenue = g.Sum(i => i.TotalAmount),
-                    Contracts = g.Select(i => i.ContractId).Distinct().Count()
-                })
-                .OrderBy(m => m.Month)
-                .ToList();
+        // ===== DOANH THU THEO THÁNG (từ activeContracts) =====
+        var monthlyData = activeContracts
+            .GroupBy(c => new { c.CreatedAt.Year, c.CreatedAt.Month })
+            .Select(g => new MonthlyRevenueDto
+            {
+                Month = $"{g.Key.Month:00}/{g.Key.Year}",
+                Revenue = g.Sum(c => c.TotalAmountFinal),
+                Contracts = g.Count()
+            })
+            .OrderBy(m => m.Month)
+            .ToList();
 
-            _logger.LogInformation("Monthly data from invoices: {Count} months", monthlyData.Count);
-            report.MonthlyData = monthlyData;
-        }
-        else
-        {
-            // Không có rental invoices → tính từ contracts (doanh thu dự kiến)
-            var monthlyData = allContracts
-                .Where(c => c.Status == RentalContractStatus.Completed || 
-                           c.Status == RentalContractStatus.Active || 
-                           c.Status == RentalContractStatus.InProgress ||
-                           c.Status == RentalContractStatus.PendingSettlement)
-                .GroupBy(c => new { c.CreatedAt.Year, c.CreatedAt.Month })
-                .Select(g => new MonthlyRevenueDto
-                {
-                    Month = $"{g.Key.Month:00}/{g.Key.Year}",
-                    Revenue = g.Sum(c => c.TotalAmountFinal),
-                    Contracts = g.Count()
-                })
-                .OrderBy(m => m.Month)
-                .ToList();
+        _logger.LogInformation("Monthly data from contracts: {Count} months, Total = {Total:N0}", 
+            monthlyData.Count, monthlyData.Sum(m => m.Revenue));
+        report.MonthlyData = monthlyData;
 
-            report.MonthlyData = monthlyData;
-        }
-
-        _logger.LogInformation("GetRevenueReportAsync: Total Revenue = {Revenue:N0} VNĐ (excluding deposits)", report.TotalRevenue);
+        _logger.LogInformation("GetRevenueReportAsync: Total Revenue = {Revenue:N0} VNĐ (from contracts)", report.TotalRevenue);
 
         return report;
     }
@@ -254,9 +219,9 @@ public class AnalyticsService : IAnalyticsService
         report.NewCustomers = await _context.Customers
             .CountAsync(c => c.CreatedAt >= monthStart);
 
-        // Tổng doanh thu từ tất cả khách hàng
+        // Tổng doanh thu từ tất cả khách hàng (Completed + PendingSettlement)
         report.TotalRevenue = await _context.RentalContracts
-            .Where(rc => rc.Status == RentalContractStatus.Completed)
+            .Where(rc => rc.Status == RentalContractStatus.Completed || rc.Status == RentalContractStatus.PendingSettlement)
             .SumAsync(rc => rc.TotalAmountFinal);
 
         // Giá trị trung bình/khách
@@ -276,7 +241,7 @@ public class AnalyticsService : IAnalyticsService
                 TotalBookings = c.Bookings.Count,
                 CompletedBookings = c.Bookings.Count(b => b.Status == BookingStatus.Completed),
                 TotalSpent = c.RentalContracts
-                    .Where(rc => rc.Status == RentalContractStatus.Completed)
+                    .Where(rc => rc.Status == RentalContractStatus.Completed || rc.Status == RentalContractStatus.PendingSettlement)
                     .Sum(rc => rc.TotalAmountFinal),
                 RiskLevel = c.RiskLevel ?? "Bình thường",
                 IsBlacklisted = c.IsBlacklisted
@@ -304,11 +269,11 @@ public class AnalyticsService : IAnalyticsService
             Count = vipCustomers.Count,
             AverageSpent = vipCustomers.Any() 
                 ? Math.Round(vipCustomers.Average(c => 
-                    c.RentalContracts.Where(rc => rc.Status == RentalContractStatus.Completed)
+                    c.RentalContracts.Where(rc => rc.Status == RentalContractStatus.Completed || rc.Status == RentalContractStatus.PendingSettlement)
                         .Sum(rc => rc.TotalAmountFinal)), 0)
                 : 0,
             TotalRevenue = vipCustomers.Sum(c =>
-                c.RentalContracts.Where(rc => rc.Status == RentalContractStatus.Completed)
+                c.RentalContracts.Where(rc => rc.Status == RentalContractStatus.Completed || rc.Status == RentalContractStatus.PendingSettlement)
                     .Sum(rc => rc.TotalAmountFinal))
         });
 
@@ -320,11 +285,11 @@ public class AnalyticsService : IAnalyticsService
             Count = frequentCustomers.Count,
             AverageSpent = frequentCustomers.Any()
                 ? Math.Round(frequentCustomers.Average(c =>
-                    c.RentalContracts.Where(rc => rc.Status == RentalContractStatus.Completed)
+                    c.RentalContracts.Where(rc => rc.Status == RentalContractStatus.Completed || rc.Status == RentalContractStatus.PendingSettlement)
                         .Sum(rc => rc.TotalAmountFinal)), 0)
                 : 0,
             TotalRevenue = frequentCustomers.Sum(c =>
-                c.RentalContracts.Where(rc => rc.Status == RentalContractStatus.Completed)
+                c.RentalContracts.Where(rc => rc.Status == RentalContractStatus.Completed || rc.Status == RentalContractStatus.PendingSettlement)
                     .Sum(rc => rc.TotalAmountFinal))
         });
 
@@ -336,11 +301,11 @@ public class AnalyticsService : IAnalyticsService
             Count = newCustomers.Count,
             AverageSpent = newCustomers.Any()
                 ? Math.Round(newCustomers.Average(c =>
-                    c.RentalContracts.Where(rc => rc.Status == RentalContractStatus.Completed)
+                    c.RentalContracts.Where(rc => rc.Status == RentalContractStatus.Completed || rc.Status == RentalContractStatus.PendingSettlement)
                         .Sum(rc => rc.TotalAmountFinal)), 0)
                 : 0,
             TotalRevenue = newCustomers.Sum(c =>
-                c.RentalContracts.Where(rc => rc.Status == RentalContractStatus.Completed)
+                c.RentalContracts.Where(rc => rc.Status == RentalContractStatus.Completed || rc.Status == RentalContractStatus.PendingSettlement)
                     .Sum(rc => rc.TotalAmountFinal))
         });
 
