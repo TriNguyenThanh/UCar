@@ -1,4 +1,4 @@
-@model UCar.Models.DTOs.Vehicle.PagedResult<UCar.Models.DTOs.Handover.ContractForHandoverListDto>
+@model UCar.Models.DTOs.PagedResult<UCar.Models.DTOs.Handover.ContractForHandoverListDto>
 @using UCar.Models.DTOs.Handover
 @using UCar.Models.Enums
 @{
@@ -14,33 +14,13 @@
                 <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">car_rental</i>
                 Danh sách chờ giao xe
             </h4>
-            <p class="grey-text text-darken-1" style="margin: 0;">Các hợp đồng đang chờ nhân viên xác nhận giao xe cho khách</p>
+            <p class="grey-text text-darken-1" style="margin: 0;">
+                Các hợp đồng nháp (Draft) và đang chờ ký + thanh toán (PendingSigning)
+            </p>
         </div>
-    </div>
-
-    <!-- Stats Cards -->
-    <div class="row">
-        <div class="col s12 m4">
-            <div class="card stats-card">
-                <i class="material-icons stats-icon blue-text">assignment</i>
-                <div class="stats-value">@Model.TotalCount</div>
-                <div class="stats-label">Chờ giao xe</div>
-            </div>
-        </div>
-        <div class="col s12 m4">
-            <a href="@Url.Action("Return")" class="card stats-card hoverable" style="display: block;">
-                <i class="material-icons stats-icon green-text">assignment_return</i>
-                <div class="stats-value">-</div>
-                <div class="stats-label">Chờ nhận xe</div>
-            </a>
-        </div>
-        <div class="col s12 m4">
-            <a href="@Url.Action("Overdue")" class="card stats-card hoverable" style="display: block;">
-                <i class="material-icons stats-icon red-text">warning</i>
-                <div class="stats-value">-</div>
-                <div class="stats-label">Quá hạn</div>
-            </a>
-        </div>
+        <a asp-action="Return" class="btn waves-effect waves-light orange">
+            <i class="material-icons left">assignment_return</i>Danh sách trả xe
+        </a>
     </div>
 
     <!-- Filter Section -->
@@ -62,14 +42,16 @@
                     <div class="col s12 m3">
                         <div class="input-field">
                             <i class="material-icons prefix">date_range</i>
-                            <input type="date" id="fromDate" name="FromDate" value="@filter.FromDate?.ToString("yyyy-MM-dd")" class="datepicker">
+                            <input type="text" id="fromDate" name="FromDate"
+                                value="@filter.FromDate?.ToString("dd/MM/yyyy")" class="datepicker">
                             <label for="fromDate" class="active">Từ ngày</label>
                         </div>
                     </div>
                     <div class="col s12 m3">
                         <div class="input-field">
                             <i class="material-icons prefix">date_range</i>
-                            <input type="date" id="toDate" name="ToDate" value="@filter.ToDate?.ToString("yyyy-MM-dd")" class="datepicker">
+                            <input type="text" id="toDate" name="ToDate" value="@filter.ToDate?.ToString("dd/MM/yyyy")"
+                                class="datepicker">
                             <label for="toDate" class="active">Đến ngày</label>
                         </div>
                     </div>
@@ -127,10 +109,25 @@
                                     <span class="chip blue white-text">@item.StatusDisplayName</span>
                                 </td>
                                 <td class="center-align">
-                                    <a asp-action="CheckOut" asp-route-contractId="@item.ContractId" 
-                                       class="btn-small waves-effect waves-light green">
-                                        <i class="material-icons left">exit_to_app</i>Giao xe
+                                    <a asp-controller="Contract" asp-action="Details" asp-route-id="@item.ContractId"
+                                        class="btn-small waves-effect waves-light blue tooltipped"
+                                        data-position="top" data-tooltip="Xem hợp đồng">
+                                        <i class="material-icons">visibility</i>
                                     </a>
+                                    @if (item.Status == RentalContractStatus.Draft)
+                                    {
+                                        <a asp-action="CheckOut" asp-route-contractId="@item.ContractId"
+                                            class="btn-small waves-effect waves-light green">
+                                            <i class="material-icons left">exit_to_app</i>Lập biên bản
+                                        </a>
+                                    }
+                                    else if (item.Status == RentalContractStatus.PendingSigning)
+                                    {
+                                        <a asp-controller="Payment" asp-action="Pickup" asp-route-contractId="@item.ContractId"
+                                            class="btn-small waves-effect waves-light orange">
+                                            <i class="material-icons left">payment</i>Thanh toán
+                                        </a>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -154,7 +151,8 @@
     {
         <ul class="pagination center-align">
             <li class="@(Model.Page <= 1 ? "disabled" : "waves-effect")">
-                <a href="@Url.Action("Index", new { Page = Model.Page - 1, filter.SearchTerm, filter.FromDate, filter.ToDate })">
+                <a
+                    href="@Url.Action("Index", new { Page = Model.Page - 1, filter.SearchTerm, filter.FromDate, filter.ToDate })">
                     <i class="material-icons">chevron_left</i>
                 </a>
             </li>
@@ -165,7 +163,8 @@
                 </li>
             }
             <li class="@(Model.Page >= Model.TotalPages ? "disabled" : "waves-effect")">
-                <a href="@Url.Action("Index", new { Page = Model.Page + 1, filter.SearchTerm, filter.FromDate, filter.ToDate })">
+                <a
+                    href="@Url.Action("Index", new { Page = Model.Page + 1, filter.SearchTerm, filter.FromDate, filter.ToDate })">
                     <i class="material-icons">chevron_right</i>
                 </a>
             </li>
@@ -179,14 +178,17 @@
             padding: 1.5rem;
             text-align: center;
         }
+
         .stats-icon {
             font-size: 2.5rem;
         }
+
         .stats-value {
             font-size: 2rem;
             font-weight: 700;
             margin: 0.5rem 0;
         }
+
         .stats-label {
             color: #666;
             font-size: 0.9rem;
@@ -196,16 +198,79 @@
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
+            var i18nConfig = {
+                cancel: 'Hủy',
+                clear: 'Xóa',
+                done: 'Chọn',
+                months: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+                monthsShort: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'],
+                weekdays: ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'],
+                weekdaysShort: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+                weekdaysAbbrev: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+            };
+
+            // Initialize fromDate picker
+            var fromDateElem = document.getElementById('fromDate');
+            var fromDatePicker = M.Datepicker.init(fromDateElem, {
+                format: 'dd/mm/yyyy',
+                autoClose: true,
+                i18n: i18nConfig,
+                onSelect: function(date) {
+                    // Update toDate minDate when fromDate is selected
+                    if (toDatePicker) {
+                        toDatePicker.options.minDate = date;
+                        toDatePicker.gotoDate(date);
+                    }
+                }
+            });
+
+            // Initialize toDate picker
+            var toDateElem = document.getElementById('toDate');
+            var toDatePicker = M.Datepicker.init(toDateElem, {
+                format: 'dd/mm/yyyy',
+                autoClose: true,
+                i18n: i18nConfig,
+                onSelect: function(date) {
+                    // Update fromDate maxDate when toDate is selected
+                    if (fromDatePicker) {
+                        fromDatePicker.options.maxDate = date;
+                    }
+                }
+            });
+
+            // Set initial min/max dates if values exist
+            @if (filter.FromDate.HasValue)
+            {
+                <text>
+                var initialFromDate = new Date(@filter.FromDate.Value.Year, @(filter.FromDate.Value.Month - 1), @filter.FromDate.Value.Day);
+                if (toDatePicker) {
+                    toDatePicker.options.minDate = initialFromDate;
+                }
+                </text>
+            }
+            @if (filter.ToDate.HasValue)
+            {
+                <text>
+                var initialToDate = new Date(@filter.ToDate.Value.Year, @(filter.ToDate.Value.Month - 1), @filter.ToDate.Value.Day);
+                if (fromDatePicker) {
+                    fromDatePicker.options.maxDate = initialToDate;
+                }
+                </text>
+            }
+
             // Toast messages
-            @if (TempData["SuccessMessage"] != null)
-            {
-                <text>UCarToast.success('@TempData["SuccessMessage"]');</text>
-            }
-            @if (TempData["ErrorMessage"] != null)
-            {
-                <text>UCarToast.error('@TempData["ErrorMessage"]');</text>
-            }
-        });
+            var tooltipElems = document.querySelectorAll('.tooltipped');
+            M.Tooltip.init(tooltipElems);
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <text>UCarToast.success('@TempData["SuccessMessage"]');</text>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <text>UCarToast.error('@TempData["ErrorMessage"]');</text>
+        }
+            });
     </script>
 }

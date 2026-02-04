@@ -17,8 +17,11 @@ public interface ICustomerService
     // DFD 2.1: Đăng ký thông tin khách - Tạo mới
     Task<(bool Success, string Message, Guid? CustomerId)> CreateCustomerAsync(CustomerCreateViewModel model);
     
-    // Bổ sung hợp lý: Cập nhật thông tin khách hàng
+    // Bổ sung hợp lý: Cập nhật thông tin khách hàng (Admin/Staff)
     Task<(bool Success, string Message)> UpdateCustomerAsync(CustomerEditViewModel model);
+
+    // Bổ sung hợp lý: Cập nhật thông tin cá nhân (Customer self-service)
+    Task<(bool Success, string Message)> UpdateCustomerProfileAsync(CustomerProfileEditViewModel model);
     
     // Bổ sung hợp lý: Lấy thông tin để edit
     Task<CustomerEditViewModel?> GetCustomerForEditAsync(Guid customerId);
@@ -37,4 +40,16 @@ public interface ICustomerService
     Task<bool> IsEmailExistsAsync(string email, Guid? excludeCustomerId = null);
     Task<bool> IsPhoneExistsAsync(string phone, Guid? excludeCustomerId = null);
     Task<bool> IsDocumentNumberExistsAsync(string documentNumber, Guid? excludeCustomerId = null);
+    
+    // Cập nhật giấy tờ tùy thân - Customer self-service
+    Task<CustomerDocumentUpdateViewModel?> GetCustomerDocumentsForEditAsync(Guid customerId);
+    Task<(bool Success, string Message)> UpdateCustomerDocumentsAsync(CustomerDocumentUpdateViewModel model);
+    
+    // Xác thực giấy tờ - Admin/Staff
+    Task<(bool Success, string Message)> VerifyCustomerDocumentAsync(Guid docId, Guid verifiedByUserId);
+    Task<(bool Success, string Message)> RejectCustomerDocumentAsync(Guid docId, string? reason);
+    
+    // Danh sách giấy tờ chờ duyệt
+    Task<List<PendingDocumentViewModel>> GetPendingDocumentsAsync();
+    Task<string?> GetPhoneNumberAsync(Guid customerId);
 }

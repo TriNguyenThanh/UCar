@@ -7,6 +7,7 @@ Hiếu:
     2. Quản lý xe
     6. Quản lý giao nhận xe
     8. Quản lý vận hành & nhân sự
+    (nhớ sửa DFD_6)
 
 Tài: 
     3. Quản lý bảng giá & chính sách

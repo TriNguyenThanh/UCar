@@ -1,0 +1,512 @@
+@model InvoicePrintViewModel
+@using UCar.ViewModels
+@using UCar.Models.Enums
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>In hóa đơn - @Model.InvoiceNumber</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #333;
+            padding: 20mm;
+            background: white;
+        }
+
+        .invoice-container {
+            max-width: 210mm;
+            margin: 0 auto;
+            background: white;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #2196F3;
+        }
+
+        .company-info {
+            flex: 1;
+        }
+
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2196F3;
+            margin-bottom: 10px;
+        }
+
+        .company-details {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .invoice-title {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .invoice-title h1 {
+            font-size: 28px;
+            font-weight: bold;
+            color: #2196F3;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .invoice-title .invoice-number {
+            font-size: 16px;
+            color: #666;
+        }
+
+        .info-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .info-block {
+            flex: 1;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 4px;
+            margin-right: 15px;
+        }
+
+        .info-block:last-child {
+            margin-right: 0;
+        }
+
+        .info-block h3 {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2196F3;
+            border-bottom: 2px solid #2196F3;
+            padding-bottom: 5px;
+        }
+
+        .info-row {
+            display: flex;
+            margin-bottom: 5px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            min-width: 120px;
+        }
+
+        .info-value {
+            flex: 1;
+        }
+
+        .table-container {
+            margin: 30px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        thead {
+            background: #2196F3;
+            color: white;
+        }
+
+        th {
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: bold;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tbody tr:hover {
+            background: #f5f5f5;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .summary-section {
+            display: flex;
+            justify-content: flex-end;
+            margin: 30px 0;
+        }
+
+        .summary-table {
+            width: 400px;
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 4px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+
+        .summary-row.total {
+            border-top: 2px solid #2196F3;
+            border-bottom: 2px solid #2196F3;
+            margin-top: 10px;
+            padding: 12px 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2196F3;
+        }
+
+        .summary-row.paid {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .summary-row.due {
+            font-size: 16px;
+            font-weight: bold;
+            color: #F44336;
+        }
+
+        .notes-section {
+            margin: 30px 0;
+            padding: 15px;
+            background: #fffde7;
+            border-left: 4px solid #FFC107;
+            border-radius: 4px;
+        }
+
+        .notes-section h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #F57C00;
+        }
+
+        .signature-section {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 50px;
+            text-align: center;
+        }
+
+        .signature-block {
+            flex: 1;
+        }
+
+        .signature-block h4 {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 80px;
+        }
+
+        .signature-block p {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .badge-blue { background: #2196F3; color: white; }
+        .badge-green { background: #4CAF50; color: white; }
+        .badge-orange { background: #FF9800; color: white; }
+        .badge-red { background: #F44336; color: white; }
+        .badge-teal { background: #009688; color: white; }
+
+        @@media print {
+            body {
+                padding: 0;
+            }
+
+            .invoice-container {
+                max-width: 100%;
+            }
+
+            @@page {
+                margin: 15mm;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="company-info">
+                <div class="company-name">@Model.CompanyName</div>
+                <div class="company-details">
+                    Địa chỉ: @Model.CompanyAddress<br />
+                    Điện thoại: @Model.CompanyPhone | Email: @Model.CompanyEmail<br />
+                    Mã số thuế: @Model.CompanyTaxCode
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoice Title -->
+        <div class="invoice-title">
+            <h1>HÓA ĐƠN @Model.InvoiceTypeText.ToUpper()</h1>
+            <div class="invoice-number">
+                <strong>@Model.InvoiceNumber</strong>
+                @switch (Model.InvoiceType)
+                {
+                    case InvoiceType.Deposit:
+                        <span class="badge badge-blue">Đặt cọc</span>
+                        break;
+                    case InvoiceType.Rental:
+                        <span class="badge badge-green">Tiền thuê</span>
+                        break;
+                    case InvoiceType.Surcharge:
+                        <span class="badge badge-orange">Phụ phí</span>
+                        break;
+                    case InvoiceType.Penalty:
+                        <span class="badge badge-red">Phạt</span>
+                        break;
+                    case InvoiceType.Refund:
+                        <span class="badge badge-teal">Hoàn cọc</span>
+                        break;
+                }
+            </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="info-section">
+            <!-- Customer Info -->
+            <div class="info-block">
+                <h3>Thông tin khách hàng</h3>
+                <div class="info-row">
+                    <span class="info-label">Họ tên:</span>
+                    <span class="info-value">@Model.CustomerName</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Số điện thoại:</span>
+                    <span class="info-value">@(Model.CustomerPhone ?? "N/A")</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Email:</span>
+                    <span class="info-value">@(Model.CustomerEmail ?? "N/A")</span>
+                </div>
+            </div>
+
+            <!-- Invoice Info -->
+            <div class="info-block">
+                <h3>Thông tin hóa đơn</h3>
+                <div class="info-row">
+                    <span class="info-label">Ngày phát hành:</span>
+                    <span class="info-value">@Model.IssuedDate.ToString("dd/MM/yyyy")</span>
+                </div>
+                @if (Model.DueDate.HasValue)
+                {
+                    <div class="info-row">
+                        <span class="info-label">Hạn thanh toán:</span>
+                        <span class="info-value">@Model.DueDate.Value.ToString("dd/MM/yyyy")</span>
+                    </div>
+                }
+                <div class="info-row">
+                    <span class="info-label">Trạng thái:</span>
+                    <span class="info-value">@Model.StatusDisplay</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contract Info -->
+        <div class="info-section">
+            <div class="info-block">
+                <h3>Thông tin hợp đồng thuê xe</h3>
+                <div class="info-row">
+                    <span class="info-label">Mã hợp đồng:</span>
+                    <span class="info-value"><strong>@Model.ContractCode</strong></span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Xe thuê:</span>
+                    <span class="info-value"><strong>@Model.VehiclePlateNo</strong> - @Model.VehicleModelName</span>
+                </div>
+                @if (Model.RentalDays.HasValue)
+                {
+                    <div class="info-row">
+                        <span class="info-label">Số ngày thuê:</span>
+                        <span class="info-value">@Model.RentalDays.Value ngày</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Line Items Table -->
+        <div class="table-container">
+            <h3 style="margin-bottom: 15px; color: #2196F3;">Chi tiết các khoản</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 5%;">STT</th>
+                        <th style="width: 35%;">Mục</th>
+                        <th style="width: 10%;" class="text-center">Số lượng</th>
+                        <th style="width: 10%;" class="text-center">Đơn vị</th>
+                        <th style="width: 20%;" class="text-right">Đơn giá</th>
+                        <th style="width: 20%;" class="text-right">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.LineItems.Count; i++)
+                    {
+                        var item = Model.LineItems[i];
+                        <tr>
+                            <td class="text-center">@(i + 1)</td>
+                            <td>
+                                <strong>@item.ItemTypeDisplay</strong>
+                                @if (!string.IsNullOrEmpty(item.Description))
+                                {
+                                    <br />
+                                    <small style="color: #666;">@item.Description</small>
+                                }
+                            </td>
+                            <td class="text-center">@item.Quantity</td>
+                            <td class="text-center">@item.Unit</td>
+                            <td class="text-right">@item.UnitPrice.ToString("N0") ₫</td>
+                            <td class="text-right">
+                                <strong style="@(item.Amount < 0 ? "color: #4CAF50;" : "")">
+                                    @item.Amount.ToString("N0") ₫
+                                </strong>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Summary -->
+        <div class="summary-section">
+            <div class="summary-table">
+                @if (Model.BaseRentalAmount > 0)
+                {
+                    <div class="summary-row">
+                        <span>Tiền thuê cơ bản:</span>
+                        <span>@Model.BaseRentalAmount.ToString("N0") ₫</span>
+                    </div>
+                }
+                @if (Model.SurchargesTotal > 0)
+                {
+                    <div class="summary-row">
+                        <span>Phụ phí:</span>
+                        <span style="color: #FF9800;">@Model.SurchargesTotal.ToString("N0") ₫</span>
+                    </div>
+                }
+                @if (Model.PenaltiesTotal > 0)
+                {
+                    <div class="summary-row">
+                        <span>Phạt:</span>
+                        <span style="color: #F44336;">@Model.PenaltiesTotal.ToString("N0") ₫</span>
+                    </div>
+                }
+                @if (Model.DiscountAmount > 0)
+                {
+                    <div class="summary-row">
+                        <span>Giảm giá:</span>
+                        <span style="color: #4CAF50;">-@Model.DiscountAmount.ToString("N0") ₫</span>
+                    </div>
+                }
+                @if (Model.DepositPaid > 0)
+                {
+                    <div class="summary-row">
+                        <span>Đặt cọc đã trả:</span>
+                        <span style="color: #2196F3;">-@Model.DepositPaid.ToString("N0") ₫</span>
+                    </div>
+                }
+                <div class="summary-row total">
+                    <span>TỔNG CỘNG:</span>
+                    <span style="@(Model.TotalAmount < 0 ? "color: #4CAF50;" : "color: #2196F3;")">
+                        @Model.TotalAmount.ToString("N0") ₫
+                    </span>
+                </div>
+                <div class="summary-row paid">
+                    <span>Đã thanh toán:</span>
+                    <span>@Model.AmountPaid.ToString("N0") ₫</span>
+                </div>
+                <div class="summary-row due" style="@(Model.AmountDue <= 0 ? "color: #4CAF50;" : "")">
+                    <span>Còn phải @(Model.AmountDue > 0 ? "trả" : Model.AmountDue < 0 ? "hoàn" : "thanh toán"):</span>
+                    <span>@Math.Abs(Model.AmountDue).ToString("N0") ₫</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes -->
+        @if (!string.IsNullOrEmpty(Model.Notes))
+        {
+            <div class="notes-section">
+                <h3>Ghi chú:</h3>
+                <p style="white-space: pre-wrap;">@Model.Notes</p>
+            </div>
+        }
+
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <div class="signature-block">
+                <h4>Người lập phiếu</h4>
+                <p>(Ký và ghi rõ họ tên)</p>
+            </div>
+            <div class="signature-block">
+                <h4>Khách hàng</h4>
+                <p>(Ký và ghi rõ họ tên)</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Cảm ơn quý khách đã sử dụng dịch vụ của @Model.CompanyName</p>
+            <p>Hóa đơn này được tạo tự động bởi hệ thống quản lý cho thuê xe</p>
+            <p>In lúc: @DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss")</p>
+        </div>
+    </div>
+
+    <script>
+        // Auto print on load
+        window.onload = function() {
+            window.print();
+        };
+    </script>
+</body>
+</html>

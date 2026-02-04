@@ -4,18 +4,25 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using UCar.Interfaces;
+using UCar.Services;
 using UCar.ViewModels;
+using UCar.Models;
 
 namespace UCar.Controllers;
 
 public class AccountController : Controller
 {
     private readonly IAuthService _authService;
+    private readonly ICustomerService _customerService;
     private readonly ILogger<AccountController> _logger;
 
-    public AccountController(IAuthService authService, ILogger<AccountController> logger)
+    public AccountController(
+        IAuthService authService, 
+        ICustomerService customerService,
+        ILogger<AccountController> logger)
     {
         _authService = authService;
+        _customerService = customerService;
         _logger = logger;
     }
 
@@ -43,31 +50,41 @@ public class AccountController : Controller
         try
         {
             var user = await _authService.AuthenticateAsync(model.Username, model.Password);
-
             if (user == null)
             {
                 ModelState.AddModelError(string.Empty, "Invalid username or password.");
                 return View(model);
             }
 
+            var fullName = await _authService.GetName(user);
+
             // Create claims
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Name, fullName),
                 new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-                new Claim(ClaimTypes.Role, user.Role.Code.ToString())
+                new Claim(ClaimTypes.Role, user.Role.Code.ToString()),
+                new Claim(BranchAccessService.RoleCodeClaimType, user.Role.Code.ToString())
             };
+
+            // Add Phone claim if available
+            if (!string.IsNullOrEmpty(user.Phone))
+            {
+                claims.Add(new Claim(ClaimTypes.MobilePhone, user.Phone));
+            }
 
             if (user.Customer != null)
             {
                 claims.Add(new Claim("CustomerId", user.Customer.CustomerId.ToString()));
-                claims.Add(new Claim("FullName", user.Customer.FullName));
+                claims.Add(new Claim("FullName", fullName));
             }
             else if (user.StaffProfile != null)
             {
                 claims.Add(new Claim("StaffId", user.StaffProfile.StaffId.ToString()));
-                claims.Add(new Claim("FullName", user.StaffProfile.FullName));
+                claims.Add(new Claim("FullName", fullName));
+                // Thêm BranchId claim cho Staff và BranchManager
+                claims.Add(new Claim(BranchAccessService.BranchIdClaimType, user.StaffProfile.BranchId.ToString()));
             }
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
@@ -96,8 +113,9 @@ public class AccountController : Controller
             return user.Role.Code switch
             {
                 Models.Enums.RoleCode.Admin => RedirectToAction("Index", "Home"),
+                Models.Enums.RoleCode.BranchManager => RedirectToAction("Index", "Home"),
                 Models.Enums.RoleCode.Staff => RedirectToAction("Index", "Home"),
-                Models.Enums.RoleCode.Customer => RedirectToAction("Index", "Customer"),
+                Models.Enums.RoleCode.Customer => RedirectToAction("Index", "Home"),
                 _ => RedirectToAction("Index", "Home")
             };
         }
@@ -107,6 +125,43 @@ public class AccountController : Controller
             ModelState.AddModelError(string.Empty, "An error occurred during login. Please try again.");
             return View(model);
         }
+    }
+
+    [HttpGet]
+    public IActionResult Register()
+    {
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            return RedirectToAction("Index", "Home");
+        }
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Register(RegisterViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var (success, errorMessage, user) = await _authService.RegisterCustomerAsync(model);
+
+        if (!success)
+        {
+            ModelState.AddModelError(string.Empty, errorMessage);
+            return View(model);
+        }
+
+        // Login automatically
+        await Login(new LoginViewModel 
+        { 
+            Username = model.Username, 
+            Password = model.Password 
+        });
+
+        return RedirectToAction("Index", "Home");
     }
 
     [Authorize]
@@ -167,6 +222,185 @@ public class AccountController : Controller
         }
 
         return View(viewModel);
+    }
+
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> EditProfile()
+    {
+        var customerIdClaim = User.FindFirst("CustomerId");
+        if (customerIdClaim == null || !Guid.TryParse(customerIdClaim.Value, out var customerId))
+        {
+             // Staff profile editing not implemented yet
+            return RedirectToAction("Profile");
+        }
+
+        var customer = await _customerService.GetCustomerForEditAsync(customerId);
+        if (customer == null)
+        {
+            return NotFound();
+        }
+
+        var model = new CustomerProfileEditViewModel
+        {
+            CustomerId = customer.CustomerId,
+            FullName = customer.FullName,
+            Email = customer.Email,
+            Phone = customer.Phone,
+            Dob = customer.Dob,
+            AddressText = customer.AddressText
+        };
+
+        return View(model);
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditProfile(CustomerProfileEditViewModel model)
+    {
+        var customerIdClaim = User.FindFirst("CustomerId");
+        if (customerIdClaim == null || !Guid.TryParse(customerIdClaim.Value, out var customerId))
+        {
+            return RedirectToAction("Profile");
+        }
+
+        if (model.CustomerId != customerId)
+        {
+            return Forbid();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var (success, message) = await _customerService.UpdateCustomerProfileAsync(model);
+
+        if (success)
+        {
+            TempData["SuccessMessage"] = message;
+            return RedirectToAction("Profile");
+        }
+        else
+        {
+            ModelState.AddModelError("", message);
+            return View(model);
+        }
+    }
+
+    [Authorize]
+    [HttpGet]
+    public IActionResult ChangePassword()
+    {
+        return View();
+    }
+
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+        {
+            return RedirectToAction("Login");
+        }
+
+        var (success, message) = await _authService.ChangePasswordAsync(userId, model.CurrentPassword, model.NewPassword);
+
+        if (success)
+        {
+            TempData["SuccessMessage"] = message;
+            return RedirectToAction("Profile");
+        }
+        else
+        {
+            ModelState.AddModelError(string.Empty, message);
+            return View(model);
+        }
+    }
+
+    /// <summary>
+    /// Display customer documents for editing
+    /// GET: /Account/Documents
+    /// </summary>
+    [Authorize]
+    [HttpGet]
+    public async Task<IActionResult> Documents()
+    {
+        // Check if user is a customer
+        var customerIdClaim = User.FindFirst("CustomerId");
+        if (customerIdClaim == null || !Guid.TryParse(customerIdClaim.Value, out var customerId))
+        {
+            TempData["ErrorMessage"] = "Chức năng này chỉ dành cho khách hàng";
+            return RedirectToAction("Profile");
+        }
+
+        var model = await _customerService.GetCustomerDocumentsForEditAsync(customerId);
+        if (model == null)
+        {
+            return NotFound();
+        }
+
+        return View(model);
+    }
+
+    /// <summary>
+    /// Handle customer document update
+    /// POST: /Account/Documents
+    /// </summary>
+    [Authorize]
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Documents(CustomerDocumentUpdateViewModel model)
+    {
+        // Check if user is a customer
+        var customerIdClaim = User.FindFirst("CustomerId");
+        if (customerIdClaim == null || !Guid.TryParse(customerIdClaim.Value, out var customerId))
+        {
+            TempData["ErrorMessage"] = "Chức năng này chỉ dành cho khách hàng";
+            return RedirectToAction("Profile");
+        }
+
+        // Verify the customer ID matches
+        if (model.CustomerId != customerId)
+        {
+            _logger.LogWarning("Customer ID mismatch in document update. Claim: {ClaimId}, Model: {ModelId}", 
+                customerId, model.CustomerId);
+            return Forbid();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            // Reload existing images info
+            var existingModel = await _customerService.GetCustomerDocumentsForEditAsync(customerId);
+            if (existingModel != null)
+            {
+                model.ExistingImageFrontUrl = existingModel.ExistingImageFrontUrl;
+                model.ExistingImageBackUrl = existingModel.ExistingImageBackUrl;
+                model.CustomerFullName = existingModel.CustomerFullName;
+            }
+            return View(model);
+        }
+
+        var (success, message) = await _customerService.UpdateCustomerDocumentsAsync(model);
+
+        if (success)
+        {
+            TempData["SuccessMessage"] = message;
+        }
+        else
+        {
+            TempData["ErrorMessage"] = message;
+        }
+
+        return RedirectToAction("Documents");
     }
 
     [Authorize]

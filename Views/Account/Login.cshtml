@@ -9,10 +9,11 @@
         <div class="card shadow">
             <div class="card-body p-4">
                 <h2 class="card-title text-center mb-4">
-                    <i class="bi bi-car-front-fill"></i> UCar
+                    UCar
                 </h2>
-                <h5 class="text-center mb-4">Sign In</h5>
-
+                <h5 class="card-subtitle mb-4 text-center text-muted">
+                    Đăng nhập vào tài khoản của bạn
+                </h5>
                 <form asp-action="Login" method="post">
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
                     
@@ -22,16 +23,17 @@
                         <label asp-for="Username" class="form-label"></label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-person"></i></span>
-                            <input asp-for="Username" class="form-control" placeholder="Enter username" autofocus />
+                            <input asp-for="Username" class="form-control" placeholder="Nhập tên đăng nhập" autofocus />
                         </div>
                         <span asp-validation-for="Username" class="text-danger"></span>
                     </div>
 
                     <div class="mb-3">
                         <label asp-for="Password" class="form-label"></label>
-                        <div class="input-group">
+                        <div class="input-group position-relative">
                             <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                            <input asp-for="Password" class="form-control" placeholder="Enter password" />
+                            <input asp-for="Password" class="form-control" placeholder="Nhập mật khẩu" id="passwordInput" style="padding-right: 40px;" />
+                            <i class="bi bi-eye position-absolute top-50 translate-middle-y end-0 me-3 cursor-pointer" id="togglePassword" style="z-index: 10; cursor: pointer;"></i>
                         </div>
                         <span asp-validation-for="Password" class="text-danger"></span>
                     </div>
@@ -43,20 +45,15 @@
 
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary btn-lg">
-                            <i class="bi bi-box-arrow-in-right"></i> Login
+                            Đăng nhập
                         </button>
                     </div>
                 </form>
 
                 <hr class="my-4" />
 
-                <div class="text-center">
-                    <small class="text-muted">
-                        Demo accounts:<br />
-                        <strong>admin</strong> / admin123<br />
-                        <strong>staff01</strong> / staff123<br />
-                        <strong>customer01</strong> / customer123
-                    </small>
+                <div class="text-center mt-3">
+                    <p class="mb-0">Chưa có tài khoản? <a asp-action="Register">Đăng ký ngay</a></p>
                 </div>
             </div>
         </div>
@@ -65,4 +62,17 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById('togglePassword').addEventListener('click', function () {
+            const passwordInput = document.getElementById('passwordInput');
+            
+            // Toggle the type attribute
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            // Toggle the eye / eye slash icon
+            this.classList.toggle('bi-eye');
+            this.classList.toggle('bi-eye-slash');
+        });
+    </script>
 }

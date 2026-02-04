@@ -1,0 +1,48 @@
+Tóm tắt thay đổi: Khách hàng chỉ được tạo yêu cầu đặt xe và xem chi phí dự kiến, sau đó bên hệ thống nhân viên sẽ gọi điện cho khách hàng để xác nhận và Xác nhận trên hệ thống (Hợp đồng nháp) và sau đó khi giao xe sẽ in hợp đồng giấy để khách ký và cập nhật trên hệ thống
+
+Bỏ luồng khách hàng thanh toán online, xem và ký hợp đồng online, các thông tin ký hợp đồng online
+
+-- Luồng đặt xe:
+    B1: Khách hàng: Được phép tìm kiếm để booking xe và chỉ xem thông tin chi phí cuối cùng thuê xe (không hiển thị hợp đồng online), Bỏ hợp đồng của tôi. 
+    B2: Nhân viên: xác nhận đơn đặt xe (Gọi điện) (Cập nhật trạng thái xe)
+    B3: Nhân viên: Tạo hợp đồng luôn luôn là nháp ( Draft )
+
+-- Luồng giao xe:
+    Khách hàng: Đến nhận xe
+    Nhân viên và khách hàng: Kiểm tra tình trạng xe và phụ kiện đi kèm (phải có hợp đồng nháp)
+    Nhân viên: Lập biên bản bàn giao xe + hợp đồng thuê xe chính thức (bao gồm chi phí phụ kiện đi kèm)
+    Nhân viên: Tạo hóa đơn giao xe từ biên bản và hợp đồng (Hợp đồng sẽ là hợp đồng chờ ký)
+        Lúc tiến hành giao xe:
+            - Thống kê chi phí phụ kiện
+            - In hợp đồng (dùng template: https://thuvienphapluat.vn/hopdong/541/HOP-DONG-THUE-XE) bao gồm:
+                Thông tin 2 bên
+                Thông tin xe
+                Giá thuê
+                Thời gian thuê
+                Các điều khoản
+            - In biên bản (dùng template: https://www.studocu.vn/vn/document/truong-dai-hoc-mo-thanh-pho-ho-chi-minh/quan-tri-kinh-doanh/bien-ban-ban-giao-xe-cho-thue-mau-tai-lieu-hanh-chinh/135148527) bao gồm
+                Thông tin 2 bên
+                Thông tin tình trạng xe
+                Danh sách phụ kiện
+                Tiền cọc
+            - Lập hóa đơn giao xe
+            - Chờ khách hàng thanh toán hóa đơn và ký xác nhận
+    Khách hàng: Thanh toán
+    Khách hàng: Ký hợp đồng và biên bản (ký giấy)
+    Nhân viên: Xác nhận hợp đồng trên hệ thống
+        Sau khi khách hàng ký hợp đồng và biên bản giấy, nhân viên lên hệ thống xác nhận hợp đồng có hiệu lực (Hợp đồng chờ ký -> Hợp đồng có hiệu lực (Active))
+    Nhân viên: Bàn giao xe cho khách
+
+-- Luồng trả xe:
+
+    Khách hàng: Trả xe
+    Nhân viên và khách hàng: Kiểm tra tình trạng xe và phụ kiện
+    Nhân viên: Lập biên bản trả xe (Bao gồm tiền cọc, chi phí phát sinh vi phạm hợp đồng,...)
+    Nhân viên: Lập hóa đơn trả xe
+    Nhân viên: Thanh toán hóa đơn với khách hàng
+    Khách hàng: Ký biên bản (ký giấy)
+    Nhân viên: Cập nhật trạng thái xe
+
+
+-- Ghi chú:
+Các template sẽ được lưu trong hệ thống và điền thông tin tự động khi in ấn.

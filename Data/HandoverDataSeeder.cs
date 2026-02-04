@@ -143,7 +143,8 @@ public static class HandoverDataSeeder
             return;
         }
 
-        // 5. Seed Price (if not exists)
+        // 5. Seed Price (if not exists) - DEPRECATED: Uses old schema
+        /* OLD SCHEMA - Commented out
         var price = await context.Prices.FirstOrDefaultAsync();
         if (price == null)
         {
@@ -161,6 +162,15 @@ public static class HandoverDataSeeder
             };
             await context.Prices.AddAsync(price);
             await context.SaveChangesAsync();
+        }
+        */
+        
+        // NEW: Get price from existing seeded data
+        var price = await context.Prices.FirstOrDefaultAsync(p => p.IsActive);
+        if (price == null)
+        {
+            Console.WriteLine("HandoverDataSeeder: No active Price found. Skipping contracts.");
+            return;
         }
 
         // 6. Seed Bookings and Contracts

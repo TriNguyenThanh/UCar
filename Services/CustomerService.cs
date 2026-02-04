@@ -219,6 +219,15 @@ public class CustomerService : ICustomerService
 
     #region DFD 2.1: Đăng ký thông tin khách - Create
 
+    public Task<string?> GetPhoneNumberAsync(Guid customerId)
+    {
+        return _context.Customers
+            .Include(c => c.UserAccount)
+            .Where(c => c.UserId == customerId)
+            .Select(c => c.UserAccount.Phone)
+            .FirstOrDefaultAsync();
+    }
+
     public async Task<(bool Success, string Message, Guid? CustomerId)> CreateCustomerAsync(CustomerCreateViewModel model)
     {
         using var transaction = await _context.Database.BeginTransactionAsync();
@@ -415,6 +424,53 @@ public class CustomerService : ICustomerService
         {
             _logger.LogError(ex, "Error updating customer: {CustomerId}", model.CustomerId);
             return (false, $"Lỗi cập nhật khách hàng: {ex.Message}");
+        }
+    }
+
+    public async Task<(bool Success, string Message)> UpdateCustomerProfileAsync(CustomerProfileEditViewModel model)
+    {
+        try
+        {
+            _logger.LogInformation("Updating customer profile: {CustomerId}", model.CustomerId);
+
+            var customer = await _context.Customers
+                .Include(c => c.UserAccount)
+                .FirstOrDefaultAsync(c => c.CustomerId == model.CustomerId);
+
+            if (customer == null)
+            {
+                return (false, "Không tìm thấy khách hàng");
+            }
+
+            // Validate unique constraints (excluding current customer)
+            if (await IsEmailExistsAsync(model.Email, model.CustomerId))
+            {
+                return (false, "Email đã được sử dụng bởi khách hàng khác");
+            }
+
+            if (await IsPhoneExistsAsync(model.Phone, model.CustomerId))
+            {
+                return (false, "Số điện thoại đã được sử dụng bởi khách hàng khác");
+            }
+
+            // Update Customer info
+            customer.FullName = model.FullName;
+            customer.Dob = model.Dob;
+            customer.AddressText = model.AddressText;
+
+            // Update UserAccount info
+            customer.UserAccount.Email = model.Email;
+            customer.UserAccount.Phone = model.Phone;
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Customer profile updated successfully: {CustomerId}", model.CustomerId);
+            return (true, "Cập nhật thông tin thành công");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating customer profile: {CustomerId}", model.CustomerId);
+            return (false, $"Lỗi cập nhật thông tin: {ex.Message}");
         }
     }
 
@@ -642,6 +698,259 @@ public class CustomerService : ICustomerService
             throw;
         }
     }
+
+    #endregion
+
+    #region Customer Document Management
+
+    public async Task<CustomerDocumentUpdateViewModel?> GetCustomerDocumentsForEditAsync(Guid customerId)
+    {
+        try
+        {
+            _logger.LogInformation("Fetching customer documents for edit: {CustomerId}", customerId);
+
+            var customer = await _context.Customers
+                .Include(c => c.Documents)
+                .FirstOrDefaultAsync(c => c.CustomerId == customerId);
+
+            if (customer == null)
+            {
+                _logger.LogWarning("Customer not found: {CustomerId}", customerId);
+                return null;
+            }
+
+            // Get the first document (primary document)
+            var document = customer.Documents.FirstOrDefault();
+
+            return new CustomerDocumentUpdateViewModel
+            {
+                CustomerId = customer.CustomerId,
+                CustomerFullName = customer.FullName,
+                DocId = document?.DocId,
+                DocType = document?.DocType ?? CustomerDocumentType.IdCard,
+                DocNumber = document?.DocNumber ?? string.Empty,
+                IssuedDate = document?.IssuedDate,
+                IssuedPlace = document?.IssuedPlace,
+                ExistingImageFrontUrl = document?.ImageFrontUrl,
+                ExistingImageBackUrl = document?.ImageBackUrl,
+                IsVerified = document?.IsVerified ?? false
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching customer documents for edit: {CustomerId}", customerId);
+            throw;
+        }
+    }
+
+    public async Task<(bool Success, string Message)> UpdateCustomerDocumentsAsync(CustomerDocumentUpdateViewModel model)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            _logger.LogInformation("Updating customer documents: {CustomerId}", model.CustomerId);
+
+            var customer = await _context.Customers
+                .Include(c => c.Documents)
+                .FirstOrDefaultAsync(c => c.CustomerId == model.CustomerId);
+
+            if (customer == null)
+            {
+                return (false, "Không tìm thấy khách hàng");
+            }
+
+            // Validate unique document number (exclude current customer)
+            if (await IsDocumentNumberExistsAsync(model.DocNumber, model.CustomerId))
+            {
+                return (false, "Số giấy tờ đã được đăng ký bởi khách hàng khác");
+            }
+
+            // Get existing document or create new one
+            var document = customer.Documents.FirstOrDefault(dc => dc.DocType == model.DocType);
+            bool isNewDocument = document == null;
+
+            if (isNewDocument)
+            {
+                document = new CustomerDocument
+                {
+                    DocId = Guid.NewGuid(),
+                    CustomerId = model.CustomerId
+                };
+                await _context.CustomerDocuments.AddAsync(document);
+            }
+
+            // Update document info
+            document!.DocType = model.DocType;
+            document.DocNumber = model.DocNumber;
+            document.IssuedDate = model.IssuedDate;
+            document.IssuedPlace = model.IssuedPlace;
+            
+            // Mark as unverified when any info changes
+            document.IsVerified = false;
+
+            // Handle front image upload
+            if (model.DocumentImageFront != null)
+            {
+                // Delete old image if exists
+                if (!string.IsNullOrEmpty(document.ImageFrontUrl))
+                {
+                    DeleteDocumentImage(document.ImageFrontUrl);
+                }
+                document.ImageFrontUrl = await SaveDocumentImageAsync(model.DocumentImageFront, model.CustomerId, "front");
+            }
+
+            // Handle back image upload
+            if (model.DocumentImageBack != null)
+            {
+                // Delete old image if exists
+                if (!string.IsNullOrEmpty(document.ImageBackUrl))
+                {
+                    DeleteDocumentImage(document.ImageBackUrl);
+                }
+                document.ImageBackUrl = await SaveDocumentImageAsync(model.DocumentImageBack, model.CustomerId, "back");
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            _logger.LogInformation("Customer documents updated successfully: {CustomerId}", model.CustomerId);
+            return (true, "Cập nhật giấy tờ thành công. Vui lòng chờ xác minh.");
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Error updating customer documents: {CustomerId}", model.CustomerId);
+            return (false, $"Lỗi cập nhật giấy tờ: {ex.Message}");
+        }
+    }
+
+    private void DeleteDocumentImage(string imageUrl)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(imageUrl)) return;
+
+            var filePath = Path.Combine(_environment.WebRootPath, imageUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+                _logger.LogInformation("Deleted old document image: {FilePath}", filePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to delete old document image: {ImageUrl}", imageUrl);
+            // Don't throw - this is not critical
+        }
+    }
+
+    #endregion
+
+    #region Document Verification - Admin/Staff
+
+    public async Task<(bool Success, string Message)> VerifyCustomerDocumentAsync(Guid docId, Guid verifiedByUserId)
+    {
+        try
+        {
+            _logger.LogInformation("Verifying document {DocId} by user {UserId}", docId, verifiedByUserId);
+
+            var document = await _context.CustomerDocuments
+                .Include(d => d.Customer)
+                .FirstOrDefaultAsync(d => d.DocId == docId);
+
+            if (document == null)
+            {
+                return (false, "Không tìm thấy giấy tờ");
+            }
+
+            if (document.IsVerified)
+            {
+                return (false, "Giấy tờ đã được xác thực trước đó");
+            }
+
+            document.IsVerified = true;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Document {DocId} verified successfully for customer {CustomerName}", 
+                docId, document.Customer.FullName);
+            return (true, $"Đã xác thực giấy tờ của khách hàng {document.Customer.FullName}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error verifying document {DocId}", docId);
+            return (false, $"Lỗi xác thực giấy tờ: {ex.Message}");
+        }
+    }
+
+    public async Task<(bool Success, string Message)> RejectCustomerDocumentAsync(Guid docId, string? reason)
+    {
+        try
+        {
+            _logger.LogInformation("Rejecting document {DocId}. Reason: {Reason}", docId, reason);
+
+            var document = await _context.CustomerDocuments
+                .Include(d => d.Customer)
+                .FirstOrDefaultAsync(d => d.DocId == docId);
+
+            if (document == null)
+            {
+                return (false, "Không tìm thấy giấy tờ");
+            }
+
+            document.IsVerified = false;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Document {DocId} rejected for customer {CustomerName}. Reason: {Reason}", 
+                docId, document.Customer.FullName, reason ?? "No reason provided");
+            return (true, $"Đã từ chối giấy tờ của khách hàng {document.Customer.FullName}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error rejecting document {DocId}", docId);
+            return (false, $"Lỗi từ chối giấy tờ: {ex.Message}");
+        }
+    }
+
+    #endregion
+
+    #region Pending Documents List
+
+    public async Task<List<PendingDocumentViewModel>> GetPendingDocumentsAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Fetching pending documents for approval");
+
+            var pendingDocs = await _context.CustomerDocuments
+                .Include(d => d.Customer)
+                .Where(d => !d.IsVerified)
+                .OrderByDescending(d => d.Customer.CreatedAt)
+                .Select(d => new PendingDocumentViewModel
+                {
+                    DocId = d.DocId,
+                    CustomerId = d.CustomerId,
+                    CustomerName = d.Customer.FullName,
+                    DocType = d.DocType,
+                    DocNumber = d.DocNumber,
+                    IssuedDate = d.IssuedDate,
+                    IssuedPlace = d.IssuedPlace,
+                    ImageFrontUrl = d.ImageFrontUrl,
+                    ImageBackUrl = d.ImageBackUrl,
+                    CustomerCreatedAt = d.Customer.CreatedAt
+                })
+                .ToListAsync();
+
+            _logger.LogInformation("Found {Count} pending documents", pendingDocs.Count);
+            return pendingDocs;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching pending documents");
+            throw;
+        }
+    }
+
+
 
     #endregion
 }

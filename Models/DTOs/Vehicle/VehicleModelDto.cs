@@ -15,7 +15,7 @@ public record VehicleModelDto(
     int Seats,
     TransmissionType? Transmission,
     string? FuelType,
-    string? ImageUrl,
+    string? ImageFileName,
     int VehicleCount
 );
 
@@ -50,9 +50,9 @@ public class VehicleModelCreateDto
     [Display(Name = "Nhiên liệu")]
     public string? FuelType { get; set; }
 
-    [MaxLength(500, ErrorMessage = "URL ảnh tối đa 500 ký tự")]
-    [Display(Name = "Ảnh mẫu")]
-    public string? ImageUrl { get; set; }
+    [MaxLength(255, ErrorMessage = "Tên file ảnh tối đa 255 ký tự")]
+    [Display(Name = "Ảnh dòng xe")]
+    public string? ImageFileName { get; set; }
 }
 
 /// <summary>
@@ -86,7 +86,7 @@ public class VehicleModelUpdateDto
     [Display(Name = "Nhiên liệu")]
     public string? FuelType { get; set; }
 
-    [MaxLength(500, ErrorMessage = "URL ảnh tối đa 500 ký tự")]
-    [Display(Name = "Ảnh mẫu")]
-    public string? ImageUrl { get; set; }
+    [MaxLength(255, ErrorMessage = "Tên file ảnh tối đa 255 ký tự")]
+    [Display(Name = "Ảnh dòng xe")]
+    public string? ImageFileName { get; set; }
 }

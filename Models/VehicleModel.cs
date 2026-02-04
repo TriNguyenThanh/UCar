@@ -27,6 +27,9 @@ public class VehicleModel
     [MaxLength(50)]
     public string? FuelType { get; set; }
 
+    [MaxLength(255)]
+    public string? ImageFileName { get; set; }
+
     // Navigation properties
     [ForeignKey(nameof(VehicleTypeId))]
     public VehicleType VehicleType { get; set; } = null!;

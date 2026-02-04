@@ -1,0 +1,217 @@
+@model UCar.ViewModels.Pricing.PricingEditViewModel
+@{
+    ViewData["Title"] = "Chỉnh sửa Bảng giá";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+        <a asp-action="Index" class="btn-flat waves-effect">
+            <i class="material-icons left">arrow_back</i>Quay lại
+        </a>
+        <h4 style="font-weight: 700; margin: 0 0 0 1rem;">
+            <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">edit</i>
+            Chỉnh sửa Bảng giá
+        </h4>
+    </div>
+
+    <div class="card-panel orange lighten-5 orange-text text-darken-4" style="margin-bottom: 1.5rem;">
+        <i class="material-icons left">warning</i>
+        <strong>Lưu ý:</strong> Không thể thay đổi dòng xe của bảng giá đã tạo. Nếu cần thay đổi, vui lòng tạo bảng giá mới.
+    </div>
+
+    <div class="row">
+        <div class="col s12 l8">
+            <div class="card">
+                <div class="card-content">
+                    <form asp-action="Edit" asp-route-id="@Model.PriceId" method="post">
+                        <input type="hidden" asp-for="PriceId" />
+                        <input type="hidden" asp-for="VehicleModelId" />
+                        
+                        <div asp-validation-summary="All" class="card-panel red lighten-4 red-text text-darken-4" style="display: none;"></div>
+                        
+                        <div class="row">
+                            <div class="col s12">
+                                <div class="input-field">
+                                    <i class="material-icons prefix grey-text">directions_car</i>
+                                    <select id="vehicleModelSelect" name="vehicleModelDisplay" disabled>
+                                        @foreach (var option in ViewBag.VehicleModels)
+                                        {
+                                            <option value="@option.Value" selected="@(option.Value == Model.VehicleModelId.ToString())">@option.Text</option>
+                                        }
+                                    </select>
+                                    <label for="vehicleModelSelect">Dòng xe (không thể thay đổi)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col s12">
+                                <div class="input-field">
+                                    <i class="material-icons prefix">label</i>
+                                    <input asp-for="Name" type="text" id="name" />
+                                    <label for="name">Tên bảng giá (*)</label>
+                                    <span asp-validation-for="Name" class="red-text"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col s12 m6">
+                                <div class="input-field">
+                                    <i class="material-icons prefix">attach_money</i>
+                                    <input asp-for="DailyBasePrice" type="number" step="1000" id="dailyBasePrice" />
+                                    <label for="dailyBasePrice">Giá cơ bản/ngày (đ) (*)</label>
+                                    <span asp-validation-for="DailyBasePrice" class="red-text"></span>
+                                </div>
+                            </div>
+                            <div class="col s12 m6">
+                                <div class="input-field">
+                                    <i class="material-icons prefix">access_time</i>
+                                    <input asp-for="OvertimeHourlyPrice" type="number" step="1000" id="overtimeHourlyPrice" />
+                                    <label for="overtimeHourlyPrice">Phụ phí giờ trễ (đ) (*)</label>
+                                    <span asp-validation-for="OvertimeHourlyPrice" class="red-text"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col s12 m6">
+                                <div class="input-field">
+                                    <i class="material-icons prefix">account_balance_wallet</i>
+                                    <input asp-for="DepositSuggest" type="number" step="1000" id="depositSuggest" />
+                                    <label for="depositSuggest">Tiền cọc đề xuất (đ) (*)</label>
+                                    <span asp-validation-for="DepositSuggest" class="red-text"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col s12 m4">
+                                <div class="input-field">
+                                    <i class="material-icons prefix">percent</i>
+                                    <input asp-for="MonthlyMultiplier" type="number" step="0.01" id="monthlyMultiplier" />
+                                    <label for="monthlyMultiplier">Hệ số tháng (*)</label>
+                                    <span asp-validation-for="MonthlyMultiplier" class="red-text"></span>
+                                    <span class="helper-text">VD: 0.8 = giảm 20%</span>
+                                </div>
+                            </div>
+                            <div class="col s12 m4">
+                                <div class="input-field">
+                                    <i class="material-icons prefix">trending_up</i>
+                                    <input asp-for="HolidayMultiplier" type="number" step="0.01" id="holidayMultiplier" />
+                                    <label for="holidayMultiplier">Hệ số ngày lễ (*)</label>
+                                    <span asp-validation-for="HolidayMultiplier" class="red-text"></span>
+                                    <span class="helper-text">VD: 1.2 = tăng 20%</span>
+                                </div>
+                            </div>
+                            <div class="col s12 m4">
+                                <div class="input-field">
+                                    <i class="material-icons prefix">weekend</i>
+                                    <input asp-for="WeekendMultiplier" type="number" step="0.01" id="weekendMultiplier" />
+                                    <label for="weekendMultiplier">Hệ số cuối tuần (*)</label>
+                                    <span asp-validation-for="WeekendMultiplier" class="red-text"></span>
+                                    <span class="helper-text">VD: 1.15 = tăng 15%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row" style="display: none;">
+                            <div class="col s12 m6">
+                                <div class="input-field">
+                                    <i class="material-icons prefix">event</i>
+                                    <input type="text" value="Không thay đổi" readonly />
+                                    <label>Hiệu lực</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col s12">
+                                <p>
+                                    <label>
+                                        <input asp-for="IsActive" type="checkbox" />
+                                        <span>Đang áp dụng</span>
+                                    </label>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="row" style="margin-top: 2rem;">
+                            <div class="col s12">
+                                <button type="submit" class="btn waves-effect waves-light blue">
+                                    <i class="material-icons left">save</i>Lưu thay đổi
+                                </button>
+                                <a asp-action="Index" class="btn-flat waves-effect" style="margin-left: 0.5rem;">
+                                    Hủy
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col s12 l4">
+            <div class="card teal lighten-5">
+                <div class="card-content">
+                    <span class="card-title" style="font-weight: 700;">
+                        <i class="material-icons left teal-text">history</i>
+                        Thông tin hiện tại
+                    </span>
+                    <p><strong>Dòng xe:</strong> 
+                        @{
+                            var selectList = ViewBag.VehicleModels as Microsoft.AspNetCore.Mvc.Rendering.SelectList;
+                            var items = selectList?.Items as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>;
+                            var selectedOption = items?.FirstOrDefault(x => x.Value == Model.VehicleModelId.ToString());
+                        }
+                        @(selectedOption?.Text ?? "N/A")
+                    </p>
+                    <p><strong>Giá hiện tại:</strong> @Model.DailyBasePrice.ToString("N0")đ</p>
+                    <p><strong>Trạng thái:</strong> 
+                        @if (Model.IsActive)
+                        {
+                            <span class="chip green lighten-4 green-text">Đang áp dụng</span>
+                        }
+                        else
+                        {
+                            <span class="chip grey lighten-2">Tạm ngưng</span>
+                        }
+                    </p>
+                </div>
+            </div>
+
+            <div class="card blue lighten-5">
+                <div class="card-content">
+                    <span class="card-title" style="font-weight: 700;">
+                        <i class="material-icons left blue-text">info</i>
+                        Lưu ý khi chỉnh sửa
+                    </span>
+                    <ul class="collection" style="border: none;">
+                        <li class="collection-item blue lighten-5" style="border: none;">
+                            <i class="material-icons tiny">warning</i>
+                            Không thể đổi dòng xe
+                        </li>
+                        <li class="collection-item blue lighten-5" style="border: none;">
+                            <i class="material-icons tiny">info</i>
+                            Thay đổi sẽ ảnh hưởng đến booking mới
+                        </li>
+                        <li class="collection-item blue lighten-5" style="border: none;">
+                            <i class="material-icons tiny">check</i>
+                            Booking cũ vẫn giữ nguyên giá
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            M.FormSelect.init(document.querySelectorAll('select'));
+            M.updateTextFields();
+        });
+    </script>
+}

@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using UCar.Interfaces;
@@ -9,6 +11,7 @@ namespace UCar.Controllers;
 /// <summary>
 /// Controller quản lý xe
 /// </summary>
+[Authorize(Roles = "Admin,BranchManager,Staff")]
 public class VehicleController : Controller
 {
     private readonly IVehicleService _vehicleService;
@@ -25,17 +28,28 @@ public class VehicleController : Controller
         _statusService = statusService;
     }
 
+    /// <summary>Lấy User ID từ authentication cookie</summary>
+    private Guid GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        return userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId)
+            ? userId
+            : Guid.Empty;
+    }
+
     /// <summary>
     /// Danh sách xe với filter và phân trang
     /// </summary>
     public async Task<IActionResult> Index(VehicleFilterDto filter)
     {
         var result = await _vehicleService.GetAllVehiclesAsync(filter);
-        
+        var stats = await _vehicleService.GetVehicleStatsAsync(filter);
+
         // Prepare filter dropdowns
         await PrepareFilterDropdowns(filter);
-        
+
         ViewBag.Filter = filter;
+        ViewBag.Stats = stats;
         return View(result);
     }
 
@@ -84,11 +98,10 @@ public class VehicleController : Controller
             return View(dto);
         }
 
-        // TODO: Get current user ID from authentication
-        var userId = Guid.Empty; // Placeholder
+        var userId = GetCurrentUserId();
 
         var result = await _vehicleService.CreateVehicleAsync(dto, userId);
-        
+
         if (result.Success)
         {
             TempData["Success"] = result.Message;
@@ -145,11 +158,10 @@ public class VehicleController : Controller
             return View(dto);
         }
 
-        // TODO: Get current user ID from authentication
-        var userId = Guid.Empty; // Placeholder
+        var userId = GetCurrentUserId();
 
         var result = await _vehicleService.UpdateVehicleAsync(id, dto, userId);
-        
+
         if (result.Success)
         {
             TempData["Success"] = result.Message;
@@ -174,7 +186,7 @@ public class VehicleController : Controller
     public async Task<IActionResult> Delete(Guid id)
     {
         var result = await _vehicleService.DeleteVehicleAsync(id);
-        
+
         if (result.Success)
         {
             TempData["Success"] = result.Message;
@@ -188,24 +200,26 @@ public class VehicleController : Controller
     }
 
     /// <summary>
-    /// Thay đổi trạng thái xe (AJAX)
+    /// Thay đổi trạng thái xe (Form POST)
     /// </summary>
     [HttpPost]
-    public async Task<IActionResult> ChangeStatus([FromBody] VehicleStatusChangeDto dto)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangeStatus(VehicleStatusChangeDto dto)
     {
         if (!ModelState.IsValid)
         {
-            return Json(new { success = false, message = "Dữ liệu không hợp lệ" });
+            TempData["Error"] = "Dữ liệu không hợp lệ";
+            return RedirectToAction(nameof(Details), new { id = dto.VehicleId });
         }
 
-        // TODO: Get current user ID from authentication
-        var userId = Guid.Empty; // Placeholder
+        var userId = GetCurrentUserId();
 
         var result = await _statusService.ChangeStatusAsync(dto, userId);
-        
-        return Json(new { 
-            success = result.Success, 
-            message = result.Success ? result.Message : result.Errors.FirstOrDefault() 
+
+        return Json(new
+        {
+            success = result.Success,
+            message = result.Success ? result.Message : result.Errors.FirstOrDefault()
         });
     }
 
@@ -273,9 +287,10 @@ public class VehicleController : Controller
         var branches = await _vehicleService.GetBranchesAsync();
 
         ViewBag.VehicleModels = new SelectList(
-            vehicleModels.Select(vm => new { 
-                vm.ModelId, 
-                DisplayName = $"{vm.Make} {vm.ModelName} ({vm.VehicleTypeName})" 
+            vehicleModels.Select(vm => new
+            {
+                vm.ModelId,
+                DisplayName = $"{vm.Make} {vm.ModelName} ({vm.VehicleTypeName})"
             }),
             "ModelId", "DisplayName");
 

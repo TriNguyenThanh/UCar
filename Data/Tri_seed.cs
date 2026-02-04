@@ -1,3 +1,9 @@
+/*
+ * DEPRECATED: This seeder uses old Price schema (VehicleTypeId, Unit, UnitPrice, DepositSuggest)
+ * Use UCarDataSeeder instead which uses new schema (VehicleModelId, BaseDailyPrice, multipliers)
+ */
+ 
+/*
 using Microsoft.EntityFrameworkCore;
 using UCar.Models;
 using UCar.Models.Enums;
@@ -442,3 +448,4 @@ public static class Tri_seed
         await context.SaveChangesAsync();
     }
 }
+*/

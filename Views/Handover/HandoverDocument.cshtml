@@ -96,6 +96,12 @@
                         </tr>
                     }
                 </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2"><strong>Tổng giá trị tài sản kèm theo</strong></td>
+                        <td><strong>@Model.Accessories.Sum(a => a.EstimatedValue * a.Quantity).ToString("N0") đ</strong></td>
+                    </tr>
+                </tfoot>
             </table>
 
             <hr/>

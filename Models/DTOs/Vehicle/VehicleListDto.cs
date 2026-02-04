@@ -14,9 +14,11 @@ public record VehicleListDto(
     string? Color,
     int ManufactureYear,
     VehicleStatus CurrentStatus,
+    Guid BranchId,
     string BranchName,
     decimal CurrentOdoKm,
     int Seats,
     TransmissionType? Transmission,
-    string? FuelType
+    string? FuelType,
+    string? ImageFileName
 );

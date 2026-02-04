@@ -1,15 +1,20 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using UCar.Data;
+using UCar.Infrastructure;
 using UCar.Interfaces;
 using UCar.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    // Register custom DateTime model binder for all DateTime properties
+    options.ModelBinderProviders.Insert(0, new DateTimeModelBinderProvider());
+});
 builder.Services.AddDbContext<UCarDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("HieuDb"))); //Anh em nhớ đổi chỗ này nhé
 
 // Add authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -21,11 +26,13 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.ExpireTimeSpan = TimeSpan.FromHours(12);
         options.SlidingExpiration = true;
         options.Cookie.HttpOnly = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Changed from Always
+        options.Cookie.SameSite = SameSiteMode.Lax; // Changed from Strict
     });
 
 // Register application services
+builder.Services.AddHttpContextAccessor(); // Required for IBranchAccessService
+builder.Services.AddScoped<IBranchAccessService, BranchAccessService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 
@@ -36,6 +43,37 @@ builder.Services.AddScoped<IVehicleService, VehicleService>();
 
 // Register Handover services
 builder.Services.AddScoped<IHandoverService, HandoverService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+
+// Register Contract services
+builder.Services.AddScoped<IContractService, ContractService>();
+
+// Register Invoice services (Module 7)
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+builder.Services.AddHostedService<BackgroundInvoiceService>(); // Background service cho tự động xử lý invoice
+
+// Register Payment services
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+
+// Register Operations & HR services (Module 8.0)
+builder.Services.AddScoped<IBranchService, BranchService>();
+builder.Services.AddScoped<IStaffService, StaffService>();
+builder.Services.AddScoped<IOperationalTaskService, OperationalTaskService>();
+builder.Services.AddScoped<IShiftService, ShiftService>();
+
+// Register Pricing & Policy services (Module 3.0)
+builder.Services.AddScoped<IPricingService, PricingService>();
+builder.Services.AddScoped<IPriceCalculationService, PriceCalculationService>();
+builder.Services.AddScoped<IHolidayService, HolidayService>();
+builder.Services.AddScoped<IDepositPolicyService, DepositPolicyService>();
+builder.Services.AddScoped<ISurchargePolicyService, SurchargePolicyService>();
+
+// Document Template Service (DOCX templates)
+builder.Services.AddScoped<IDocumentTemplateService, DocumentTemplateService>();
+
+// Image Upload Service
+builder.Services.AddScoped<IImageUploadService, ImageUploadService>();
+
 var app = builder.Build();
 
 // Seed database with unified seeder
@@ -45,7 +83,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<UCarDbContext>();
-        await UCarDataSeeder.SeedAllDataAsync(context, force: true);
+        await UCarDataSeeder.SeedAllDataAsync(context, force: false);
     }
     catch (Exception ex)
     {
@@ -53,9 +91,6 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "An error occurred seeding the database.");
     }
 }
-
-
-
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -66,14 +101,15 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseStaticFiles();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Account}/{action=Login}/{id?}");
+    pattern: "{controller=Home}/{action=Index}");
 
 app.Run();

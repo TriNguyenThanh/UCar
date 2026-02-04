@@ -142,7 +142,7 @@ public class VehicleCatalogService : IVehicleCatalogService
                 vm.Seats,
                 vm.Transmission,
                 vm.FuelType,
-                null, // ImageUrl - need to add to model if required
+                vm.ImageFileName,
                 vm.Vehicles.Count()
             ))
             .ToListAsync();
@@ -161,7 +161,7 @@ public class VehicleCatalogService : IVehicleCatalogService
                 vm.Seats,
                 vm.Transmission,
                 vm.FuelType,
-                null,
+                vm.ImageFileName,
                 vm.Vehicles.Count()
             ))
             .FirstOrDefaultAsync();
@@ -194,7 +194,8 @@ public class VehicleCatalogService : IVehicleCatalogService
             ModelName = dto.ModelName.Trim(),
             Seats = dto.Seats,
             Transmission = dto.Transmission,
-            FuelType = dto.FuelType?.Trim()
+            FuelType = dto.FuelType?.Trim(),
+            ImageFileName = dto.ImageFileName
         };
 
         _context.VehicleModels.Add(vehicleModel);
@@ -235,6 +236,12 @@ public class VehicleCatalogService : IVehicleCatalogService
         vehicleModel.Seats = dto.Seats;
         vehicleModel.Transmission = dto.Transmission;
         vehicleModel.FuelType = dto.FuelType?.Trim();
+        
+        // Update image only if provided
+        if (!string.IsNullOrEmpty(dto.ImageFileName))
+        {
+            vehicleModel.ImageFileName = dto.ImageFileName;
+        }
 
         await _context.SaveChangesAsync();
 

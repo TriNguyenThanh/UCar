@@ -1,0 +1,353 @@
+@model InvoiceDetailsViewModel
+@using UCar.ViewModels
+@using UCar.Models.Enums
+
+@{
+    ViewData["Title"] = "Chi tiết hóa đơn";
+    ViewData["Description"] = $"Hóa đơn {Model.InvoiceNumber}";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Page Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">description</i>
+                @Model.InvoiceNumber
+            </h4>
+            <p class="grey-text text-darken-1" style="font-size: 1.125rem; margin: 0;">
+                @Model.InvoiceTypeDisplay - Phát hành ngày @Model.IssuedDate.ToString("dd/MM/yyyy")
+            </p>
+        </div>
+        <div>
+            <a asp-action="Print" asp-route-id="@Model.InvoiceId" 
+               class="btn waves-effect waves-light blue" target="_blank"
+               style="margin-right: 8px;">
+                <i class="material-icons left">print</i>
+                In hóa đơn
+            </a>
+            @if (Model.CanRecordPayment)
+            {
+                <a asp-action="RecordPayment" asp-route-id="@Model.InvoiceId" 
+                   class="btn waves-effect waves-light green">
+                    <i class="material-icons left">payment</i>
+                    Ghi nhận thanh toán
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Status Badge -->
+    <div style="margin-bottom: 1.5rem;">
+        <span class="@Model.StatusBadgeClass" style="font-size: 1rem; padding: 8px 16px;">
+            @Model.StatusDisplay
+        </span>
+        @if (Model.IsOverdue)
+        {
+            <span class="badge red white-text" style="font-size: 1rem; padding: 8px 16px; margin-left: 8px;">
+                <i class="material-icons tiny" style="vertical-align: middle;">warning</i>
+                Quá hạn thanh toán
+            </span>
+        }
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Customer & Contract Info -->
+        <div class="col s12 m6">
+            <!-- Customer Card -->
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title">
+                        <i class="material-icons blue-text" style="vertical-align: middle;">person</i>
+                        Thông tin khách hàng
+                    </span>
+                    <table style="margin-top: 1rem;">
+                        <tbody>
+                            <tr>
+                                <td style="width: 35%; padding: 8px 0;"><strong>Tên khách hàng:</strong></td>
+                                <td style="padding: 8px 0;">@Model.CustomerName</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0;"><strong>Số điện thoại:</strong></td>
+                                <td style="padding: 8px 0;">
+                                    @if (!string.IsNullOrEmpty(Model.CustomerPhone))
+                                    {
+                                        <span>@Model.CustomerPhone</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="grey-text">Chưa cập nhật</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0;"><strong>Email:</strong></td>
+                                <td style="padding: 8px 0;">
+                                    @if (!string.IsNullOrEmpty(Model.CustomerEmail))
+                                    {
+                                        <span>@Model.CustomerEmail</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="grey-text">Chưa cập nhật</span>
+                                    }
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Contract Card -->
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title">
+                        <i class="material-icons green-text" style="vertical-align: middle;">assignment</i>
+                        Thông tin hợp đồng
+                    </span>
+                    <table style="margin-top: 1rem;">
+                        <tbody>
+                            <tr>
+                                <td style="width: 35%; padding: 8px 0;"><strong>Mã hợp đồng:</strong></td>
+                                <td style="padding: 8px 0;">
+                                    <a asp-controller="Contract" asp-action="Details" asp-route-code="@Model.ContractCode" 
+                                       class="blue-text">
+                                        @Model.ContractCode
+                                    </a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0;"><strong>Xe:</strong></td>
+                                <td style="padding: 8px 0;">
+                                    <span class="chip">@Model.VehiclePlateNo</span>
+                                    <span class="grey-text">@Model.VehicleModelName</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Invoice Summary -->
+        <div class="col s12 m6">
+            <div class="card blue lighten-5" style="border-left: 4px solid #2196F3;">
+                <div class="card-content">
+                    <span class="card-title" style="font-size: 1.5rem; font-weight: 700;">
+                        Tổng quan hóa đơn
+                    </span>
+                    <table style="margin-top: 1.5rem; font-size: 1.1rem;">
+                        <tbody>
+                            @if (Model.BaseRentalAmount > 0)
+                            {
+                                <tr>
+                                    <td style="padding: 12px 0;">Tiền thuê cơ bản:</td>
+                                    <td style="text-align: right; padding: 12px 0;">
+                                        <strong>@Model.BaseRentalAmount.ToString("N0") ₫</strong>
+                                    </td>
+                                </tr>
+                            }
+                            @if (Model.SurchargesTotal > 0)
+                            {
+                                <tr>
+                                    <td style="padding: 12px 0;">Phụ phí:</td>
+                                    <td style="text-align: right; padding: 12px 0;">
+                                        <strong class="orange-text">@Model.SurchargesTotal.ToString("N0") ₫</strong>
+                                    </td>
+                                </tr>
+                            }
+                            @if (Model.PenaltiesTotal > 0)
+                            {
+                                <tr>
+                                    <td style="padding: 12px 0;">Phạt:</td>
+                                    <td style="text-align: right; padding: 12px 0;">
+                                        <strong class="red-text">@Model.PenaltiesTotal.ToString("N0") ₫</strong>
+                                    </td>
+                                </tr>
+                            }
+                            @if (Model.DiscountAmount > 0)
+                            {
+                                <tr>
+                                    <td style="padding: 12px 0;">Giảm giá:</td>
+                                    <td style="text-align: right; padding: 12px 0;">
+                                        <strong class="green-text">-@Model.DiscountAmount.ToString("N0") ₫</strong>
+                                    </td>
+                                </tr>
+                            }
+                            @if (Model.DepositPaid > 0)
+                            {
+                                <tr>
+                                    <td style="padding: 12px 0;">Đặt cọc đã trả:</td>
+                                    <td style="text-align: right; padding: 12px 0;">
+                                        <strong class="blue-text">-@Model.DepositPaid.ToString("N0") ₫</strong>
+                                    </td>
+                                </tr>
+                            }
+                            <tr style="border-top: 2px solid #1976D2; border-bottom: 2px solid #1976D2;">
+                                <td style="padding: 16px 0; font-size: 1.3rem; font-weight: 700;">Tổng cộng:</td>
+                                <td style="text-align: right; padding: 16px 0; font-size: 1.5rem; font-weight: 700;">
+                                    <span class="@(Model.TotalAmount < 0 ? "green-text" : "blue-text")">
+                                        @Model.TotalAmount.ToString("N0") ₫
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px 0;">Đã thanh toán:</td>
+                                <td style="text-align: right; padding: 12px 0;">
+                                    <strong class="green-text">@Model.AmountPaid.ToString("N0") ₫</strong>
+                                </td>
+                            </tr>
+                            <tr style="border-top: 1px solid #90CAF9;">
+                                <td style="padding: 16px 0; font-size: 1.2rem; font-weight: 700;">
+                                    Còn phải @(Model.AmountDue > 0 ? "trả" : Model.AmountDue < 0 ? "hoàn" : "thanh toán"):
+                                </td>
+                                <td style="text-align: right; padding: 16px 0; font-size: 1.4rem; font-weight: 700;">
+                                    <span class="@(Model.AmountDue > 0 ? "red-text" : Model.AmountDue < 0 ? "green-text" : "")">
+                                        @Math.Abs(Model.AmountDue).ToString("N0") ₫
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    @if (Model.DueDate.HasValue)
+                    {
+                        <div style="margin-top: 1.5rem; padding: 12px; background: white; border-radius: 4px;">
+                            <strong>Hạn thanh toán:</strong>
+                            <span class="@(Model.IsOverdue ? "red-text" : "")">
+                                @Model.DueDate.Value.ToString("dd/MM/yyyy HH:mm")
+                            </span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Line Items -->
+    <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-content">
+            <span class="card-title">
+                <i class="material-icons orange-text" style="vertical-align: middle;">list</i>
+                Chi tiết các khoản
+            </span>
+            <table class="striped highlight responsive-table" style="margin-top: 1rem;">
+                <thead>
+                    <tr>
+                        <th>Mục</th>
+                        <th>Mô tả</th>
+                        <th style="text-align: center;">Số lượng</th>
+                        <th style="text-align: center;">Đơn vị</th>
+                        <th style="text-align: right;">Đơn giá</th>
+                        <th style="text-align: right;">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.LineItems)
+                    {
+                        <tr>
+                            <td><strong>@item.ItemTypeDisplay</strong></td>
+                            <td>
+                                @item.Description
+                                @if (!string.IsNullOrEmpty(item.Notes))
+                                {
+                                    <br />
+                                    <small class="grey-text">@item.Notes</small>
+                                }
+                            </td>
+                            <td style="text-align: center;">@item.Quantity</td>
+                            <td style="text-align: center;">@item.Unit</td>
+                            <td style="text-align: right;">@item.UnitPrice.ToString("N0") ₫</td>
+                            <td style="text-align: right;">
+                                <strong class="@(item.Amount < 0 ? "green-text" : "")">
+                                    @item.Amount.ToString("N0") ₫
+                                </strong>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Adjustments (if any) -->
+    @if (Model.Adjustments.Any())
+    {
+        <div class="card" style="margin-top: 1.5rem;">
+            <div class="card-content">
+                <span class="card-title">
+                    <i class="material-icons purple-text" style="vertical-align: middle;">history</i>
+                    Lịch sử điều chỉnh
+                </span>
+                <table class="striped highlight responsive-table" style="margin-top: 1rem;">
+                    <thead>
+                        <tr>
+                            <th>Loại điều chỉnh</th>
+                            <th>Số tiền</th>
+                            <th>Lý do</th>
+                            <th>Người điều chỉnh</th>
+                            <th>Thời gian</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var adj in Model.Adjustments)
+                        {
+                            <tr>
+                                <td><strong>@adj.AdjustmentTypeDisplay</strong></td>
+                                <td>
+                                    <strong class="@(adj.Amount > 0 ? "red-text" : "green-text")">
+                                        @adj.Amount.ToString("N0") ₫
+                                    </strong>
+                                </td>
+                                <td>@adj.Reason</td>
+                                <td>@adj.AdjustedByName</td>
+                                <td>@adj.AdjustedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- Notes -->
+    @if (!string.IsNullOrEmpty(Model.Notes))
+    {
+        <div class="card" style="margin-top: 1.5rem;">
+            <div class="card-content">
+                <span class="card-title">
+                    <i class="material-icons grey-text" style="vertical-align: middle;">notes</i>
+                    Ghi chú
+                </span>
+                <p style="margin-top: 1rem; white-space: pre-wrap;">@Model.Notes</p>
+            </div>
+        </div>
+    }
+
+    <!-- Internal Notes (Staff only) -->
+    @if (!string.IsNullOrEmpty(Model.InternalNotes))
+    {
+        <div class="card yellow lighten-4" style="margin-top: 1.5rem;">
+            <div class="card-content">
+                <span class="card-title">
+                    <i class="material-icons orange-text" style="vertical-align: middle;">lock</i>
+                    Ghi chú nội bộ (Chỉ nhân viên)
+                </span>
+                <p style="margin-top: 1rem; white-space: pre-wrap;">@Model.InternalNotes</p>
+            </div>
+        </div>
+    }
+
+    <!-- Action Buttons -->
+    <div style="margin-top: 2rem; text-align: center;">
+        <a asp-action="Index" class="btn waves-effect waves-light grey">
+            <i class="material-icons left">arrow_back</i>
+            Quay lại danh sách
+        </a>
+        <a asp-action="ByContract" asp-route-contractId="@Model.ContractId" 
+           class="btn waves-effect waves-light blue">
+            <i class="material-icons left">receipt_long</i>
+            Xem tất cả HĐ của hợp đồng này
+        </a>
+    </div>
+</div>

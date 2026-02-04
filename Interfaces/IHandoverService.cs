@@ -43,12 +43,19 @@ public interface IHandoverService
     Task<ServiceResult> CanCheckOutAsync(Guid contractId);
 
     /// <summary>
-    /// Xác nhận giao xe cho khách (Check-out)
+    /// Xác nhận giao xe cho khách (Check-out) - Luồng mới
     /// - Tạo HandoverRecord
-    /// - Cập nhật trạng thái xe → Renting
-    /// - Cập nhật trạng thái hợp đồng → InProgress
+    /// - Cập nhật trạng thái hợp đồng → PendingSigning (chờ ký + thanh toán)
     /// </summary>
     Task<ServiceResult<Guid>> ConfirmCheckOutAsync(CheckOutDto dto, Guid userId);
+
+    /// <summary>
+    /// Hoàn tất giao xe - Luồng mới
+    /// Gọi sau khi khách đã ký hợp đồng và thanh toán
+    /// - Cập nhật trạng thái xe → Renting
+    /// - Cập nhật trạng thái hợp đồng → Active
+    /// </summary>
+    Task<ServiceResult> CompleteHandoverAsync(Guid contractId, Guid staffId, Guid? paymentTxnId = null);
 
     #endregion
 
@@ -72,6 +79,14 @@ public interface IHandoverService
     /// - Cập nhật trạng thái hợp đồng → PendingSettlement/Completed
     /// </summary>
     Task<ServiceResult<Guid>> ConfirmCheckInAsync(CheckInDto dto, Guid userId);
+
+    /// <summary>
+    /// Hoàn tất trả xe - Luồng mới
+    /// Gọi sau khi khách thanh toán/hoàn tiền xong
+    /// - Tạo Return Invoice tổng hợp
+    /// - Cập nhật trạng thái hợp đồng → Completed
+    /// </summary>
+    Task<ServiceResult> CompleteReturnAsync(Guid contractId, Guid staffId, Guid? paymentTxnId = null);
 
     #endregion
 
@@ -99,6 +114,7 @@ public interface IHandoverService
     /// <summary>
     /// Lấy danh sách sự cố của hợp đồng
     /// </summary>
+    Task<IEnumerable<IncidentDto>> GetAllIncidentsAsync();
     Task<IEnumerable<IncidentDto>> GetIncidentsByContractAsync(Guid contractId);
 
     /// <summary>

@@ -1,0 +1,224 @@
+@model IEnumerable<UCar.Models.DTOs.Handover.IncidentDto>
+@using UCar.Models.Enums
+@{
+    ViewData["Title"] = "Tất cả sự cố";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons red-text" style="vertical-align: middle; margin-right: 8px;">warning</i>
+                Tất cả sự cố
+            </h4>
+            <p class="grey-text text-darken-1" style="margin: 0;">Danh sách tất cả sự cố được ghi nhận trong hệ thống</p>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card">
+        <div class="card-content">
+            @if (!Model.Any())
+            {
+                <div class="center-align" style="padding: 3rem;">
+                    <i class="material-icons large green-text">check_circle</i>
+                    <p class="grey-text">Không có sự cố nào được ghi nhận</p>
+                </div>
+            }
+            else
+            {
+                <table class="striped highlight responsive-table">
+                    <thead>
+                        <tr>
+                            <th>Loại sự cố</th>
+                            <th>Hợp đồng</th>
+                            <th>Khách hàng</th>
+                            <th>Xe</th>
+                            <th>Thời gian</th>
+                            <th>Địa điểm</th>
+                            <th>Mô tả</th>
+                            <th>Chi phí ước tính</th>
+                            <th>Trạng thái</th>
+                            <th style="text-align: center;">Chi tiết</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    @if (item.IncidentType == IncidentType.Accident)
+                                    {
+                                        <span class="chip red white-text">
+                                            <i class="material-icons tiny">directions_car</i> Tai nạn
+                                        </span>
+                                    }
+                                    else if (item.IncidentType == IncidentType.Theft)
+                                    {
+                                        <span class="chip purple white-text">
+                                            <i class="material-icons tiny">report</i> Trộm cướp
+                                        </span>
+                                    }
+                                    else if (item.IncidentType == IncidentType.Fine)
+                                    {
+                                        <span class="chip orange white-text">
+                                            <i class="material-icons tiny">receipt</i> Phạt nguội
+                                        </span>
+                                    }
+                                    else if (item.IncidentType == IncidentType.Impound)
+                                    {
+                                        <span class="chip deep-orange white-text">
+                                            <i class="material-icons tiny">local_parking</i> Tạm giữ xe
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("Details", "Contract", new { id = item.ContractId })" 
+                                       class="blue-text text-darken-2" style="font-weight: 500;">
+                                        @item.ContractCode
+                                    </a>
+                                </td>
+                                <td>@item.CustomerName</td>
+                                <td>
+                                    <div><strong>@item.PlateNo</strong></div>
+                                    <small class="grey-text">@item.VehicleName</small>
+                                </td>
+                                <td>@item.OccurredAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@(item.Location ?? "-")</td>
+                                <td style="max-width: 200px;">
+                                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        @item.Description
+                                    </div>
+                                </td>
+                                <td class="red-text"><strong>@item.EstimatedCost.ToString("N0") đ</strong></td>
+                                <td>
+                                    @if (item.Status == IncidentStatus.Resolved)
+                                    {
+                                        <span class="chip green white-text">Đã xử lý</span>
+                                    }
+                                    else if (item.Status == IncidentStatus.Processing)
+                                    {
+                                        <span class="chip orange white-text">Đang xử lý</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="chip grey white-text">Mới</span>
+                                    }
+                                </td>
+                                <td style="text-align: center;">
+                                    @if (item.IncidentType == IncidentType.Fine && item.FineDetail != null)
+                                    {
+                                        <a class="btn-small waves-effect waves-light orange tooltipped modal-trigger" 
+                                           data-position="top" 
+                                           data-tooltip="Chi tiết phạt nguội"
+                                           href="#fineModal_@item.IncidentId">
+                                            <i class="material-icons">receipt</i>
+                                        </a>
+
+                                        <!-- Modal Fine Detail -->
+                                        <div id="fineModal_@item.IncidentId" class="modal">
+                                            <div class="modal-content">
+                                                <h5><i class="material-icons left orange-text">receipt</i>Chi tiết phạt nguội</h5>
+                                                <table class="striped">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td><strong>Số biên bản vi phạm:</strong></td>
+                                                            <td>@item.FineDetail.TicketNumber</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><strong>Cơ quan xử phạt:</strong></td>
+                                                            <td>@item.FineDetail.AgencyName</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><strong>Hạn nộp phạt:</strong></td>
+                                                            <td>@item.FineDetail.DueDate?.ToString("dd/MM/yyyy")</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><strong>Số tiền phạt:</strong></td>
+                                                            <td class="red-text"><strong>@(item.FineDetail.FineAmount?.ToString("N0") ?? "0") đ</strong></td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <a href="#!" class="modal-close btn-flat">Đóng</a>
+                                            </div>
+                                        </div>
+                                    }
+                                    @if (item.IncidentType == IncidentType.Impound && item.ImpoundDetail != null)
+                                    {
+                                        <a class="btn-small waves-effect waves-light deep-orange tooltipped modal-trigger" 
+                                           data-position="top" 
+                                           data-tooltip="Chi tiết tạm giữ xe"
+                                           href="#impoundModal_@item.IncidentId">
+                                            <i class="material-icons">local_parking</i>
+                                        </a>
+
+                                        <!-- Modal Impound Detail -->
+                                        <div id="impoundModal_@item.IncidentId" class="modal">
+                                            <div class="modal-content">
+                                                <h5><i class="material-icons left deep-orange-text">local_parking</i>Chi tiết tạm giữ xe</h5>
+                                                <table class="striped">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td><strong>Địa chỉ bãi giữ xe:</strong></td>
+                                                            <td>@item.ImpoundDetail.ImpoundLotAddress</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><strong>Ngày bị tạm giữ:</strong></td>
+                                                            <td>@item.ImpoundDetail.ImpoundedAt.ToString("dd/MM/yyyy")</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><strong>Ngày lấy lại xe:</strong></td>
+                                                            <td>
+                                                                @if (item.ImpoundDetail.ReleasedAt.HasValue)
+                                                                {
+                                                                    @item.ImpoundDetail.ReleasedAt.Value.ToString("dd/MM/yyyy")
+                                                                }
+                                                                else
+                                                                {
+                                                                    <span class="grey-text">Chưa lấy lại</span>
+                                                                }
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <a href="#!" class="modal-close btn-flat">Đóng</a>
+                                            </div>
+                                        </div>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize tooltips
+            var tooltipElems = document.querySelectorAll('.tooltipped');
+            M.Tooltip.init(tooltipElems);
+
+            // Initialize modals
+            var modalElems = document.querySelectorAll('.modal');
+            M.Modal.init(modalElems);
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <text>UCarToast.success('@TempData["SuccessMessage"]');</text>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>UCarToast.error('@TempData["ErrorMessage"]');</text>
+            }
+        });
+    </script>
+}

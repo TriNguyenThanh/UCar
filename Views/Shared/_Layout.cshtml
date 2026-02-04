@@ -1,112 +1,226 @@
 ﻿<!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - UCar</title>
     <meta name="description" content="@(ViewData["Description"] ?? "Hệ thống quản lý thuê xe UCar")" />
-    
+
     <!-- Google Fonts: Be Vietnam Pro + Material Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    
+
     <!-- Materialize CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
-    
+
     <!-- iziToast - Toast Notifications (giống react-toastify) -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css" rel="stylesheet">
-    
+
     <!-- UCar Custom Theme (override Materialize) -->
     <link rel="stylesheet" href="~/css/ucar-theme.css" asp-append-version="true" />
-    
+
     <!-- Page specific styles -->
     @await RenderSectionAsync("Styles", required: false)
 </head>
+
 <body>
     <!-- Navigation -->
     <nav class="ucar-navbar">
         <div class="nav-wrapper container">
-            <!-- Brand -->
-            <a asp-controller="Home" asp-action="Index" class="brand-logo">
-                <i class="material-icons left">directions_car</i>UCar
-            </a>
-            
-            <!-- Mobile Toggle -->
-            <a href="#" data-target="mobile-nav" class="sidenav-trigger">
-                <i class="material-icons">menu</i>
-            </a>
-            
+            @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff"))
+            {
+                <!-- Brand -->
+                <a asp-controller="Home" asp-action="Index" class="brand-logo">
+                    <i class="material-icons left">directions_car</i>UCar
+                </a>
+
+                <!-- Mobile Toggle -->
+                <a href="#" data-target="mobile-nav" class="sidenav-trigger">
+                    <i class="material-icons">menu</i>
+                </a>
+            }
+            else
+            {
+                <!-- Brand -->
+                <a href="#" class="brand-logo">
+                    <i class="material-icons left">directions_car</i>UCar
+                </a>
+
+                <!-- Mobile Toggle -->
+                <a href="#" data-target="mobile-nav" class="sidenav-trigger">
+                    <i class="material-icons">menu</i>
+                </a>
+            }
+
             <!-- Desktop Nav Links -->
             <ul class="right hide-on-med-and-down">
                 @if (User.Identity?.IsAuthenticated == true)
                 {
-                    <li><a asp-controller="Home" asp-action="Index"><i class="material-icons left">home</i>Trang chủ</a></li>
-                    
-                    @if (User.IsInRole("Admin") || User.IsInRole("Staff"))
+                    @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff"))
                     {
-                        <li><a asp-controller="Customer" asp-action="Index"><i class="material-icons left">people</i>Khách hàng</a></li>
-                        
+                        <li><a asp-controller="Home" asp-action="Index"><i class="material-icons left">home</i>Trang chủ</a>
+                        </li>
+
+                        <!-- Khách hàng Dropdown -->
+                        <li>
+                            <a class="dropdown-trigger" href="#!" data-target="customer-dropdown">
+                                <i class="material-icons left">people</i>Khách hàng<i
+                                    class="material-icons right">arrow_drop_down</i>
+                            </a>
+                        </li>
+
                         <!-- 2.0 Quản lý xe Dropdown -->
                         <li>
                             <a class="dropdown-trigger" href="#!" data-target="vehicle-dropdown">
-                                <i class="material-icons left">directions_car</i>Quản lý xe<i class="material-icons right">arrow_drop_down</i>
+                                <i class="material-icons left">directions_car</i>Quản lý xe<i
+                                    class="material-icons right">arrow_drop_down</i>
                             </a>
                         </li>
-                        
+
                         <!-- 6.0 Giao nhận xe Dropdown -->
                         <li>
                             <a class="dropdown-trigger" href="#!" data-target="handover-dropdown">
-                                <i class="material-icons left">swap_horiz</i>Giao nhận<i class="material-icons right">arrow_drop_down</i>
+                                <i class="material-icons left">swap_horiz</i>Giao nhận<i
+                                    class="material-icons right">arrow_drop_down</i>
                             </a>
                         </li>
                         
-                        <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons left">event</i>Đặt xe</a></li>
+                        <!-- 5.0 Hợp đồng Dropdown -->
+                        <li>
+                            <a class="dropdown-trigger" href="#!" data-target="contract-dropdown">
+                                <i class="material-icons left">description</i>Hợp đồng<i
+                                    class="material-icons right">arrow_drop_down</i>
+                            </a>
+                        </li>
+                        
+                        <!-- 7.0 Hóa đơn Dropdown -->
+                        <li>
+                            <a class="dropdown-trigger" href="#!" data-target="invoice-dropdown">
+                                <i class="material-icons left">receipt</i>Hóa đơn<i
+                                    class="material-icons right">arrow_drop_down</i>
+                            </a>
+                        </li>
+                        
+                        <!-- 8.0 Vận hành & Nhân sự Dropdown -->
+                        <li>
+                            <a class="dropdown-trigger" href="#!" data-target="operations-dropdown">
+                                <i class="material-icons left">assignment_ind</i>Vận hành<i class="material-icons right">arrow_drop_down</i>
+                            </a>
+                        </li>
+                        
+                        @* <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons left">event</i>Đặt xe</a></li> *@
                     }
-                    
+
+                    @* TODO: Implement ReportsController
                     @if (User.IsInRole("Admin"))
                     {
-                        <li><a asp-controller="Reports" asp-action="Index"><i class="material-icons left">bar_chart</i>Báo cáo</a></li>
+                        <li><a asp-controller="Reports" asp-action="Index"><i class="material-icons left">bar_chart</i>Báo
+                                cáo</a></li>
                     }
-                    
+                    *@
+
                     @if (User.IsInRole("Customer"))
                     {
-                        <li><a asp-controller="Booking" asp-action="MyBookings"><i class="material-icons left">event</i>Đặt xe của tôi</a></li>
-                        <li><a asp-controller="Rental" asp-action="MyRentals"><i class="material-icons left">directions_car</i>Hợp đồng của tôi</a></li>
+                        <li><a asp-controller="Booking" asp-action="Search"><i class="material-icons left">search</i>Thuê xe</a></li>
+                        <li><a asp-controller="Booking" asp-action="MyBookings"><i class="material-icons left">event</i>Đặt xe
+                                của tôi</a></li>
+                        @* Luồng mới: Khách không xem được Hợp đồng và Hóa đơn online *@
                     }
-                    
+
                     <!-- User Dropdown -->
                     <li>
                         <a class="dropdown-trigger" href="#!" data-target="user-dropdown">
-                            @(User.Claims.FirstOrDefault(c => c.Type == "FullName")?.Value ?? User.Identity.Name)<i class="material-icons right">arrow_drop_down</i>
+                            @(User.Claims.FirstOrDefault(c => c.Type == "FullName")?.Value ?? User.Identity.Name)<i
+                                class="material-icons right">arrow_drop_down</i>
                         </a>
                     </li>
                 }
                 else
                 {
+                    <li><a asp-controller="Account" asp-action="Register"><i class="material-icons left">person_add</i>Đăng ký</a></li>
                     <li><a asp-controller="Account" asp-action="Login"><i class="material-icons left">login</i>Đăng nhập</a></li>
                 }
             </ul>
         </div>
     </nav>
-    
+
+    <!-- Customer Management Dropdown Structure -->
+    <ul id="customer-dropdown" class="dropdown-content">
+        <li><a asp-controller="Customer" asp-action="Index"><i class="material-icons">list</i>DS Khách hàng</a></li>
+        <li><a asp-controller="Customer" asp-action="PendingDocuments"><i class="material-icons">pending_actions</i>Duyệt giấy tờ</a></li>
+    </ul>
+
     <!-- Vehicle Management Dropdown Structure -->
     <ul id="vehicle-dropdown" class="dropdown-content">
+        <li><a asp-controller="Booking" asp-action="Manage"><i class="material-icons">list</i>Quản lý Đặt xe</a></li>
         <li><a asp-controller="Vehicle" asp-action="Index"><i class="material-icons">list</i>Danh sách xe</a></li>
         <li><a asp-controller="Vehicle" asp-action="Create"><i class="material-icons">add</i>Thêm xe mới</a></li>
         <li class="divider"></li>
-        <li><a asp-controller="VehicleCatalog" asp-action="VehicleTypes"><i class="material-icons">category</i>Loại xe</a></li>
-        <li><a asp-controller="VehicleCatalog" asp-action="VehicleModels"><i class="material-icons">directions_car</i>Dòng xe</a></li>
+        <li><a asp-controller="VehicleCatalog" asp-action="VehicleTypes"><i class="material-icons">category</i>Loại
+                xe</a></li>
+        <li><a asp-controller="VehicleCatalog" asp-action="VehicleModels"><i
+                    class="material-icons">directions_car</i>Dòng xe</a></li>
+        <li class="divider"></li>
+        <li><a asp-controller="Pricing" asp-action="Index"><i class="material-icons">attach_money</i>Bảng giá</a></li>
+        <li><a asp-controller="Holiday" asp-action="Index"><i class="material-icons">event</i>Ngày lễ</a></li>
+        <li><a asp-controller="DepositPolicy" asp-action="Index"><i class="material-icons">account_balance_wallet</i>Chính sách đặt cọc</a></li>
+        <li><a asp-controller="SurchargePolicy" asp-action="Index"><i class="material-icons">monetization_on</i>Chính sách phụ phí</a></li>
     </ul>
-    
+
     <!-- Handover Management Dropdown Structure -->
     <ul id="handover-dropdown" class="dropdown-content">
-        <li><a asp-controller="Handover" asp-action="Index"><i class="material-icons">exit_to_app</i>Chờ giao xe</a></li>
+        <li><a asp-controller="Handover" asp-action="Index"><i class="material-icons">exit_to_app</i>Chờ giao xe</a>
+        </li>
         <li><a asp-controller="Handover" asp-action="Return"><i class="material-icons">login</i>Chờ nhận xe</a></li>
         <li class="divider"></li>
         <li><a asp-controller="Handover" asp-action="Overdue"><i class="material-icons">warning</i>Quá hạn</a></li>
-        <li><a asp-controller="Handover" asp-action="Documents"><i class="material-icons">description</i>Biên bản</a></li>
+        <li><a asp-controller="Handover" asp-action="Documents"><i class="material-icons">description</i>Biên bản</a>
+        </li>
+        <li><a asp-controller="Handover" asp-action="AllIncidents"><i class="material-icons">report_problem</i>Sự cố</a>
+        </li>
+    </ul>
+    
+    <!-- Contract Management Dropdown Structure (Module 5.0) -->
+    <ul id="contract-dropdown" class="dropdown-content">
+        <li><a asp-controller="Contract" asp-action="Manage"><i class="material-icons">list</i>Quản lý hợp đồng</a></li>
+        <li><a asp-controller="Contract" asp-action="Create"><i class="material-icons">add</i>Tạo hợp đồng mới</a></li>
+        <li class="divider"></li>
+        <li><a asp-controller="Contract" asp-action="Manage" asp-route-status="Pending"><i class="material-icons">schedule</i>Chờ xác nhận</a></li>
+        <li><a asp-controller="Contract" asp-action="Manage" asp-route-status="Active"><i class="material-icons">check_circle</i>Đang hoạt động</a></li>
+        <li><a asp-controller="Contract" asp-action="Manage" asp-route-status="InProgress"><i class="material-icons">directions_car</i>Đang thuê</a></li>
+        <li><a asp-controller="Contract" asp-action="Manage" asp-route-status="Completed"><i class="material-icons">done_all</i>Hoàn thành</a></li>
+    </ul>
+    
+    <!-- Invoice Management Dropdown Structure (Module 7.0) -->
+    <ul id="invoice-dropdown" class="dropdown-content">
+        <li><a asp-controller="Invoice" asp-action="Index"><i class="material-icons">list</i>Tất cả hóa đơn</a></li>
+        <li class="divider"></li>
+        <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="Deposit"><i class="material-icons">account_balance_wallet</i>Hóa đơn cọc</a></li>
+        <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="Rental"><i class="material-icons">directions_car</i>Hóa đơn thuê xe</a></li>
+        <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="SurchargePenalty"><i class="material-icons">monetization_on</i>Phụ thu/Phạt</a></li>
+        <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="Refund"><i class="material-icons">restore</i>Hoàn tiền</a></li>
+        <li class="divider"></li>
+        <li><a asp-controller="Invoice" asp-action="Index" asp-route-status="Overdue"><i class="material-icons">warning</i>Hóa đơn quá hạn</a></li>
+    </ul>
+    
+    <!-- Operations & HR Dropdown Structure (Module 8.0) -->
+    <ul id="operations-dropdown" class="dropdown-content">
+        <li><a asp-controller="Staff" asp-action="Index"><i class="material-icons">people</i>Nhân viên</a></li>
+        @if (User.IsInRole("Admin"))
+        {
+            <li><a asp-controller="Operations" asp-action="Branches"><i class="material-icons">business</i>Chi nhánh</a></li>
+        }
+        <li class="divider"></li>
+        <li><a asp-controller="Operations" asp-action="Tasks"><i class="material-icons">assignment</i>Nhiệm vụ</a></li>
+        @if (User.IsInRole("Admin"))
+        {
+            <li><a asp-controller="Operations" asp-action="Shifts"><i class="material-icons">schedule</i>Ca làm việc</a></li>
+        }
+        <li><a asp-controller="Operations" asp-action="ShiftSchedule"><i class="material-icons">calendar_month</i>Lịch xếp ca</a></li>
     </ul>
     
     <!-- User Dropdown Structure -->
@@ -124,7 +238,7 @@
     <form id="logoutForm" asp-controller="Account" asp-action="Logout" method="post" style="display: none;">
         @Html.AntiForgeryToken()
     </form>
-    
+
     <!-- Mobile Sidenav -->
     <ul class="sidenav" id="mobile-nav">
         @if (User.Identity?.IsAuthenticated == true)
@@ -132,23 +246,40 @@
             <li>
                 <div class="user-view">
                     <div class="background" style="background: linear-gradient(135deg, #00275e 0%, #667eea 100%);"></div>
-                    <a href="#!"><span class="white-text name">@(User.Claims.FirstOrDefault(c => c.Type == "FullName")?.Value ?? "User")</span></a>
+                    <a href="#!"><span class="white-text name">@(User.Claims.FirstOrDefault(c => c.Type ==
+                                                    "FullName")?.Value ?? "User")</span></a>
                     <a href="#!"><span class="white-text email">@(User.Identity.Name)</span></a>
-                    <a href="#!"><span class="white-text role">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span></a>
+                    <a href="#!"><span
+                            class="white-text role">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span></a>
                 </div>
             </li>
-            <li><a asp-controller="Home" asp-action="Index"><i class="material-icons">home</i>Trang chủ</a></li>
-            
-            @if (User.IsInRole("Admin") || User.IsInRole("Staff"))
+
+            @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff"))
             {
-                <li><a asp-controller="Customer" asp-action="Index"><i class="material-icons">people</i>Khách hàng</a></li>
-                <li class="divider"></li>
+                <li><a asp-controller="Home" asp-action="Index"><i class="material-icons">home</i>Trang chủ</a></li>
                 
+                <!-- Khách hàng - Collapsible -->
+                <li class="no-padding">
+                    <ul class="collapsible collapsible-accordion">
+                        <li>
+                            <a class="collapsible-header"><i class="material-icons">people</i>Khách hàng<i
+                                    class="material-icons right">arrow_drop_down</i></a>
+                            <div class="collapsible-body">
+                                <ul>
+                                    <li><a asp-controller="Customer" asp-action="Index">DS Khách hàng</a></li>
+                                    <li><a asp-controller="Customer" asp-action="PendingDocuments">Duyệt giấy tờ</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+
                 <!-- Quản lý xe - Collapsible -->
                 <li class="no-padding">
                     <ul class="collapsible collapsible-accordion">
                         <li>
-                            <a class="collapsible-header"><i class="material-icons">directions_car</i>Quản lý xe<i class="material-icons right">arrow_drop_down</i></a>
+                            <a class="collapsible-header"><i class="material-icons">directions_car</i>Quản lý xe<i
+                                    class="material-icons right">arrow_drop_down</i></a>
                             <div class="collapsible-body">
                                 <ul>
                                     <li><a asp-controller="Vehicle" asp-action="Index">Danh sách xe</a></li>
@@ -160,12 +291,13 @@
                         </li>
                     </ul>
                 </li>
-                
+
                 <!-- Giao nhận xe - Collapsible -->
                 <li class="no-padding">
                     <ul class="collapsible collapsible-accordion">
                         <li>
-                            <a class="collapsible-header"><i class="material-icons">swap_horiz</i>Giao nhận<i class="material-icons right">arrow_drop_down</i></a>
+                            <a class="collapsible-header"><i class="material-icons">swap_horiz</i>Giao nhận<i
+                                    class="material-icons right">arrow_drop_down</i></a>
                             <div class="collapsible-body">
                                 <ul>
                                     <li><a asp-controller="Handover" asp-action="Index">Chờ giao xe</a></li>
@@ -178,23 +310,88 @@
                     </ul>
                 </li>
                 
-                <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons">event</i>Đặt xe</a></li>
+                <!-- Hợp đồng - Collapsible (Module 5.0) -->
+                <li class="no-padding">
+                    <ul class="collapsible collapsible-accordion">
+                        <li>
+                            <a class="collapsible-header"><i class="material-icons">description</i>Hợp đồng<i
+                                    class="material-icons right">arrow_drop_down</i></a>
+                            <div class="collapsible-body">
+                                <ul>
+                                    <li><a asp-controller="Contract" asp-action="Manage">Quản lý hợp đồng</a></li>
+                                    <li><a asp-controller="Contract" asp-action="Create">Tạo mới</a></li>
+                                    <li><a asp-controller="Contract" asp-action="Manage" asp-route-status="Pending">Chờ xác nhận</a></li>
+                                    <li><a asp-controller="Contract" asp-action="Manage" asp-route-status="Active">Đang hoạt động</a></li>
+                                    <li><a asp-controller="Contract" asp-action="Manage" asp-route-status="InProgress">Đang thuê</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+                
+                <!-- Hóa đơn - Collapsible (Module 7.0) -->
+                <li class="no-padding">
+                    <ul class="collapsible collapsible-accordion">
+                        <li>
+                            <a class="collapsible-header"><i class="material-icons">receipt</i>Hóa đơn<i
+                                    class="material-icons right">arrow_drop_down</i></a>
+                            <div class="collapsible-body">
+                                <ul>
+                                    <li><a asp-controller="Invoice" asp-action="Index">Tất cả hóa đơn</a></li>
+                                    <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="Deposit">Hóa đơn cọc</a></li>
+                                    <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="Rental">Hóa đơn thuê xe</a></li>
+                                    <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="SurchargePenalty">Phụ thu/Phạt</a></li>
+                                    <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="Refund">Hoàn tiền</a></li>
+                                    <li><a asp-controller="Invoice" asp-action="Index" asp-route-status="Overdue">Quá hạn</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+                
+                <!-- Vận hành & Nhân sự - Collapsible (Module 8.0) -->
+                <li class="no-padding">
+                    <ul class="collapsible collapsible-accordion">
+                        <li>
+                            <a class="collapsible-header"><i class="material-icons">assignment_ind</i>Vận hành<i class="material-icons right">arrow_drop_down</i></a>
+                            <div class="collapsible-body">
+                                <ul>
+                                    <li><a asp-controller="Staff" asp-action="Index">Nhân viên</a></li>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <li><a asp-controller="Operations" asp-action="Branches">Chi nhánh</a></li>
+                                    }
+                                    <li><a asp-controller="Operations" asp-action="Tasks">Nhiệm vụ</a></li>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <li><a asp-controller="Operations" asp-action="Shifts">Ca làm việc</a></li>
+                                    }
+                                    <li><a asp-controller="Operations" asp-action="ShiftSchedule">Lịch xếp ca</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+                
+                @* <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons">event</i>Đặt xe</a></li> *@
             }
-            
+
+            @* TODO: Implement ReportsController
             @if (User.IsInRole("Admin"))
             {
                 <li><a asp-controller="Reports" asp-action="Index"><i class="material-icons">bar_chart</i>Báo cáo</a></li>
             }
-            
+            *@
+
             @if (User.IsInRole("Customer"))
             {
-                <li><a asp-controller="Booking" asp-action="MyBookings"><i class="material-icons">event</i>Đặt xe của tôi</a></li>
-                <li><a asp-controller="Rental" asp-action="MyRentals"><i class="material-icons">directions_car</i>Hợp đồng của tôi</a></li>
+                <li><a asp-controller="Booking" asp-action="MyBookings"><i class="material-icons">event</i>Đặt xe của tôi</a>
+                </li>
+                @* Luồng mới: Khách không xem được Hợp đồng và Hóa đơn online *@
             }
-            
+
             <li class="divider"></li>
             <li><a asp-controller="Account" asp-action="Profile"><i class="material-icons">person</i>Hồ sơ</a></li>
-            <li><a href="#!"><i class="material-icons">settings</i>Cài đặt</a></li>
             <li>
                 <a href="#" onclick="document.getElementById('logoutForm').submit(); return false;" class="red-text">
                     <i class="material-icons">exit_to_app</i>Đăng xuất
@@ -203,6 +400,7 @@
         }
         else
         {
+            <li><a asp-controller="Account" asp-action="Register"><i class="material-icons">person_add</i>Đăng ký</a></li>
             <li><a asp-controller="Account" asp-action="Login"><i class="material-icons">login</i>Đăng nhập</a></li>
         }
     </ul>
@@ -227,80 +425,86 @@
 
     <!-- Materialize JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-    
+
     <!-- Initialize Materialize Components -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        // ===== GLOBAL CONFIG cho Materialize Components =====
+        window.UCarConfig = {
+            datepickerI18n: {
+                cancel: 'Hủy',
+                clear: 'Xóa',
+                done: 'Chọn',
+                months: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+                monthsShort: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'],
+                weekdays: ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'],
+                weekdaysShort: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+                weekdaysAbbrev: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+            },
+            timepickerI18n: {
+                cancel: 'Hủy',
+                clear: 'Xóa',
+                done: 'Chọn'
+            }
+        };
+        
+        document.addEventListener('DOMContentLoaded', function () {
             // Initialize sidenav
             var sidenavElems = document.querySelectorAll('.sidenav');
             M.Sidenav.init(sidenavElems);
-            
+
             // Initialize dropdowns
             var dropdownElems = document.querySelectorAll('.dropdown-trigger');
             M.Dropdown.init(dropdownElems, {
                 coverTrigger: false,
                 constrainWidth: false
             });
-            
+
             // Initialize collapsible (for mobile sidenav)
             var collapsibleElems = document.querySelectorAll('.collapsible');
             M.Collapsible.init(collapsibleElems);
-            
+
             // Initialize select
             var selectElems = document.querySelectorAll('select');
             M.FormSelect.init(selectElems);
-            
+
             // Initialize datepickers
             var dateElems = document.querySelectorAll('.datepicker');
             M.Datepicker.init(dateElems, {
                 format: 'dd/mm/yyyy',
-                i18n: {
-                    cancel: 'Hủy',
-                    clear: 'Xóa',
-                    done: 'Chọn',
-                    months: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
-                    monthsShort: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'],
-                    weekdays: ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'],
-                    weekdaysShort: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
-                    weekdaysAbbrev: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
-                }
+                i18n: UCarConfig.datepickerI18n
             });
-            
+
             // Initialize timepickers
             var timeElems = document.querySelectorAll('.timepicker');
             M.Timepicker.init(timeElems, {
                 twelveHour: false,
-                i18n: {
-                    cancel: 'Hủy',
-                    clear: 'Xóa',
-                    done: 'Chọn'
-                }
+                i18n: UCarConfig.timepickerI18n
             });
-            
+
             // Initialize tooltips
             var tooltipElems = document.querySelectorAll('.tooltipped');
             M.Tooltip.init(tooltipElems);
-            
+
             // Initialize modals
             var modalElems = document.querySelectorAll('.modal');
             M.Modal.init(modalElems);
-            
+
             // Initialize floating action buttons
             var fabElems = document.querySelectorAll('.fixed-action-btn');
             M.FloatingActionButton.init(fabElems);
-            
+
             // Initialize tabs
             var tabElems = document.querySelectorAll('.tabs');
             M.Tabs.init(tabElems);
-            
+
             // Initialize textareas
             M.textareaAutoResize(document.querySelectorAll('textarea'));
         });
     </script>
-    
+
     <!-- iziToast JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
-    
+
     <!-- UCar Toast Wrapper - sử dụng giống react-toastify -->
     <script>
         // UCar Toast - wrapper cho iziToast
@@ -317,9 +521,9 @@
                 transitionIn: 'flipInX',
                 transitionOut: 'flipOutX'
             },
-            
+
             // Success toast
-            success: function(message, title = 'Thành công!') {
+            success: function (message, title = 'Thành công!') {
                 iziToast.success({
                     ...this.defaults,
                     title: title,
@@ -329,9 +533,9 @@
                     color: '#4CAF50'
                 });
             },
-            
+
             // Error toast
-            error: function(message, title = 'Lỗi!') {
+            error: function (message, title = 'Lỗi!') {
                 iziToast.error({
                     ...this.defaults,
                     title: title,
@@ -341,9 +545,9 @@
                     color: '#f44336'
                 });
             },
-            
+
             // Warning toast
-            warning: function(message, title = 'Cảnh báo!') {
+            warning: function (message, title = 'Cảnh báo!') {
                 iziToast.warning({
                     ...this.defaults,
                     title: title,
@@ -353,9 +557,9 @@
                     color: '#ff9800'
                 });
             },
-            
+
             // Info toast
-            info: function(message, title = 'Thông tin') {
+            info: function (message, title = 'Thông tin') {
                 iziToast.info({
                     ...this.defaults,
                     title: title,
@@ -365,23 +569,23 @@
                     color: '#2196F3'
                 });
             },
-            
+
             // Custom toast with options
-            show: function(options) {
+            show: function (options) {
                 iziToast.show({
                     ...this.defaults,
                     ...options
                 });
             }
         };
-        
+
         // Expose globally
         window.UCarToast = UCarToast;
-        
+
         // Legacy support - showToast function
         function showToast(type, message, duration = 3000) {
             UCarToast.defaults.timeout = duration;
-            switch(type) {
+            switch (type) {
                 case 'success': UCarToast.success(message); break;
                 case 'error': UCarToast.error(message); break;
                 case 'warning': UCarToast.warning(message); break;
@@ -391,8 +595,9 @@
         }
         window.showToast = showToast;
     </script>
-    
+
     <!-- Page specific scripts -->
     @await RenderSectionAsync("Scripts", required: false)
 </body>
+
 </html>
