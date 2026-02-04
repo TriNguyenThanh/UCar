@@ -1,0 +1,255 @@
+@model UCar.Models.DTOs.PagedResult<UCar.Models.Price>
+@{
+    ViewData["Title"] = "Quản lý Bảng giá";
+    ViewData["Description"] = "Quản lý bảng giá thuê xe theo dòng xe";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header Section -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons teal-text" style="vertical-align: middle; margin-right: 8px;">attach_money</i>
+                Quản lý Bảng giá
+            </h4>
+            <p class="grey-text text-darken-1" style="margin: 0;">Tổng số: <strong>@Model.TotalCount</strong> bảng giá</p>
+        </div>
+        <a asp-action="Create" class="btn waves-effect waves-light teal">
+            <i class="material-icons left">add</i>Thêm Bảng giá
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="card-panel green lighten-4 green-text text-darken-4">
+            <i class="material-icons left">check_circle</i>
+            @TempData["SuccessMessage"]
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="card-panel red lighten-4 red-text text-darken-4">
+            <i class="material-icons left">error</i>
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <!-- Filter Section -->
+    <div class="card">
+        <div class="card-content">
+            <form asp-action="Index" method="get">
+                <div class="row" style="margin-bottom: 0;">
+                    <div class="col s12 m4">
+                        <div class="input-field">
+                            <select id="vehicleModelId" name="vehicleModelId">
+                                <option value="">Tất cả dòng xe</option>
+                                @foreach (var vehicleModel in ViewBag.VehicleModels)
+                                {
+                                    <option value="@vehicleModel.Value" selected="@(vehicleModel.Value == ViewBag.CurrentVehicleModelId?.ToString())">@vehicleModel.Text</option>
+                                }
+                            </select>
+                            <label for="vehicleModelId">Lọc theo dòng xe</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m3">
+                        <div class="input-field">
+                            <select id="isActive" name="isActive">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="true" selected="@(ViewBag.CurrentIsActive == true)">Đang áp dụng</option>
+                                <option value="false" selected="@(ViewBag.CurrentIsActive == false)">Tạm ngưng</option>
+                            </select>
+                            <label for="isActive">Trạng thái</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m3" style="display: flex; align-items: center; gap: 0.5rem; padding-top: 1rem;">
+                        <button type="submit" class="btn waves-effect waves-light teal">
+                            <i class="material-icons left">filter_list</i>Lọc
+                        </button>
+                        <a asp-action="Index" class="btn-flat waves-effect">
+                            <i class="material-icons left">refresh</i>Tất cả
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pricing Table -->
+    <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-content" style="padding: 0;">
+            @if (Model.TotalCount == 0)
+            {
+                <div class="card-panel orange lighten-4 orange-text text-darken-4">
+                    <i class="material-icons left">info</i>
+                    Không tìm thấy bảng giá nào
+                </div>
+            }
+            else
+            {
+                <table class="striped highlight responsive-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40px;"></th>
+                            <th>Dòng xe</th>
+                            <th>Tên bảng giá</th>
+                            <th>Giá ngày</th>
+                            <th>Phụ phí giờ</th>
+                            <th>Hiệu lực từ</th>
+                            <th>Trạng thái</th>
+                            <th style="text-align: center;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var price in Model.Items)
+                        {
+                            var rowId = $"price-{price.PriceId}";
+                            var detailId = $"detail-{price.PriceId}";
+                            
+                            <tr id="@rowId">
+                                <td>
+                                    <a href="javascript:void(0)" 
+                                       onclick="togglePriceDetail('@detailId', this)"
+                                       class="btn-flat waves-effect" 
+                                       style="padding: 0; min-width: 36px;">
+                                        <i class="material-icons grey-text">expand_more</i>
+                                    </a>
+                                </td>
+                                <td>
+                                    <strong>@price.VehicleModel?.ModelName</strong><br/>
+                                    <small class="grey-text">@price.VehicleModel?.Make</small>
+                                </td>
+                                <td>@price.Name</td>
+                                <td><strong>@price.BaseDailyPrice.ToString("N0")đ</strong></td>
+                                <td>@price.OvertimeHourlyPrice.ToString("N0")đ</td>
+                                <td>@price.ValidFrom.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    @if (price.IsActive)
+                                    {
+                                        <span class="chip green lighten-4 green-text">Đang áp dụng</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="chip grey lighten-2">Tạm ngưng</span>
+                                    }
+                                </td>
+                                <td style="text-align: center;">
+                                    <a asp-action="Details" asp-route-id="@price.PriceId" 
+                                       class="btn-flat waves-effect tooltipped" 
+                                       data-position="top" data-tooltip="Chi tiết">
+                                        <i class="material-icons teal-text">visibility</i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@price.PriceId" 
+                                       class="btn-flat waves-effect tooltipped" 
+                                       data-position="top" data-tooltip="Sửa">
+                                        <i class="material-icons blue-text">edit</i>
+                                    </a>
+                                    <form asp-action="Delete" asp-route-id="@price.PriceId" 
+                                          method="post" style="display: inline;" 
+                                          onsubmit="return confirm('Bạn có chắc muốn xóa bảng giá này?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn-flat waves-effect tooltipped" 
+                                                data-position="top" data-tooltip="Xóa">
+                                            <i class="material-icons red-text">delete</i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <tr id="@detailId" style="display: none;" class="price-detail-row">
+                                <td colspan="8" style="background-color: #f5f5f5; padding: 1rem;">
+                                    <div class="row" style="margin-bottom: 0;">
+                                        <div class="col s12 m4">
+                                            <div class="card blue lighten-5" style="margin: 0;">
+                                                <div class="card-content" style="padding: 1rem;">
+                                                    <span class="card-title blue-text" style="font-size: 1rem; font-weight: 600;">
+                                                        <i class="material-icons tiny" style="vertical-align: middle;">today</i>
+                                                        Giá thuê ngày
+                                                    </span>
+                                                    <p style="font-size: 1.5rem; font-weight: 700; margin: 0.5rem 0 0 0;">
+                                                        @price.BaseDailyPrice.ToString("N0")đ
+                                                    </p>
+                                                    <small class="grey-text">Giá cơ bản mỗi ngày</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col s12 m4">
+                                            <div class="card purple lighten-5" style="margin: 0;">
+                                                <div class="card-content" style="padding: 1rem;">
+                                                    <span class="card-title purple-text" style="font-size: 1rem; font-weight: 600;">
+                                                        <i class="material-icons tiny" style="vertical-align: middle;">date_range</i>
+                                                        Giá thuê tháng
+                                                    </span>
+                                                    <p style="font-size: 1.5rem; font-weight: 700; margin: 0.5rem 0 0 0;">
+                                                        @((price.BaseDailyPrice * 30 * price.MonthMultiplier).ToString("N0"))đ
+                                                    </p>
+                                                    <small class="grey-text">30 ngày × @price.MonthMultiplier = giảm @((1 - price.MonthMultiplier) * 100)%</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col s12 m4">
+                                            <div class="card orange lighten-5" style="margin: 0;">
+                                                <div class="card-content" style="padding: 1rem;">
+                                                    <span class="card-title orange-text text-darken-2" style="font-size: 1rem; font-weight: 600;">
+                                                        <i class="material-icons tiny" style="vertical-align: middle;">star</i>
+                                                        Giá ngày lễ
+                                                    </span>
+                                                    <p style="font-size: 1.5rem; font-weight: 700; margin: 0.5rem 0 0 0;">
+                                                        @((price.BaseDailyPrice * price.PeakMultiplier).ToString("N0"))đ
+                                                    </p>
+                                                    <small class="grey-text">Ngày thường × @price.PeakMultiplier = tăng @((price.PeakMultiplier - 1) * 100)%</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <div style="display: flex; justify-content: center; margin-top: 2rem;">
+            <ul class="pagination">
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="@(i == Model.Page ? "active teal" : "waves-effect")">
+                        <a asp-action="Index" 
+                           asp-route-page="@i"
+                           asp-route-vehicleModelId="@ViewBag.CurrentVehicleModelId"
+                           asp-route-isActive="@ViewBag.CurrentIsActive">@i</a>
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            M.FormSelect.init(document.querySelectorAll('select'));
+            M.Tooltip.init(document.querySelectorAll('.tooltipped'));
+        });
+        
+        function togglePriceDetail(detailId, buttonElement) {
+            const detailRow = document.getElementById(detailId);
+            const icon = buttonElement.querySelector('i');
+            
+            if (detailRow.style.display === 'none') {
+                detailRow.style.display = 'table-row';
+                icon.textContent = 'expand_less';
+                icon.classList.remove('grey-text');
+                icon.classList.add('teal-text');
+            } else {
+                detailRow.style.display = 'none';
+                icon.textContent = 'expand_more';
+                icon.classList.remove('teal-text');
+                icon.classList.add('grey-text');
+            }
+        }
+    </script>
+}

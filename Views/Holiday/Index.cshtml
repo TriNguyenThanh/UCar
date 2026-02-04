@@ -1,0 +1,202 @@
+@model List<UCar.Models.HolidayConfig>
+@{
+    ViewData["Title"] = "Quản lý Ngày lễ";
+    ViewData["Description"] = "Quản lý danh sách ngày lễ và ngày cao điểm";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header Section -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons orange-text" style="vertical-align: middle; margin-right: 8px;">event</i>
+                Quản lý Ngày lễ
+            </h4>
+            <p class="grey-text text-darken-1" style="margin: 0;">Năm <strong>@ViewBag.CurrentYear</strong> - Tổng số: <strong>@Model.Count</strong> ngày lễ</p>
+        </div>
+        <a asp-action="Create" class="btn waves-effect waves-light orange">
+            <i class="material-icons left">add</i>Thêm Ngày lễ
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="card-panel green lighten-4 green-text text-darken-4">
+            <i class="material-icons left">check_circle</i>
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    <!-- Year Filter Tabs -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-content" style="padding: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <span style="font-weight: 600; margin-right: 0.5rem;">
+                    <i class="material-icons tiny" style="vertical-align: middle;">filter_list</i> Lọc theo năm:
+                </span>
+                @foreach (var year in ViewBag.AvailableYears)
+                {
+                    if (year == ViewBag.CurrentYear)
+                    {
+                        <a asp-action="Index" asp-route-year="@year" 
+                           class="btn waves-effect orange white-text" style="margin: 0.2rem;">
+                            @year
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-action="Index" asp-route-year="@year" 
+                           class="btn waves-effect orange lighten-5 orange-text" style="margin: 0.2rem;">
+                            @year
+                        </a>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (Model.Count == 0)
+    {
+        <div class="card orange lighten-5">
+            <div class="card-content orange-text text-darken-2">
+                <i class="material-icons left">info</i>
+                <strong>Chưa có ngày lễ nào cho năm @ViewBag.CurrentYear</strong>
+                <p style="margin-top: 0.5rem; margin-bottom: 0;">Nhấn nút "Thêm Ngày lễ" để tạo cấu hình ngày lễ mới.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Holiday Cards Grid -->
+        <div class="row">
+            @foreach (var holiday in Model)
+            {
+                var daysCount = (holiday.EndDate - holiday.StartDate).Days + 1;
+                var isPast = holiday.EndDate < DateTime.Now;
+                var isCurrent = holiday.StartDate <= DateTime.Now && holiday.EndDate >= DateTime.Now;
+                var isFuture = holiday.StartDate > DateTime.Now;
+                
+                <div class="col s12 m6 l4">
+                    <div class="card hoverable" style="border-radius: 8px;">
+                        <div class="card-content">
+                            <!-- Status Badge -->
+                            <div style="position: absolute; top: 1rem; right: 1rem;">
+                                @if (holiday.IsActive)
+                                {
+                                    <span class="chip green lighten-4 green-text" style="font-size: 0.75rem; height: 24px; line-height: 24px;">
+                                        <i class="material-icons tiny" style="vertical-align: middle;">check_circle</i> Áp dụng
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="chip grey lighten-2" style="font-size: 0.75rem; height: 24px; line-height: 24px;">
+                                        <i class="material-icons tiny" style="vertical-align: middle;">block</i> Tạm ngưng
+                                    </span>
+                                }
+                            </div>
+                            
+                            <!-- Holiday Icon & Name -->
+                            <div style="margin-bottom: 1rem;">
+                                <i class="material-icons orange-text" style="font-size: 2.5rem;">celebration</i>
+                                <h5 style="font-weight: 700; margin-top: 0.5rem; margin-bottom: 0;">@holiday.HolidayName</h5>
+                            </div>
+                            
+                            <!-- Date Range -->
+                            <div class="divider" style="margin-bottom: 1rem;"></div>
+                            <div style="display: flex; gap: 0.5rem; align-items: flex-start; margin-bottom: 0.75rem;">
+                                <i class="material-icons orange-text" style="font-size: 1.2rem;">date_range</i>
+                                <div>
+                                    <div style="font-weight: 600; color: #424242;">@holiday.StartDate.ToString("dd/MM/yyyy")</div>
+                                    <div class="grey-text" style="font-size: 0.875rem;">đến</div>
+                                    <div style="font-weight: 600; color: #424242;">@holiday.EndDate.ToString("dd/MM/yyyy")</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Duration & Year -->
+                            <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                                <div class="chip orange lighten-5 orange-text" style="margin: 0;">
+                                    <i class="material-icons tiny" style="vertical-align: middle;">timelapse</i> @daysCount ngày
+                                </div>
+                                <div class="chip blue lighten-5 blue-text" style="margin: 0;">
+                                    <i class="material-icons tiny" style="vertical-align: middle;">event</i> Năm @holiday.Year
+                                </div>
+                            </div>
+                            
+                            <!-- Time Status -->
+                            @if (isCurrent)
+                            {
+                                <div class="chip teal lighten-4 teal-text" style="width: 100%; text-align: center; margin: 0.5rem 0;">
+                                    <i class="material-icons tiny" style="vertical-align: middle;">trending_up</i> Đang diễn ra
+                                </div>
+                            }
+                            else if (isPast)
+                            {
+                                <div class="chip grey lighten-3" style="width: 100%; text-align: center; margin: 0.5rem 0;">
+                                    <i class="material-icons tiny" style="vertical-align: middle;">history</i> Đã qua
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="chip blue lighten-4 blue-text" style="width: 100%; text-align: center; margin: 0.5rem 0;">
+                                    <i class="material-icons tiny" style="vertical-align: middle;">schedule</i> Sắp tới
+                                </div>
+                            }
+                        </div>
+                        
+                        <!-- Card Actions -->
+                        <div class="card-action" style="display: flex; justify-content: space-between; padding: 0.75rem 1rem;">
+                            <a asp-action="Edit" asp-route-id="@holiday.HolidayId" 
+                               class="btn-flat waves-effect orange-text tooltipped" 
+                               data-position="top" data-tooltip="Chỉnh sửa">
+                                <i class="material-icons">edit</i>
+                            </a>
+                            <form asp-action="ToggleStatus" asp-route-id="@holiday.HolidayId" 
+                                  method="post" style="display: inline;">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-flat waves-effect amber-text tooltipped" 
+                                        data-position="top" data-tooltip="@(holiday.IsActive ? "Tắt" : "Bật")">
+                                    <i class="material-icons">@(holiday.IsActive ? "visibility_off" : "visibility")</i>
+                                </button>
+                            </form>
+                            <form asp-action="Delete" asp-route-id="@holiday.HolidayId" 
+                                  method="post" style="display: inline;" 
+                                  onsubmit="return confirm('Bạn có chắc muốn xóa ngày lễ này?');">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn-flat waves-effect red-text tooltipped" 
+                                        data-position="top" data-tooltip="Xóa">
+                                    <i class="material-icons">delete</i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Info Note -->
+    <div class="card amber lighten-5" style="margin-top: 1.5rem;">
+        <div class="card-content amber-text text-darken-3">
+            <div style="display: flex; align-items: flex-start; gap: 1rem;">
+                <i class="material-icons" style="font-size: 2rem;">info</i>
+                <div>
+                    <strong style="font-size: 1.1rem;">Lưu ý về Ngày lễ</strong>
+                    <p style="margin-top: 0.5rem; margin-bottom: 0;">
+                        • Ngày lễ được sử dụng để tính giá cao điểm khi khách hàng thuê xe<br/>
+                        • Giá thuê sẽ được nhân với hệ số cao điểm (thường x1.5 hoặc cao hơn)<br/>
+                        • Chỉ những ngày lễ có trạng thái "Đang áp dụng" mới ảnh hưởng đến giá thuê<br/>
+                        • Cấu hình hệ số cao điểm cụ thể được thiết lập trong phần Quản lý Bảng giá
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            M.Tooltip.init(document.querySelectorAll('.tooltipped'));
+        });
+    </script>
+}

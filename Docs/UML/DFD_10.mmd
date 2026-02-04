@@ -1,24 +1,24 @@
 flowchart LR
-  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px;
-  classDef store fill:#f3fff3,stroke:#1f7a1f,stroke-width:1.2px;
-  classDef internal fill:#fff,stroke:#555,stroke-width:1px,stroke-dasharray: 4 3;
+  classDef ext fill:#DEFFF8,stroke:#46EDC8,stroke-width:1px,color:#0b5b4a;
+  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px,color:#1f1f6b;
+  classDef store fill:#FFF3BF,stroke:#F2C94C,stroke-width:1.2px,color:#6b5200;
 
-  P9i[[9.0 Lập báo cáo và phân tích]]:::internal
-  P5i[[5.0 Quản lý hợp đồng thuê]]:::internal
-  P3i[[3.0 Quản lý bảng giá và chính sách]]:::internal
-  P1i[[1.0 Quản lý khách hàng]]:::internal
+  QTV[Quản trị viên hệ thống]:::ext
 
-  D11[(D11 Người dùng và phân quyền)]:::store
-  D12[(D12 Mẫu biểu và điều khoản)]:::store
+
+  D11[(Người dùng và phân quyền)]:::store
+  D12[(Mẫu biểu và điều khoản)]:::store
 
   P101((10.1 Quản lý người dùng và phân quyền)):::proc
   P104((10.2 Quản lý mẫu biểu điều khoản và chính sách pháp lý)):::proc
 
-  P9i -->|Báo cáo tuân thủ| P104
 
-  P101 <--> |Người dùng và phân quyền| D11
-  P104 <--> |Mẫu biểu và điều khoản| D12
+  P101 <--> D11
+  P104 <--> D12
 
-  P104 -->|Mẫu hợp đồng| P5i
-  P104 -->|Yêu cầu cập nhật chính sách| P3i
-  P104 -->|Quy định tuân thủ| P1i
+  QTV -->|Thông tin yêu cầu quản lý người dùng và phân quyền| P101
+  P101 -->|Kết quả quản lý người dùng và phân quyền| QTV
+
+  QTV -->|Yêu cầu quản lý mẫu biểu điều khoản và chính sách pháp lý| P104
+  P104 -->|Kết quả quản lý mẫu biểu điều khoản và chính sách pháp lý| QTV
+  

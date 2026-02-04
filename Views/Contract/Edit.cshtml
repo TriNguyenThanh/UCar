@@ -1,0 +1,326 @@
+@model UCar.ViewModels.Contract.ContractEditViewModel
+@{
+    ViewData["Title"] = "Chỉnh sửa hợp đồng " + Model.ContractCode;
+    var options = ViewBag.Options as UCar.ViewModels.Contract.ContractCreateOptionsViewModel;
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header -->
+    <div style="margin-bottom: 1.5rem;">
+        <a asp-action="Details" asp-route-id="@Model.ContractId" class="btn-flat waves-effect">
+            <i class="material-icons left">arrow_back</i>Quay lại
+        </a>
+        <h4 style="font-weight: 700; margin-bottom: 0.5rem; margin-top: 1rem;">
+            <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">edit</i>
+            Chỉnh sửa hợp đồng @Model.ContractCode
+        </h4>
+        <p class="grey-text">Trạng thái hiện tại: <span class="chip">@Model.CurrentStatus</span></p>
+    </div>
+
+    <!-- Validation Summary -->
+    <div asp-validation-summary="ModelOnly" class="card-panel red lighten-4 red-text text-darken-4"></div>
+
+    <form asp-action="Edit" method="post" id="editContractForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="ContractId" />
+        <input type="hidden" asp-for="ContractCode" />
+        <input type="hidden" asp-for="CurrentStatus" />
+        <input type="hidden" asp-for="RowVersion" />
+
+        <div class="row">
+            <!-- Left Column -->
+            <div class="col s12 l8">
+                <!-- Khách hàng -->
+                <div class="card">
+                    <div class="card-content">
+                        <span class="card-title">
+                            <i class="material-icons blue-text">person</i>
+                            Thông tin khách hàng
+                        </span>
+                        
+                        @if (Model.CanEditCriticalFields)
+                        {
+                            <div class="row">
+                                <div class="col s12">
+                                    <div class="input-field">
+                                        <select asp-for="CustomerId" id="CustomerId">
+                                            @foreach (var cust in options?.Customers ?? new List<UCar.ViewModels.Contract.CustomerOption>())
+                                            {
+                                                <option value="@cust.CustomerId" selected="@(Model.CustomerId == cust.CustomerId)">
+                                                    @cust.FullName - @cust.Phone
+                                                </option>
+                                            }
+                                        </select>
+                                        <label for="CustomerId">Khách hàng</label>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <input type="hidden" asp-for="CustomerId" />
+                            <p><strong>Họ tên:</strong> @Model.CustomerName</p>
+                            <p><strong>SĐT:</strong> @Model.CustomerPhone</p>
+                            <p class="orange-text"><i class="material-icons tiny">info</i> Không thể thay đổi khách hàng khi hợp đồng đã ký</p>
+                        }
+                    </div>
+                </div>
+
+                <!-- Xe -->
+                <div class="card">
+                    <div class="card-content">
+                        <span class="card-title">
+                            <i class="material-icons green-text">directions_car</i>
+                            Thông tin xe
+                        </span>
+                        
+                        @if (Model.CanEditCriticalFields)
+                        {
+                            <div class="row">
+                                <div class="col s12">
+                                    <div class="input-field">
+                                        <select asp-for="VehicleId" id="VehicleId">
+                                            @foreach (var veh in options?.Vehicles ?? new List<UCar.ViewModels.Contract.VehicleOption>())
+                                            {
+                                                <option value="@veh.VehicleId" selected="@(Model.VehicleId == veh.VehicleId)">
+                                                    @veh.PlateNo - @veh.ModelName
+                                                </option>
+                                            }
+                                        </select>
+                                        <label for="VehicleId">Xe cho thuê</label>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <input type="hidden" asp-for="VehicleId" />
+                            <p><strong>Biển số:</strong> @Model.VehiclePlateNo</p>
+                            <p><strong>Xe:</strong> @Model.VehicleModel</p>
+                            <p class="orange-text"><i class="material-icons tiny">info</i> Không thể thay đổi xe khi hợp đồng đã ký</p>
+                        }
+                    </div>
+                </div>
+
+                <!-- Thời gian & Địa điểm -->
+                <div class="card">
+                    <div class="card-content">
+                        <span class="card-title">
+                            <i class="material-icons orange-text">schedule</i>
+                            Thời gian & Địa điểm
+                        </span>
+                        
+                        <div class="row">
+                            <div class="col s12 m6">
+                                <div class="input-field">
+                                    @if (Model.CanEditCriticalFields)
+                                    {
+                                        <input type="datetime-local" asp-for="PlannedStart" id="PlannedStart" />
+                                    }
+                                    else
+                                    {
+                                        <input type="datetime-local" asp-for="PlannedStart" id="PlannedStart" readonly />
+                                    }
+                                    <label for="PlannedStart" class="active">Ngày bắt đầu</label>
+                                </div>
+                            </div>
+                            <div class="col s12 m6">
+                                <div class="input-field">
+                                    <input type="datetime-local" asp-for="PlannedEnd" id="PlannedEnd" />
+                                    <label for="PlannedEnd" class="active">Ngày kết thúc</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col s12 m6">
+                                <div class="input-field">
+                                    <input type="text" asp-for="PickupLocation" id="PickupLocation" />
+                                    <label for="PickupLocation">Địa điểm nhận xe</label>
+                                </div>
+                            </div>
+                            <div class="col s12 m6">
+                                <div class="input-field">
+                                    <input type="text" asp-for="ReturnLocation" id="ReturnLocation" />
+                                    <label for="ReturnLocation">Địa điểm trả xe</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Điều khoản -->
+                <div class="card">
+                    <div class="card-content">
+                        <span class="card-title">
+                            <i class="material-icons purple-text">gavel</i>
+                            Điều khoản
+                        </span>
+                        
+                        <div class="row">
+                            <div class="col s12">
+                                <div class="input-field">
+                                    <textarea asp-for="Terms" id="Terms" class="materialize-textarea" style="height: 150px;"></textarea>
+                                    <label for="Terms">Điều khoản hợp đồng</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col s12">
+                                <div class="input-field">
+                                    <textarea asp-for="InternalNote" id="InternalNote" class="materialize-textarea"></textarea>
+                                    <label for="InternalNote">Ghi chú nội bộ</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="col s12 l4">
+                <div class="card" style="position: sticky; top: 1rem;">
+                    <div class="card-content">
+                        <span class="card-title">
+                            <i class="material-icons amber-text text-darken-2">attach_money</i>
+                            Chi phí
+                        </span>
+                        
+                        <div class="row">
+                            <div class="col s12">
+                                <div class="input-field">
+                                    <select asp-for="PriceId" id="PriceId">
+                                        @foreach (var price in options?.Prices ?? new List<UCar.ViewModels.Contract.PriceOption>())
+                                        {
+                                            <option value="@price.PriceId" 
+                                                    data-unit-price="@price.UnitPrice"
+                                                    data-deposit="@price.DepositSuggest"
+                                                    selected="@(Model.PriceId == price.PriceId)">
+                                                @price.Name - @price.UnitPrice.ToString("N0")đ/ngày
+                                            </option>
+                                        }
+                                    </select>
+                                    <label for="PriceId">Bảng giá</label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 1rem;">
+                            <div class="row" style="margin-bottom: 0.5rem;">
+                                <div class="col s6"><span class="grey-text">Đơn giá:</span></div>
+                                <div class="col s6 right-align">
+                                    <input type="hidden" asp-for="UnitPrice" id="UnitPrice" />
+                                    <strong id="displayUnitPrice">@Model.UnitPrice.ToString("N0")đ</strong>
+                                </div>
+                            </div>
+                            
+                            <div class="row" style="margin-bottom: 0.5rem;">
+                                <div class="col s6"><span class="grey-text">Số ngày:</span></div>
+                                <div class="col s6 right-align">
+                                    <input type="hidden" asp-for="RentalDays" id="RentalDays" />
+                                    <strong id="displayDays">@Model.RentalDays ngày</strong>
+                                </div>
+                            </div>
+                            
+                            <div class="row" style="margin-bottom: 0.5rem;">
+                                <div class="col s6"><span class="grey-text">Tiền thuê:</span></div>
+                                <div class="col s6 right-align">
+                                    <input type="hidden" asp-for="RentalAmount" id="RentalAmount" />
+                                    <strong id="displayRentalAmount">@Model.RentalAmount.ToString("N0")đ</strong>
+                                </div>
+                            </div>
+                            
+                            <div class="row" style="margin-bottom: 0.5rem;">
+                                <div class="col s8">
+                                    <div class="input-field" style="margin: 0;">
+                                        <input type="number" asp-for="ExtraCharges" id="ExtraCharges" min="0" step="1000" />
+                                        <label for="ExtraCharges" class="active">Phụ phí</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="divider"></div>
+                            
+                            <div class="row" style="margin-top: 1rem;">
+                                <div class="col s6"><strong>Tổng tiền:</strong></div>
+                                <div class="col s6 right-align">
+                                    <input type="hidden" asp-for="TotalAmount" id="TotalAmount" />
+                                    <strong id="displayTotal" style="font-size: 1.2rem; color: #1565c0;">@Model.TotalAmount.ToString("N0")đ</strong>
+                                </div>
+                            </div>
+                            
+                            <div class="divider"></div>
+                            
+                            <div class="row" style="margin-top: 1rem;">
+                                <div class="col s8">
+                                    <div class="input-field" style="margin: 0;">
+                                        <input type="number" asp-for="DepositAmount" id="DepositAmount" min="0" step="100000" />
+                                        <label for="DepositAmount" class="active">Tiền cọc</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-action">
+                        <button type="submit" class="btn waves-effect waves-light" style="width: 100%;">
+                            <i class="material-icons left">save</i>Lưu thay đổi
+                        </button>
+                        <a asp-action="Details" asp-route-id="@Model.ContractId" class="btn-flat waves-effect" style="width: 100%; margin-top: 0.5rem;">
+                            Hủy
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var selects = document.querySelectorAll('select');
+        M.FormSelect.init(selects);
+        M.updateTextFields();
+        
+        function calculatePrice() {
+            var start = new Date(document.getElementById('PlannedStart').value);
+            var end = new Date(document.getElementById('PlannedEnd').value);
+            var unitPrice = parseFloat(document.getElementById('UnitPrice').value) || 0;
+            var extraCharges = parseFloat(document.getElementById('ExtraCharges').value) || 0;
+            
+            if (start && end && end > start) {
+                var diffTime = Math.abs(end - start);
+                var days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if (days < 1) days = 1;
+                
+                var rentalAmount = days * unitPrice;
+                var total = rentalAmount + extraCharges;
+                
+                document.getElementById('RentalDays').value = days;
+                document.getElementById('RentalAmount').value = rentalAmount;
+                document.getElementById('TotalAmount').value = total;
+                
+                document.getElementById('displayDays').textContent = days + ' ngày';
+                document.getElementById('displayRentalAmount').textContent = rentalAmount.toLocaleString('vi-VN') + 'đ';
+                document.getElementById('displayTotal').textContent = total.toLocaleString('vi-VN') + 'đ';
+            }
+        }
+        
+        document.getElementById('PlannedStart').addEventListener('change', calculatePrice);
+        document.getElementById('PlannedEnd').addEventListener('change', calculatePrice);
+        document.getElementById('ExtraCharges').addEventListener('input', calculatePrice);
+        
+        document.getElementById('PriceId').addEventListener('change', function() {
+            var selected = this.options[this.selectedIndex];
+            if (selected.value) {
+                var unitPrice = parseFloat(selected.dataset.unitPrice) || 0;
+                document.getElementById('UnitPrice').value = unitPrice;
+                document.getElementById('displayUnitPrice').textContent = unitPrice.toLocaleString('vi-VN') + 'đ';
+                calculatePrice();
+            }
+        });
+    });
+</script>
+}

@@ -1,0 +1,311 @@
+@model UCar.Models.DTOs.Analytics.VehicleUtilizationReportDto
+@{
+    ViewData["Title"] = "Báo cáo Hiệu suất Xe";
+    ViewData["Description"] = "Phân tích hiệu suất sử dụng xe trong hệ thống";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Page Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                @* <i class="material-icons amber-text text-darken-2" style="vertical-align: middle; margin-right: 8px;">directions_car</i> *@
+                Báo cáo Hiệu suất Xe
+            </h4>
+            <p class="grey-text text-darken-1" style="font-size: 1rem; margin: 0;">
+                Phân tích tình trạng và mức độ sử dụng của đội xe
+            </p>
+        </div>
+    </div>
+
+    <!-- Report Navigation Tabs -->
+    <div class="card" style="margin-bottom: 0; border-radius: 8px 8px 0 0;">
+        <div class="card-content" style="padding: 0;">
+            <div class="row" style="margin-bottom: 0;">
+                <div class="col s12">
+                    <a href="@Url.Action("Revenue")" class="btn-flat waves-effect" style="height: 48px; line-height: 48px;">
+                        <i class="material-icons left">attach_money</i>Doanh thu
+                    </a>
+                    <a href="#" class="btn-flat waves-effect amber-text text-darken-2" style="height: 48px; line-height: 48px; border-bottom: 3px solid #FACB01;">
+                        <i class="material-icons left">directions_car</i>Hiệu suất xe
+                    </a>
+                    <a href="@Url.Action("Customers")" class="btn-flat waves-effect" style="height: 48px; line-height: 48px;">
+                        <i class="material-icons left">people</i>Khách hàng
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card" style="margin-top: 0; border-radius: 0 0 8px 8px; border-top: 1px solid #e0e0e0;">
+        <div class="card-content">
+            <form method="get" action="@Url.Action("VehicleUtilization")">
+                <div class="row" style="margin-bottom: 0;">
+                    <div class="input-field col s12 m4">
+                        <i class="material-icons prefix">date_range</i>
+                        <input type="date" id="fromDate" name="fromDate" value="@ViewBag.FromDate">
+                        <label for="fromDate" class="active">Từ ngày</label>
+                    </div>
+                    <div class="input-field col s12 m4">
+                        <i class="material-icons prefix">event</i>
+                        <input type="date" id="toDate" name="toDate" value="@ViewBag.ToDate">
+                        <label for="toDate" class="active">Đến ngày</label>
+                    </div>
+                    <div class="col s12 m4" style="padding-top: 1rem;">
+                        <button type="submit" class="btn waves-effect waves-light" style="margin-right: 8px;">
+                            <i class="material-icons left">search</i>Lọc
+                        </button>
+                        <a href="@Url.Action("VehicleUtilization")" class="btn-flat waves-effect">
+                            <i class="material-icons left">refresh</i>Đặt lại
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats Cards Row -->
+    <div class="row" style="margin-top: 1.5rem;">
+        <div class="col s12 m6 l3">
+            <div class="card stats-card" style="--stats-border-color: #2196F3;">
+                <i class="material-icons stats-icon blue-text">local_shipping</i>
+                <div class="stats-value">@Model.TotalVehicles</div>
+                <div class="stats-label">Tổng số xe</div>
+            </div>
+        </div>
+        <div class="col s12 m6 l3">
+            <div class="card stats-card" style="--stats-border-color: #4CAF50;">
+                <i class="material-icons stats-icon green-text">check_circle</i>
+                <div class="stats-value">@Model.AvailableVehicles</div>
+                <div class="stats-label">Xe sẵn sàng</div>
+                <small class="green-text" style="font-weight: 600;">
+                    @((Model.TotalVehicles > 0 ? (double)Model.AvailableVehicles / Model.TotalVehicles * 100 : 0).ToString("F0"))%
+                </small>
+            </div>
+        </div>
+        <div class="col s12 m6 l3">
+            <div class="card stats-card" style="--stats-border-color: var(--ucar-primary);">
+                <i class="material-icons stats-icon amber-text text-darken-2">car_rental</i>
+                <div class="stats-value">@Model.RentingVehicles</div>
+                <div class="stats-label">Đang cho thuê</div>
+                <small class="amber-text text-darken-2" style="font-weight: 600;">
+                    @((Model.TotalVehicles > 0 ? (double)Model.RentingVehicles / Model.TotalVehicles * 100 : 0).ToString("F0"))%
+                </small>
+            </div>
+        </div>
+        <div class="col s12 m6 l3">
+            <div class="card stats-card" style="--stats-border-color: #f44336;">
+                <i class="material-icons stats-icon red-text">build</i>
+                <div class="stats-value">@Model.MaintenanceVehicles</div>
+                <div class="stats-label">Đang bảo trì</div>
+                <small class="red-text" style="font-weight: 600;">
+                    @((Model.TotalVehicles > 0 ? (double)Model.MaintenanceVehicles / Model.TotalVehicles * 100 : 0).ToString("F0"))%
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart & Status Distribution -->
+    <div class="row">
+        <!-- Status Distribution Chart -->
+        <div class="col s12 l5">
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title" style="font-weight: 600;">
+                        <i class="material-icons left blue-text">pie_chart</i>
+                        Phân bố trạng thái xe
+                    </span>
+                    <div style="height: 300px; position: relative; display: flex; align-items: center; justify-content: center;">
+                        <canvas id="statusChart" style="max-height: 300px;"></canvas>
+                    </div>
+                    
+                    <!-- Legend -->
+                    <div style="margin-top: 1rem;">
+                        <div class="row" style="margin-bottom: 0;">
+                            <div class="col s6" style="padding: 0.5rem;">
+                                <span class="chip chip-success" style="width: 100%; text-align: left;">
+                                    <i class="material-icons tiny">check_circle</i> Sẵn sàng: @Model.AvailableVehicles
+                                </span>
+                            </div>
+                            <div class="col s6" style="padding: 0.5rem;">
+                                <span class="chip chip-warning" style="width: 100%; text-align: left;">
+                                    <i class="material-icons tiny">car_rental</i> Cho thuê: @Model.RentingVehicles
+                                </span>
+                            </div>
+                            <div class="col s6" style="padding: 0.5rem;">
+                                <span class="chip chip-error" style="width: 100%; text-align: left;">
+                                    <i class="material-icons tiny">build</i> Bảo trì: @Model.MaintenanceVehicles
+                                </span>
+                            </div>
+                            <div class="col s6" style="padding: 0.5rem;">
+                                <span class="chip chip-primary" style="width: 100%; text-align: left;">
+                                    <i class="material-icons tiny">schedule</i> Đặt trước: @Model.ReservedVehicles
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Utilization Rate Card -->
+        <div class="col s12 l7">
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title" style="font-weight: 600;">
+                        <i class="material-icons left green-text">trending_up</i>
+                        Hiệu suất sử dụng
+                    </span>
+                    
+                    <!-- Overall Utilization Rate -->
+                    <div class="center-align" style="padding: 2rem 0;">
+                        <div style="position: relative; display: inline-block;">
+                            <div style="font-size: 4rem; font-weight: 700; color: var(--ucar-secondary);">
+                                @Model.UtilizationRate.ToString("F1")%
+                            </div>
+                            <div class="grey-text" style="font-size: 1rem;">Tỷ lệ sử dụng trung bình</div>
+                        </div>
+                    </div>
+
+                    <div class="divider"></div>
+
+                    <!-- Additional Stats -->
+                    <div class="row" style="margin-top: 1.5rem; margin-bottom: 0;">
+                        <div class="col s6 m3 center-align">
+                            <div style="font-size: 1.8rem; font-weight: 600; color: #4CAF50;">@Model.AvailabilityRate.ToString("F0")%</div>
+                            <div class="grey-text" style="font-size: 0.85rem;">Tỷ lệ sẵn sàng</div>
+                        </div>
+                        <div class="col s6 m3 center-align">
+                            <div style="font-size: 1.8rem; font-weight: 600; color: #2196F3;">@Model.TotalVehicles</div>
+                            <div class="grey-text" style="font-size: 0.85rem;">Tổng xe</div>
+                        </div>
+                        <div class="col s6 m3 center-align">
+                            <div style="font-size: 1.8rem; font-weight: 600; color: #ff9800;">@Model.RentingVehicles</div>
+                            <div class="grey-text" style="font-size: 0.85rem;">Đang thuê</div>
+                        </div>
+                        <div class="col s6 m3 center-align">
+                            <div style="font-size: 1.8rem; font-weight: 600; color: #9c27b0;">@Model.OtherStatusVehicles</div>
+                            <div class="grey-text" style="font-size: 0.85rem;">Trạng thái khác</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Vehicles Table -->
+    @if (Model.TopVehicles != null && Model.TopVehicles.Any())
+    {
+        <div class="card">
+            <div class="card-content" style="padding-bottom: 0;">
+                <span class="card-title" style="font-weight: 600;">
+                    <i class="material-icons left amber-text text-darken-2">star</i>
+                    Top 10 xe được thuê nhiều nhất
+                </span>
+            </div>
+            <div class="card-content" style="padding: 0;">
+                <table class="striped highlight responsive-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">#</th>
+                            <th>Xe</th>
+                            <th>Biển số</th>
+                            <th class="center-align">Lượt thuê</th>
+                            <th class="center-align">Số ngày</th>
+                            <th class="right-align">Doanh thu</th>
+                            <th class="right-align">TB/ngày</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ int rank = 1; }
+                        @foreach (var vehicle in Model.TopVehicles.Take(10))
+                        {
+                            <tr>
+                                <td>
+                                    @if (rank <= 3)
+                                    {
+                                        <span class="chip @(rank == 1 ? "amber" : rank == 2 ? "grey lighten-1" : "brown lighten-2") white-text" style="margin: 0;">
+                                            @rank
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span style="padding-left: 12px;">@rank</span>
+                                    }
+                                </td>
+                                <td>
+                                    <strong>@vehicle.Model</strong>
+                                </td>
+                                <td><code>@vehicle.PlateNo</code></td>
+                                <td class="center-align">
+                                    <span class="chip chip-info" style="margin: 0;">@vehicle.TotalRentals</span>
+                                </td>
+                                <td class="center-align">@vehicle.TotalDays</td>
+                                <td class="right-align" style="font-weight: 600; color: var(--ucar-secondary);">
+                                    @vehicle.TotalRevenue.ToString("N0")đ
+                                </td>
+                                <td class="right-align">
+                                    @vehicle.AverageDailyRevenue.ToString("N0")đ
+                                </td>
+                            </tr>
+                            rank++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/js/chart.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOMContentLoaded fired');
+            console.log('Chart defined:', typeof Chart !== 'undefined');
+            
+            // Chart.js - Status Distribution (Doughnut)
+            const canvas = document.getElementById('statusChart');
+            console.log('Canvas element:', canvas);
+            console.log('Canvas dimensions:', canvas ? canvas.offsetWidth + 'x' + canvas.offsetHeight : 'N/A');
+            
+            if (canvas && typeof Chart !== 'undefined') {
+                const ctx = canvas.getContext('2d');
+                console.log('Creating chart with data:', [@Model.AvailableVehicles, @Model.RentingVehicles, @Model.MaintenanceVehicles, @Model.ReservedVehicles]);
+                
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Sẵn sàng', 'Đang cho thuê', 'Bảo trì', 'Đặt trước'],
+                        datasets: [{
+                            data: [@Model.AvailableVehicles, @Model.RentingVehicles, @Model.MaintenanceVehicles, @Model.ReservedVehicles],
+                            backgroundColor: ['#4CAF50', '#FACB01', '#f44336', '#2196F3'],
+                            borderWidth: 0,
+                            hoverOffset: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        cutout: '65%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = ((context.raw / total) * 100).toFixed(1);
+                                        return context.label + ': ' + context.raw + ' (' + percentage + '%)';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                console.error('Chart.js not loaded or canvas not found');
+            }
+        });
+    </script>
+}

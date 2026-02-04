@@ -1,0 +1,171 @@
+@model CustomerEditViewModel
+@using UCar.ViewModels
+
+@{
+    ViewData["Title"] = "Chỉnh sửa khách hàng";
+    ViewData["Description"] = "Cập nhật thông tin khách hàng";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Page Header -->
+    <div style="margin-bottom: 2rem;">
+        <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+            <i class="material-icons orange-text" style="vertical-align: middle; margin-right: 8px;">edit</i>
+            Chỉnh sửa khách hàng
+        </h4>
+        <p class="grey-text text-darken-1" style="font-size: 1.125rem; margin: 0;">
+            Cập nhật thông tin: <strong>@Model.FullName</strong>
+        </p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card">
+        <div class="card-content">
+            <form asp-action="Edit" method="post">
+                <input type="hidden" asp-for="CustomerId" />
+                <input type="hidden" asp-for="CreatedAt" />
+                <div asp-validation-summary="ModelOnly" class="red-text" style="margin-bottom: 1rem;"></div>
+
+                <!-- Personal Information Section -->
+                <h5 style="font-weight: 600; margin-bottom: 1.5rem; color: #00275e;">
+                    <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">person</i>
+                    Thông tin cá nhân
+                </h5>
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        <i class="material-icons prefix">badge</i>
+                        <input asp-for="FullName" type="text" class="validate" required>
+                        <label asp-for="FullName"></label>
+                        <span asp-validation-for="FullName" class="red-text"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">email</i>
+                        <input asp-for="Email" type="email" class="validate" required>
+                        <label asp-for="Email"></label>
+                        <span asp-validation-for="Email" class="red-text"></span>
+                    </div>
+
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">phone</i>
+                        <input asp-for="Phone" type="tel" class="validate" required>
+                        <label asp-for="Phone"></label>
+                        <span asp-validation-for="Phone" class="red-text"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">cake</i>
+                        <input asp-for="Dob" type="date" class="validate">
+                        <label asp-for="Dob"></label>
+                        <span asp-validation-for="Dob" class="red-text"></span>
+                    </div>
+
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">location_on</i>
+                        <input asp-for="AddressText" type="text" class="validate">
+                        <label asp-for="AddressText"></label>
+                        <span asp-validation-for="AddressText" class="red-text"></span>
+                    </div>
+                </div>
+
+                <div class="divider" style="margin: 2rem 0;"></div>
+
+                <!-- Risk & Status Management -->
+                <h5 style="font-weight: 600; margin-bottom: 1.5rem; color: #00275e;">
+                    <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">assessment</i>
+                    Quản lý rủi ro & trạng thái
+                </h5>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <select asp-for="RiskLevel">
+                            <option value="">Chưa đánh giá</option>
+                            <option value="Low">Thấp</option>
+                            <option value="Medium">Trung bình</option>
+                            <option value="High">Cao</option>
+                        </select>
+                        <label asp-for="RiskLevel"></label>
+                        <span asp-validation-for="RiskLevel" class="red-text"></span>
+                    </div>
+
+                    <div class="col s12 m6" style="padding-top: 1rem;">
+                        <p>
+                            <label>
+                                <input asp-for="IsActive" type="checkbox" class="filled-in" />
+                                <span><strong>Tài khoản hoạt động</strong></span>
+                            </label>
+                        </p>
+                        <p>
+                            <label>
+                                <input asp-for="IsBlacklisted" type="checkbox" class="filled-in" />
+                                <span><strong>Danh sách đen</strong> (Chặn khách hàng vi phạm)</span>
+                            </label>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="divider" style="margin: 2rem 0;"></div>
+
+                <!-- Action Buttons -->
+                <div class="row">
+                    <div class="col s12 center-align">
+                        <button type="submit" class="btn waves-effect waves-light orange" style="margin-right: 1rem;">
+                            <i class="material-icons left">save</i>Cập nhật
+                        </button>
+                        <a asp-action="Details" asp-route-id="@Model.CustomerId" class="btn-flat waves-effect">
+                            <i class="material-icons left">close</i>Hủy
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Info Card -->
+    <div class="card-panel blue lighten-5" style="margin-top: 1.5rem;">
+        <p style="margin: 0;">
+            <i class="material-icons tiny blue-text" style="vertical-align: middle;">info</i>
+            <strong>Lưu ý:</strong> Tên đăng nhập và giấy tờ tùy thân không thể thay đổi. 
+            Liên hệ quản trị viên nếu cần cập nhật thông tin này.
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Materialize components
+            var selects = document.querySelectorAll('select');
+            M.FormSelect.init(selects);
+
+            // Update labels for pre-filled inputs
+            M.updateTextFields();
+
+            // Warning when checking blacklist
+            var blacklistCheckbox = document.querySelector('input[name="IsBlacklisted"]');
+            if (blacklistCheckbox) {
+                blacklistCheckbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        UCarToast.warning('Khách hàng sẽ bị chặn không cho thuê xe khi trong danh sách đen');
+                    }
+                });
+            }
+
+            // Warning when unchecking active status
+            var activeCheckbox = document.querySelector('input[name="IsActive"]');
+            if (activeCheckbox) {
+                activeCheckbox.addEventListener('change', function() {
+                    if (!this.checked) {
+                        UCarToast.warning('Tài khoản sẽ bị khóa và không thể đăng nhập');
+                    }
+                });
+            }
+        });
+    </script>
+}

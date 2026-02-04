@@ -1,0 +1,336 @@
+@model UCar.ViewModels.Payment.PickupPaymentViewModel
+@{
+    ViewData["Title"] = "Thanh toán nhận xe - " + Model.ContractCode;
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div>
+            <a href="@Url.Action("Index", "Handover")" class="btn-flat">
+                <i class="material-icons left">arrow_back</i>Quay lại danh sách
+            </a>
+            <h4 style="font-weight: 700; margin-top: 0.5rem;">
+                <i class="material-icons orange-text" style="vertical-align: middle;">payment</i>
+                Thanh toán nhận xe - @Model.ContractCode
+            </h4>
+        </div>
+        <div>
+            <a href="@Url.Action("Print", "Contract", new { id = Model.ContractId })" target="_blank" class="btn-flat waves-effect">
+                <i class="material-icons left">print</i>In hợp đồng
+            </a>
+            @if (Model.HandoverId.HasValue)
+            {
+                <a href="@Url.Action("HandoverDocument", "Handover", new { contractId = Model.ContractId })" target="_blank" class="btn-flat waves-effect">
+                    <i class="material-icons left">assignment</i>In biên bản
+                </a>
+            }
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="card-panel red lighten-4 red-text text-darken-4">
+            <i class="material-icons left">error</i>
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <div class="row">
+        <!-- Thông tin hợp đồng & khách hàng -->
+        <div class="col s12 m6">
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title"><i class="material-icons left">description</i>Thông tin hợp đồng</span>
+                    
+                    <table class="striped">
+                        <tbody>
+                            <tr>
+                                <td><i class="material-icons tiny grey-text">person</i> Khách hàng</td>
+                                <td class="right-align"><strong>@Model.CustomerName</strong></td>
+                            </tr>
+                            <tr>
+                                <td><i class="material-icons tiny grey-text">phone</i> Số điện thoại</td>
+                                <td class="right-align">@Model.CustomerPhone</td>
+                            </tr>
+                            <tr>
+                                <td><i class="material-icons tiny grey-text">directions_car</i> Biển số xe</td>
+                                <td class="right-align"><strong>@Model.PlateNo</strong></td>
+                            </tr>
+                            <tr>
+                                <td><i class="material-icons tiny grey-text">commute</i> Loại xe</td>
+                                <td class="right-align">@Model.VehicleName</td>
+                            </tr>
+                            <tr>
+                                <td><i class="material-icons tiny grey-text">event</i> Ngày nhận xe</td>
+                                <td class="right-align">@Model.PickupDate.ToString("dd/MM/yyyy HH:mm")</td>
+                            </tr>
+                            <tr>
+                                <td><i class="material-icons tiny grey-text">event_available</i> Ngày trả xe dự kiến</td>
+                                <td class="right-align">@Model.ReturnDate.ToString("dd/MM/yyyy HH:mm")</td>
+                            </tr>
+                            <tr>
+                                <td><i class="material-icons tiny grey-text">today</i> Số ngày thuê</td>
+                                <td class="right-align"><strong>@Model.RentalDays ngày</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Chi tiết thanh toán -->
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title"><i class="material-icons left">receipt</i>Chi tiết thanh toán</span>
+                    
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td>Tiền thuê xe</td>
+                                <td class="right-align">@Model.BaseRentalAmount.ToString("N0") đ</td>
+                            </tr>
+                            @if (Model.AccessoryAmount > 0)
+                            {
+                                <tr>
+                                    <td>Phụ kiện thuê thêm</td>
+                                    <td class="right-align">@Model.AccessoryAmount.ToString("N0") đ</td>
+                                </tr>
+                            }
+                            <tr style="border-top: 1px solid #ccc;">
+                                <td><strong>Tổng tiền thuê</strong></td>
+                                <td class="right-align"><strong>@Model.TotalRentalAmount.ToString("N0") đ</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Tiền cọc</td>
+                                <td class="right-align">@Model.DepositAmount.ToString("N0") đ</td>
+                            </tr>
+                            <tr style="background-color: #fff3e0;">
+                                <td><strong style="font-size: 1.1rem;">TỔNG CẦN THANH TOÁN</strong></td>
+                                <td class="right-align">
+                                    <strong style="font-size: 1.2rem;" class="deep-orange-text">
+                                        @Model.TotalPickupAmount.ToString("N0") đ
+                                    </strong>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="card-panel blue-grey lighten-5" style="margin-top: 1rem;">
+                        <small>
+                            <i class="material-icons tiny">info</i>
+                            <strong>Lưu ý:</strong> Khách hàng thanh toán toàn bộ tiền thuê + cọc khi nhận xe.
+                            Tiền cọc sẽ được hoàn lại khi trả xe nếu không có vi phạm.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tài sản thế chấp -->
+            @if (Model.CollateralItems.Any())
+            {
+                <div class="card">
+                    <div class="card-content">
+                        <span class="card-title"><i class="material-icons left">security</i>Tài sản thế chấp</span>
+                        
+                        <ul class="collection">
+                            @foreach (var item in Model.CollateralItems)
+                            {
+                                <li class="collection-item">
+                                    <span class="badge">@(item.EstimatedValue?.ToString("N0") ?? "N/A") đ</span>
+                                    <strong>@item.ItemTypeName</strong>
+                                    <p class="grey-text">@item.Description</p>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Form thanh toán -->
+        <div class="col s12 m6">
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title"><i class="material-icons left">credit_card</i>Xác nhận thanh toán</span>
+                    
+                    <div id="paymentForm">
+                        <input type="hidden" id="ContractId" value="@Model.ContractId" />
+                        <input type="hidden" id="PaymentAmount" value="@Model.TotalPickupAmount" />
+                        
+                        <div class="card-panel orange lighten-4" style="margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span><i class="material-icons left">attach_money</i> <strong>Số tiền thanh toán:</strong></span>
+                                <span style="font-size: 1.5rem; font-weight: bold;" class="deep-orange-text" id="PaymentAmountDisplay">
+                                    @Model.TotalPickupAmount.ToString("N0") đ
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Phương thức thanh toán -->
+                        <div class="input-field">
+                            <i class="material-icons prefix">account_balance_wallet</i>
+                            <select id="PaymentMethod">
+                                <option value="@((int)UCar.Models.Enums.PaymentMethod.Cash)">Tiền mặt</option>
+                                <option value="@((int)UCar.Models.Enums.PaymentMethod.Transfer)">Chuyển khoản</option>
+                                <option value="@((int)UCar.Models.Enums.PaymentMethod.Card)">Thẻ</option>
+                            </select>
+                            <label for="PaymentMethod">Phương thức thanh toán</label>
+                        </div>
+
+                        <!-- Mã giao dịch (cho chuyển khoản) -->
+                        <div class="input-field" id="bankRefField" style="display: none;">
+                            <i class="material-icons prefix">confirmation_number</i>
+                            <input type="text" id="BankRefCode" />
+                            <label for="BankRefCode">Mã giao dịch ngân hàng</label>
+                            <span class="helper-text">Nhập mã giao dịch từ ngân hàng để đối soát</span>
+                        </div>
+
+                        <!-- Ghi chú -->
+                        <div class="input-field">
+                            <i class="material-icons prefix">note</i>
+                            <textarea id="Note" class="materialize-textarea"></textarea>
+                            <label for="Note">Ghi chú</label>
+                        </div>
+
+                        <!-- Checklist xác nhận -->
+                        <div class="card-panel grey lighten-4" style="margin-top: 1rem;">
+                            <p><strong><i class="material-icons tiny">checklist</i> Xác nhận trước khi thanh toán:</strong></p>
+                            <p>
+                                <label>
+                                    <input type="checkbox" id="chk1" />
+                                    <span>Khách hàng đã ký hợp đồng giấy</span>
+                                </label>
+                            </p>
+                            <p>
+                                <label>
+                                    <input type="checkbox" id="chk2" />
+                                    <span>Đã lập biên bản bàn giao xe</span>
+                                </label>
+                            </p>
+                        </div>
+
+                        <div class="center-align" style="margin-top: 2rem;">
+                            <button type="button" class="btn-large waves-effect waves-light green" id="btnSubmit">
+                                <i class="material-icons left">check</i>Xác nhận thanh toán & Giao xe
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Loading overlay -->
+                    <div id="loadingOverlay" style="display: none; text-align: center; padding: 2rem;">
+                        <div class="preloader-wrapper big active">
+                            <div class="spinner-layer spinner-green-only">
+                                <div class="circle-clipper left"><div class="circle"></div></div>
+                                <div class="gap-patch"><div class="circle"></div></div>
+                                <div class="circle-clipper right"><div class="circle"></div></div>
+                            </div>
+                        </div>
+                        <p class="grey-text">Đang xử lý thanh toán...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hướng dẫn -->
+            <div class="card blue-grey lighten-5">
+                <div class="card-content">
+                    <span class="card-title"><i class="material-icons left">help_outline</i>Quy trình</span>
+                    <ol>
+                        <li><strong>Kiểm tra xe</strong> - Đã hoàn tất</li>
+                        <li><strong>Lập biên bản</strong> - Đã hoàn tất</li>
+                        <li><strong>Ký hợp đồng giấy</strong> - Khách ký 2 bản</li>
+                        <li class="orange-text"><strong>Thanh toán</strong> - Đang thực hiện</li>
+                        <li><strong>Bàn giao xe</strong> - Chìa khóa, giấy tờ</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Html.AntiForgeryToken()
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize select
+            var selects = document.querySelectorAll('select');
+            M.FormSelect.init(selects);
+
+            // Show/hide bank ref field based on payment method
+            var paymentMethodSelect = document.getElementById('PaymentMethod');
+            var bankRefField = document.getElementById('bankRefField');
+            
+            function toggleBankRef() {
+                var selectedValue = paymentMethodSelect.value;
+                if (selectedValue === '@((int)UCar.Models.Enums.PaymentMethod.Transfer)' || 
+                    selectedValue === '@((int)UCar.Models.Enums.PaymentMethod.Card)') {
+                    bankRefField.style.display = 'block';
+                } else {
+                    bankRefField.style.display = 'none';
+                }
+            }
+
+            paymentMethodSelect.addEventListener('change', toggleBankRef);
+            toggleBankRef(); // Initial check
+
+            // AJAX Submit
+            var btnSubmit = document.getElementById('btnSubmit');
+            btnSubmit.addEventListener('click', async function() {
+                var chk1 = document.getElementById('chk1');
+                var chk2 = document.getElementById('chk2');
+                
+                if (!chk1.checked || !chk2.checked) {
+                    M.toast({html: 'Vui lòng xác nhận tất cả các mục trước khi thanh toán!', classes: 'red'});
+                    return;
+                }
+
+                var amountValue = @((int)Model.TotalPickupAmount);
+                var amountFormatted = amountValue.toLocaleString('vi-VN');
+                
+                if (!confirm('Xác nhận thanh toán ' + amountFormatted + ' đ và giao xe cho khách?')) {
+                    return;
+                }
+
+                // Show loading
+                document.getElementById('paymentForm').style.display = 'none';
+                document.getElementById('loadingOverlay').style.display = 'block';
+                btnSubmit.disabled = true;
+
+                try {
+                    var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                    
+                    var formData = new FormData();
+                    formData.append('ContractId', document.getElementById('ContractId').value);
+                    formData.append('PaymentAmount', amountValue);
+                    formData.append('PaymentMethod', document.getElementById('PaymentMethod').value);
+                    formData.append('BankRefCode', document.getElementById('BankRefCode').value || '');
+                    formData.append('Note', document.getElementById('Note').value || '');
+                    formData.append('__RequestVerificationToken', token);
+
+                    var response = await fetch('@Url.Action("ProcessPickupAjax", "Payment")', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    var result = await response.json();
+
+                    if (result.success) {
+                        M.toast({html: result.message || 'Thanh toán thành công!', classes: 'green'});
+                        setTimeout(function() {
+                            window.location.href = '@Url.Action("Details", "Contract", new { id = Model.ContractId })';
+                        }, 1500);
+                    } else {
+                        M.toast({html: result.message || 'Có lỗi xảy ra!', classes: 'red'});
+                        document.getElementById('paymentForm').style.display = 'block';
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                        btnSubmit.disabled = false;
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    M.toast({html: 'Lỗi kết nối. Vui lòng thử lại!', classes: 'red'});
+                    document.getElementById('paymentForm').style.display = 'block';
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                    btnSubmit.disabled = false;
+                }
+            });
+        });
+    </script>
+}

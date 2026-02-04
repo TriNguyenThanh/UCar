@@ -39,6 +39,15 @@ public interface IVehicleService
     Task<IEnumerable<VehicleListDto>> GetAvailableVehiclesAsync(DateTime? fromDate = null, DateTime? toDate = null);
 
     /// <summary>
+    /// Lấy danh sách xe theo loại nhiệm vụ vận hành
+    /// - Giao xe: xe đang sẵn sàng hoặc đã được đặt
+    /// - Nhận xe: xe đang cho thuê
+    /// - Bảo dưỡng: xe cần bảo dưỡng
+    /// - Cứu hộ: xe đang gặp sự cố
+    /// </summary>
+    Task<IEnumerable<VehicleListDto>> GetVehiclesByTaskTypeAsync(UCar.Models.Enums.TaskType taskType, Guid? branchId = null);
+
+    /// <summary>
     /// Kiểm tra biển số đã tồn tại chưa
     /// </summary>
     Task<bool> IsPlateNoExistsAsync(string plateNo, Guid? excludeId = null);
@@ -52,4 +61,9 @@ public interface IVehicleService
     /// Lấy danh sách chi nhánh cho dropdown
     /// </summary>
     Task<IEnumerable<(Guid Id, string Name)>> GetBranchesAsync();
+
+    /// <summary>
+    /// Lấy thống kê xe theo trạng thái từ database
+    /// </summary>
+    Task<VehicleStatsDto> GetVehicleStatsAsync(VehicleFilterDto? filter = null);
 }

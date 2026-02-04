@@ -15,11 +15,13 @@ public class VehicleService : IVehicleService
 {
     private readonly UCarDbContext _context;
     private readonly IVehicleStatusService _statusService;
+    private readonly IBranchAccessService _branchAccess;
 
-    public VehicleService(UCarDbContext context, IVehicleStatusService statusService)
+    public VehicleService(UCarDbContext context, IVehicleStatusService statusService, IBranchAccessService branchAccess)
     {
         _context = context;
         _statusService = statusService;
+        _branchAccess = branchAccess;
     }
 
     public async Task<PagedResult<VehicleListDto>> GetAllVehiclesAsync(VehicleFilterDto? filter = null)
@@ -31,6 +33,14 @@ public class VehicleService : IVehicleService
                 .ThenInclude(m => m.VehicleType)
             .Include(v => v.Branch)
             .AsQueryable();
+
+        // *** BRANCH ACCESS FILTER ***
+        // BranchManager và Staff chỉ thấy xe thuộc chi nhánh của mình
+        var userBranchId = _branchAccess.GetCurrentUserBranchId();
+        if (userBranchId.HasValue)
+        {
+            query = query.Where(v => v.BranchId == userBranchId.Value);
+        }
 
         // Apply filters
         if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
@@ -57,7 +67,8 @@ public class VehicleService : IVehicleService
             query = query.Where(v => v.CurrentStatus == filter.Status.Value);
         }
 
-        if (filter.BranchId.HasValue)
+        // Chỉ filter thêm theo BranchId nếu Admin muốn lọc theo chi nhánh cụ thể
+        if (filter.BranchId.HasValue && !userBranchId.HasValue)
         {
             query = query.Where(v => v.BranchId == filter.BranchId.Value);
         }
@@ -78,17 +89,17 @@ public class VehicleService : IVehicleService
         // Apply sorting
         query = filter.SortBy?.ToLower() switch
         {
-            "plateno" => filter.SortDirection == "desc" 
-                ? query.OrderByDescending(v => v.PlateNo) 
+            "plateno" => filter.SortDirection == "desc"
+                ? query.OrderByDescending(v => v.PlateNo)
                 : query.OrderBy(v => v.PlateNo),
-            "make" => filter.SortDirection == "desc" 
-                ? query.OrderByDescending(v => v.Model.Make) 
+            "make" => filter.SortDirection == "desc"
+                ? query.OrderByDescending(v => v.Model.Make)
                 : query.OrderBy(v => v.Model.Make),
-            "year" => filter.SortDirection == "desc" 
-                ? query.OrderByDescending(v => v.ManufactureYear) 
+            "year" => filter.SortDirection == "desc"
+                ? query.OrderByDescending(v => v.ManufactureYear)
                 : query.OrderBy(v => v.ManufactureYear),
-            "status" => filter.SortDirection == "desc" 
-                ? query.OrderByDescending(v => v.CurrentStatus) 
+            "status" => filter.SortDirection == "desc"
+                ? query.OrderByDescending(v => v.CurrentStatus)
                 : query.OrderBy(v => v.CurrentStatus),
             _ => query.OrderBy(v => v.PlateNo)
         };
@@ -106,11 +117,13 @@ public class VehicleService : IVehicleService
                 v.Color,
                 v.ManufactureYear,
                 v.CurrentStatus,
+                v.BranchId,
                 v.Branch.Name,
                 v.CurrentOdoKm,
                 v.Model.Seats,
                 v.Model.Transmission,
-                v.Model.FuelType
+                v.Model.FuelType,
+                v.Model.ImageFileName
             ))
             .ToListAsync();
 
@@ -163,6 +176,7 @@ public class VehicleService : IVehicleService
             vehicle.Branch.Name,
             vehicle.Branch.Address,
             vehicle.CurrentOdoKm,
+            vehicle.Model.ImageFileName,
             statusHistory,
             null // TODO: Add vehicle images when model is created
         );
@@ -341,11 +355,69 @@ public class VehicleService : IVehicleService
                 v.Color,
                 v.ManufactureYear,
                 v.CurrentStatus,
+                v.BranchId,
                 v.Branch.Name,
                 v.CurrentOdoKm,
                 v.Model.Seats,
                 v.Model.Transmission,
-                v.Model.FuelType
+                v.Model.FuelType,
+                v.Model.ImageFileName
+            ))
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<VehicleListDto>> GetVehiclesByTaskTypeAsync(TaskType taskType, Guid? branchId = null)
+    {
+        var query = _context.Vehicles
+            .Include(v => v.Model)
+                .ThenInclude(m => m.VehicleType)
+            .Include(v => v.Branch)
+            .AsQueryable();
+
+        // Filter by branch if specified
+        if (branchId.HasValue)
+        {
+            query = query.Where(v => v.BranchId == branchId.Value);
+        }
+
+        // Filter by status based on task type
+        query = taskType switch
+        {
+            // Giao xe: xe sẵn sàng hoặc đã được đặt (Reserved)
+            TaskType.Delivery => query.Where(v => v.CurrentStatus == VehicleStatus.Available || v.CurrentStatus == VehicleStatus.Reserved),
+            
+            // Nhận xe: xe đang cho thuê
+            TaskType.Return => query.Where(v => v.CurrentStatus == VehicleStatus.Renting),
+            
+            // Bảo dưỡng: xe cần bảo dưỡng hoặc xe sẵn sàng (định kỳ)
+            TaskType.Maintenance => query.Where(v => v.CurrentStatus == VehicleStatus.Maintenance || v.CurrentStatus == VehicleStatus.Available),
+            
+            // Cứu hộ: xe đang gặp sự cố hoặc đang cho thuê (khách gọi cứu hộ)
+            TaskType.Rescue => query.Where(v => v.CurrentStatus == VehicleStatus.Incident || v.CurrentStatus == VehicleStatus.Renting),
+            
+            // Kiểm tra: tất cả xe (trừ xe đã ngừng khai thác)
+            TaskType.Inspection => query.Where(v => v.CurrentStatus != VehicleStatus.Decommissioned),
+            
+            _ => query
+        };
+
+        return await query
+            .Select(v => new VehicleListDto(
+                v.VehicleId,
+                v.PlateNo,
+                v.Model.Make,
+                v.Model.ModelName,
+                v.Model.VehicleType.TypeName,
+                v.Color,
+                v.ManufactureYear,
+                v.CurrentStatus,
+                v.BranchId,
+                v.Branch.Name,
+                v.CurrentOdoKm,
+                v.Model.Seats,
+                v.Model.Transmission,
+                v.Model.FuelType,
+                v.Model.ImageFileName
             ))
             .ToListAsync();
     }
@@ -354,7 +426,7 @@ public class VehicleService : IVehicleService
     {
         var normalizedPlate = plateNo.Trim().ToUpper();
         var query = _context.Vehicles.Where(v => v.PlateNo == normalizedPlate);
-        
+
         if (excludeId.HasValue)
         {
             query = query.Where(v => v.VehicleId != excludeId.Value);
@@ -377,5 +449,74 @@ public class VehicleService : IVehicleService
         return await _context.Branches
             .Select(b => new ValueTuple<Guid, string>(b.BranchId, b.Name))
             .ToListAsync();
+    }
+
+    public async Task<VehicleStatsDto> GetVehicleStatsAsync(VehicleFilterDto? filter = null)
+    {
+        var query = _context.Vehicles.AsQueryable();
+
+        // *** BRANCH ACCESS FILTER ***
+        // BranchManager và Staff chỉ thấy stats của xe thuộc chi nhánh mình
+        var userBranchId = _branchAccess.GetCurrentUserBranchId();
+        if (userBranchId.HasValue)
+        {
+            query = query.Where(v => v.BranchId == userBranchId.Value);
+        }
+
+        // Apply same filters as GetAllVehiclesAsync (except status filter for stats)
+        if (filter != null)
+        {
+            if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+            {
+                var term = filter.SearchTerm.ToLower();
+                query = query.Where(v =>
+                    v.PlateNo.ToLower().Contains(term) ||
+                    v.Model.Make.ToLower().Contains(term) ||
+                    v.Model.ModelName.ToLower().Contains(term));
+            }
+
+            if (filter.VehicleTypeId.HasValue)
+            {
+                query = query.Where(v => v.Model.VehicleTypeId == filter.VehicleTypeId.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.Make))
+            {
+                query = query.Where(v => v.Model.Make == filter.Make);
+            }
+
+            // Chỉ filter thêm theo BranchId nếu Admin muốn lọc theo chi nhánh cụ thể
+            if (filter.BranchId.HasValue && !userBranchId.HasValue)
+            {
+                query = query.Where(v => v.BranchId == filter.BranchId.Value);
+            }
+
+            if (filter.YearFrom.HasValue)
+            {
+                query = query.Where(v => v.ManufactureYear >= filter.YearFrom.Value);
+            }
+
+            if (filter.YearTo.HasValue)
+            {
+                query = query.Where(v => v.ManufactureYear <= filter.YearTo.Value);
+            }
+        }
+
+        // Get stats from database
+        var stats = await query
+            .GroupBy(v => 1)
+            .Select(g => new VehicleStatsDto
+            {
+                TotalCount = g.Count(),
+                AvailableCount = g.Count(v => v.CurrentStatus == VehicleStatus.Available),
+                RentingCount = g.Count(v => v.CurrentStatus == VehicleStatus.Renting),
+                MaintenanceCount = g.Count(v => v.CurrentStatus == VehicleStatus.Maintenance),
+                ReservedCount = g.Count(v => v.CurrentStatus == VehicleStatus.Reserved),
+                ImpoundedCount = g.Count(v => v.CurrentStatus == VehicleStatus.Impounded),
+                IncidentCount = g.Count(v => v.CurrentStatus == VehicleStatus.Incident)
+            })
+            .FirstOrDefaultAsync();
+
+        return stats ?? new VehicleStatsDto();
     }
 }

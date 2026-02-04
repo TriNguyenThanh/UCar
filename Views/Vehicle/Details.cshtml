@@ -10,17 +10,31 @@
 <div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
     <!-- Header Section -->
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
-        <div>
-            <a asp-action="Index" class="btn-flat waves-effect" style="margin-bottom: 0.5rem;">
-                <i class="material-icons left">arrow_back</i>Quay lại danh sách
-            </a>
-            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
-                <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">directions_car</i>
-                @Model.Make @Model.ModelName
-            </h4>
-            <p class="grey-text text-darken-1" style="margin: 0;">
-                <strong>@Model.PlateNo</strong> • @Model.VehicleTypeName
-            </p>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            @if (!string.IsNullOrEmpty(Model.ImageFileName))
+            {
+                <img src="/images/vehicle-models/@Model.ImageFileName" 
+                     alt="@Model.Make @Model.ModelName" 
+                     style="width: 120px; height: 80px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            }
+            else
+            {
+                <img src="https://placehold.co/600x400/e0e0e0/757575?text=No+Image" 
+                     alt="No image" 
+                     style="width: 120px; height: 80px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            }
+            <div>
+                <a asp-action="Index" class="btn-flat waves-effect" style="margin-bottom: 0.5rem; padding-left: 0;">
+                    <i class="material-icons left">arrow_back</i>Quay lại danh sách
+                </a>
+                <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                    <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">directions_car</i>
+                    @Model.Make @Model.ModelName
+                </h4>
+                <p class="grey-text text-darken-1" style="margin: 0;">
+                    <strong>@Model.PlateNo</strong> • @Model.VehicleTypeName
+                </p>
+            </div>
         </div>
         <div style="display: flex; gap: 0.5rem;">
             <a asp-action="Edit" asp-route-id="@Model.VehicleId" class="btn waves-effect waves-light">
@@ -239,36 +253,41 @@
 
 <!-- Status Change Modal -->
 <div id="statusModal" class="modal">
-    <div class="modal-content">
-        <h4>
-            <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">swap_horiz</i>
-            Thay đổi trạng thái xe
-        </h4>
-        <p>Chọn trạng thái mới cho xe <strong>@Model.PlateNo</strong>:</p>
+    <form asp-action="ChangeStatus" asp-controller="Vehicle" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="VehicleId" value="@Model.VehicleId" />
         
-        <div class="input-field">
-            <select id="newStatus">
-                <option value="" disabled selected>Chọn trạng thái mới</option>
-                @foreach (var item in allowedTransitions)
-                {
-                    <option value="@item.Value">@item.Text</option>
-                }
-            </select>
-            <label for="newStatus">Trạng thái mới</label>
+        <div class="modal-content">
+            <h4>
+                <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">swap_horiz</i>
+                Thay đổi trạng thái xe
+            </h4>
+            <p>Chọn trạng thái mới cho xe <strong>@Model.PlateNo</strong>:</p>
+            
+            <div class="input-field">
+                <select id="newStatus" name="NewStatus" required>
+                    <option value="" disabled selected>Chọn trạng thái mới</option>
+                    @foreach (var item in allowedTransitions)
+                    {
+                        <option value="@item.Value">@item.Text</option>
+                    }
+                </select>
+                <label for="newStatus">Trạng thái mới</label>
+            </div>
+            
+            <div class="input-field">
+                <i class="material-icons prefix">mode_edit</i>
+                <textarea id="statusNote" name="Note" class="materialize-textarea" maxlength="500"></textarea>
+                <label for="statusNote">Ghi chú</label>
+            </div>
         </div>
-        
-        <div class="input-field">
-            <i class="material-icons prefix">mode_edit</i>
-            <textarea id="statusNote" class="materialize-textarea" maxlength="500"></textarea>
-            <label for="statusNote">Ghi chú</label>
+        <div class="modal-footer">
+            <a href="#!" class="modal-close waves-effect btn-flat">Hủy</a>
+            <button type="submit" class="waves-effect btn">
+                <i class="material-icons left">check</i>Xác nhận
+            </button>
         </div>
-    </div>
-    <div class="modal-footer">
-        <a href="#!" class="modal-close waves-effect btn-flat">Hủy</a>
-        <button type="button" id="btnChangeStatus" class="waves-effect btn">
-            <i class="material-icons left">check</i>Xác nhận
-        </button>
-    </div>
+    </form>
 </div>
 
 @section Scripts {
@@ -288,47 +307,6 @@
         
         // Initialize textarea
         M.textareaAutoResize(document.querySelectorAll('textarea'));
-
-        // Handle status change
-        var btnChangeStatus = document.getElementById('btnChangeStatus');
-        if (btnChangeStatus) {
-            btnChangeStatus.addEventListener('click', function() {
-                var newStatus = document.getElementById('newStatus').value;
-                var note = document.getElementById('statusNote').value;
-                
-                if (!newStatus) {
-                    UCarToast.warning('Vui lòng chọn trạng thái mới');
-                    return;
-                }
-                
-                fetch('@Url.Action("ChangeStatus")', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        vehicleId: '@Model.VehicleId',
-                        newStatus: parseInt(newStatus),
-                        note: note
-                    })
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        UCarToast.success(result.message);
-                        setTimeout(function() {
-                            window.location.reload();
-                        }, 1500);
-                    } else {
-                        UCarToast.error(result.message);
-                    }
-                })
-                .catch(error => {
-                    UCarToast.error('Có lỗi xảy ra');
-                    console.error(error);
-                });
-            });
-        }
 
         // Show toast messages from TempData
         @if (TempData["Success"] != null)

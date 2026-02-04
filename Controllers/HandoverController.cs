@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using UCar.Interfaces;
 using UCar.Models.DTOs.Handover;
@@ -8,13 +9,25 @@ namespace UCar.Controllers;
 /// Controller quản lý giao nhận xe
 /// Tương ứng DFD 6.0 - QUẢN LÝ GIAO NHẬN XE
 /// </summary>
+[Authorize(Roles = "Admin,BranchManager,Staff")]
 public class HandoverController : Controller
 {
     private readonly IHandoverService _handoverService;
+    private readonly IImageUploadService _imageUploadService;
 
-    public HandoverController(IHandoverService handoverService)
+    public HandoverController(IHandoverService handoverService, IImageUploadService imageUploadService)
     {
         _handoverService = handoverService;
+        _imageUploadService = imageUploadService;
+    }
+
+    /// <summary>Lấy User ID từ authentication cookie</summary>
+    private Guid GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+        return userIdClaim != null && Guid.TryParse(userIdClaim.Value, out var userId)
+            ? userId
+            : Guid.Empty;
     }
 
     /// <summary>
@@ -73,8 +86,9 @@ public class HandoverController : Controller
     }
 
     /// <summary>
-    /// Xác nhận giao xe
+    /// Xác nhận lập biên bản giao xe - Luồng mới
     /// POST: /Handover/CheckOut
+    /// Sau khi lập biên bản → Chuyển đến trang thanh toán để ký + thanh toán
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -86,19 +100,56 @@ public class HandoverController : Controller
             return View(form);
         }
 
-        // TODO: Lấy userId từ session/authentication
-        var userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var userId = GetCurrentUserId();
 
         var result = await _handoverService.ConfirmCheckOutAsync(dto, userId);
         if (!result.Success)
         {
-            TempData["ErrorMessage"] = result.Errors.First();
+            // Kiểm tra nếu lỗi là "đã giao xe" thì redirect đến Pickup thay vì hiển thị lỗi
+            // Đây là trường hợp user quay lại (browser back) và form resubmit
+            var errorMsg = result.Errors.FirstOrDefault() ?? "";
+            if (errorMsg.Contains("đã được giao xe") || errorMsg.Contains("đã giao xe"))
+            {
+                return RedirectToAction("Pickup", "Payment", new { contractId = dto.ContractId });
+            }
+            
+            TempData["ErrorMessage"] = errorMsg;
             var form = await _handoverService.GetCheckOutFormAsync(dto.ContractId);
             return View(form);
         }
 
-        TempData["SuccessMessage"] = result.Message;
-        return RedirectToAction(nameof(HandoverDocument), new { contractId = dto.ContractId });
+        TempData["SuccessMessage"] = "Đã lập biên bản giao xe. Vui lòng tiến hành ký hợp đồng và thanh toán.";
+        // Chuyển đến trang thanh toán khi nhận xe
+        return RedirectToAction("Pickup", "Payment", new { contractId = dto.ContractId });
+    }
+
+    /// <summary>
+    /// API upload ảnh xe
+    /// POST: /Handover/UploadImages
+    /// </summary>
+    [HttpPost]
+    public async Task<IActionResult> UploadImages(Guid contractId, string imageType)
+    {
+        if (Request.Form.Files.Count == 0)
+            return BadRequest(new { success = false, message = "Không có file nào được upload" });
+
+        var imagePaths = await _imageUploadService.UploadVehicleImagesAsync(
+            contractId, 
+            Request.Form.Files, 
+            imageType);
+
+        return Ok(new { success = true, paths = imagePaths });
+    }
+
+    /// <summary>
+    /// API xóa ảnh xe
+    /// DELETE: /Handover/DeleteImage
+    /// </summary>
+    [HttpDelete]
+    public async Task<IActionResult> DeleteImage([FromBody] string imagePath)
+    {
+        var result = await _imageUploadService.DeleteImageAsync(imagePath);
+        return Ok(new { success = result });
     }
 
     /// <summary>
@@ -138,8 +189,7 @@ public class HandoverController : Controller
             return View(form);
         }
 
-        // TODO: Lấy userId từ session/authentication
-        var userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var userId = GetCurrentUserId();
 
         var result = await _handoverService.ConfirmCheckInAsync(dto, userId);
         if (!result.Success)
@@ -197,6 +247,16 @@ public class HandoverController : Controller
     #region Incidents (D13)
 
     /// <summary>
+    /// Danh sách tất cả sự cố
+    /// GET: /Handover/AllIncidents
+    /// </summary>
+    public async Task<IActionResult> AllIncidents()
+    {
+        var incidents = await _handoverService.GetAllIncidentsAsync();
+        return View(incidents);
+    }
+
+    /// <summary>
     /// Danh sách sự cố của hợp đồng
     /// GET: /Handover/Incidents/{contractId}
     /// </summary>
@@ -225,15 +285,26 @@ public class HandoverController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateIncident(IncidentCreateDto dto)
     {
-        if (!ModelState.IsValid)
-            return View(dto);
+        // Validate IncidentType
+        if (!dto.IncidentType.HasValue)
+        {
+            ModelState.AddModelError("IncidentType", "Vui lòng chọn loại sự cố");
+        }
 
-        var userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        if (!ModelState.IsValid)
+        {
+            // Giữ lại ContractId để view có thể sử dụng
+            ViewBag.ContractId = dto.ContractId;
+            return View(dto);
+        }
+
+        var userId = GetCurrentUserId();
         var result = await _handoverService.CreateIncidentAsync(dto, userId);
 
         if (!result.Success)
         {
             TempData["ErrorMessage"] = result.Errors.First();
+            ViewBag.ContractId = dto.ContractId;
             return View(dto);
         }
 
@@ -275,14 +346,18 @@ public class HandoverController : Controller
     public async Task<IActionResult> CreateViolation(ViolationCreateDto dto)
     {
         if (!ModelState.IsValid)
+        {
+            ViewBag.ContractId = dto.ContractId;
             return View(dto);
+        }
 
-        var userId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var userId = GetCurrentUserId();
         var result = await _handoverService.CreateViolationAsync(dto, userId);
 
         if (!result.Success)
         {
             TempData["ErrorMessage"] = result.Errors.First();
+            ViewBag.ContractId = dto.ContractId;
             return View(dto);
         }
 

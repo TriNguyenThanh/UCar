@@ -43,4 +43,10 @@ public class IncidentDto
 
     public decimal EstimatedCost { get; set; }
     public DateTime CreatedAt { get; set; }
+    
+    // Fine Detail
+    public FineDetailDto? FineDetail { get; set; }
+    
+    // Impound Detail
+    public ImpoundDetailDto? ImpoundDetail { get; set; }
 }

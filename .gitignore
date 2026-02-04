@@ -422,3 +422,12 @@ package-lock.json
 .vscode/*
 *.no.md
 .github/*
+
+# Environment variables
+*.env
+.vscode/*
+Migrations/*
+Migrations
+appsettings.json
+.github
+*.no.md

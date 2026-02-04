@@ -1,0 +1,236 @@
+@model UCar.Models.Price
+@{
+    ViewData["Title"] = "Chi tiết Bảng giá";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center;">
+            <a asp-action="Index" class="btn-flat waves-effect">
+                <i class="material-icons left">arrow_back</i>Quay lại
+            </a>
+            <h4 style="font-weight: 700; margin: 0 0 0 1rem;">
+                <i class="material-icons teal-text" style="vertical-align: middle; margin-right: 8px;">visibility</i>
+                Chi tiết Bảng giá
+            </h4>
+        </div>
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model.PriceId" class="btn waves-effect waves-light blue">
+                <i class="material-icons left">edit</i>Chỉnh sửa
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col s12 l8">
+            <!-- Main Info Card -->
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title" style="font-weight: 700; margin-bottom: 1rem;">
+                        <i class="material-icons left teal-text">info</i>
+                        Thông tin cơ bản
+                    </span>
+                    
+                    <table class="striped">
+                        <tbody>
+                            <tr>
+                                <td style="width: 35%; font-weight: 600;">
+                                    <i class="material-icons tiny teal-text" style="vertical-align: middle;">label</i>
+                                    Tên bảng giá
+                                </td>
+                                <td>@Model.Name</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 600;">
+                                    <i class="material-icons tiny teal-text" style="vertical-align: middle;">directions_car</i>
+                                    Dòng xe
+                                </td>
+                                <td>
+                                    <strong>@Model.VehicleModel?.ModelName</strong><br/>
+                                    <small class="grey-text">@Model.VehicleModel?.Make</small>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 600;">
+                                    <i class="material-icons tiny teal-text" style="vertical-align: middle;">category</i>
+                                    Loại xe
+                                </td>
+                                <td>@Model.VehicleModel?.VehicleType?.TypeName</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 600;">
+                                    <i class="material-icons tiny teal-text" style="vertical-align: middle;">event</i>
+                                    Hiệu lực
+                                </td>
+                                <td>
+                                    Từ <strong>@Model.ValidFrom.ToString("dd/MM/yyyy")</strong>
+                                    @if (Model.ValidTo.HasValue)
+                                    {
+                                        <span> đến <strong>@Model.ValidTo.Value.ToString("dd/MM/yyyy")</strong></span>
+                                    }
+                                    else
+                                    {
+                                        <span class="chip teal lighten-4 teal-text">Vô thời hạn</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 600;">
+                                    <i class="material-icons tiny teal-text" style="vertical-align: middle;">toggle_on</i>
+                                    Trạng thái
+                                </td>
+                                <td>
+                                    @if (Model.IsActive)
+                                    {
+                                        <span class="chip green lighten-4 green-text">
+                                            <i class="material-icons tiny">check_circle</i>
+                                            Đang áp dụng
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="chip grey lighten-2">
+                                            <i class="material-icons tiny">cancel</i>
+                                            Tạm ngưng
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pricing Details Card -->
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title" style="font-weight: 700; margin-bottom: 1rem;">
+                        <i class="material-icons left blue-text">attach_money</i>
+                        Chi tiết giá
+                    </span>
+
+                    <div class="row">
+                        <div class="col s12 m6">
+                            <div class="card blue lighten-5">
+                                <div class="card-content center-align">
+                                    <i class="material-icons large blue-text">today</i>
+                                    <h5 style="font-weight: 700; margin: 0.5rem 0;">@Model.BaseDailyPrice.ToString("N0")đ</h5>
+                                    <p class="grey-text text-darken-2">Giá cơ bản / ngày</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col s12 m6">
+                            <div class="card orange lighten-5">
+                                <div class="card-content center-align">
+                                    <i class="material-icons large orange-text">access_time</i>
+                                    <h5 style="font-weight: 700; margin: 0.5rem 0;">@Model.OvertimeHourlyPrice.ToString("N0")đ</h5>
+                                    <p class="grey-text text-darken-2">Phụ phí / giờ trễ</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col s12 m6">
+                            <div class="card purple lighten-5">
+                                <div class="card-content center-align">
+                                    <i class="material-icons large purple-text">calendar_month</i>
+                                    <h5 style="font-weight: 700; margin: 0.5rem 0;">×@Model.MonthMultiplier</h5>
+                                    <p class="grey-text text-darken-2">Hệ số thuê tháng</p>
+                                    @if (Model.MonthMultiplier < 1)
+                                    {
+                                        <span class="chip green lighten-4 green-text">Giảm @((1 - Model.MonthMultiplier) * 100)%</span>
+                                    }
+                                    else if (Model.MonthMultiplier > 1)
+                                    {
+                                        <span class="chip red lighten-4 red-text">Tăng @((Model.MonthMultiplier - 1) * 100)%</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col s12 m6">
+                            <div class="card teal lighten-5">
+                                <div class="card-content center-align">
+                                    <i class="material-icons large teal-text">celebration</i>
+                                    <h5 style="font-weight: 700; margin: 0.5rem 0;">×@Model.PeakMultiplier</h5>
+                                    <p class="grey-text text-darken-2">Hệ số ngày lễ</p>
+                                    @if (Model.PeakMultiplier < 1)
+                                    {
+                                        <span class="chip green lighten-4 green-text">Giảm @((1 - Model.PeakMultiplier) * 100)%</span>
+                                    }
+                                    else if (Model.PeakMultiplier > 1)
+                                    {
+                                        <span class="chip orange lighten-4 orange-text">Tăng @((Model.PeakMultiplier - 1) * 100)%</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col s12 l4">
+            <!-- Quick Calculation Card -->
+            <div class="card green lighten-5">
+                <div class="card-content">
+                    <span class="card-title" style="font-weight: 700;">
+                        <i class="material-icons left green-text">calculate</i>
+                        Ước tính giá
+                    </span>
+                    
+                    <div class="divider" style="margin: 1rem 0;"></div>
+                    
+                    <p style="margin-bottom: 1rem;">
+                        <strong>Thuê 1 ngày:</strong><br/>
+                        <span class="teal-text" style="font-size: 1.2rem; font-weight: 700;">@Model.BaseDailyPrice.ToString("N0")đ</span>
+                    </p>
+                    
+                    <p style="margin-bottom: 1rem;">
+                        <strong>Thuê 1 tuần (7 ngày):</strong><br/>
+                        <span class="teal-text" style="font-size: 1.2rem; font-weight: 700;">@((Model.BaseDailyPrice * 7).ToString("N0"))đ</span>
+                    </p>
+                    
+                    <p style="margin-bottom: 1rem;">
+                        <strong>Thuê 1 tháng (30 ngày):</strong><br/>
+                        <span class="teal-text" style="font-size: 1.2rem; font-weight: 700;">@((Model.BaseDailyPrice * 30 * Model.MonthMultiplier).ToString("N0"))đ</span>
+                        @if (Model.MonthMultiplier < 1)
+                        {
+                            <br/><small class="green-text">Tiết kiệm: @((Model.BaseDailyPrice * 30 * (1 - Model.MonthMultiplier)).ToString("N0"))đ</small>
+                        }
+                    </p>
+                    
+                    <div class="divider" style="margin: 1rem 0;"></div>
+                    
+                    <p style="margin-bottom: 1rem;">
+                        <strong>Ngày lễ (1 ngày):</strong><br/>
+                        <span class="orange-text" style="font-size: 1.2rem; font-weight: 700;">@((Model.BaseDailyPrice * Model.PeakMultiplier).ToString("N0"))đ</span>
+                    </p>
+                    
+                    <p>
+                        <strong>Trả xe trễ 3 giờ:</strong><br/>
+                        <span class="red-text" style="font-size: 1.2rem; font-weight: 700;">@((Model.OvertimeHourlyPrice * 3).ToString("N0"))đ</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Delete Action Card -->
+            <div class="card red lighten-5">
+                <div class="card-content">
+                    <span class="card-title" style="font-weight: 700;">
+                        <i class="material-icons left red-text">warning</i>
+                        Thao tác nguy hiểm
+                    </span>
+                    <p class="grey-text text-darken-2">Xóa bảng giá này sẽ không thể khôi phục.</p>
+                    <form asp-action="Delete" asp-route-id="@Model.PriceId" method="post" 
+                          onsubmit="return confirm('Bạn có chắc chắn muốn xóa bảng giá này? Hành động này không thể hoàn tác!');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn waves-effect waves-light red" style="margin-top: 1rem;">
+                            <i class="material-icons left">delete</i>Xóa bảng giá
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

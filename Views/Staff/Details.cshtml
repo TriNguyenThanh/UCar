@@ -1,0 +1,131 @@
+@model UCar.Models.DTOs.Operations.StaffDetailDto
+@{
+    ViewData["Title"] = "Chi tiết nhân viên";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">person</i>
+                @Model.FullName
+            </h4>
+            <p class="grey-text text-darken-1" style="margin: 0;">Mã NV: @Model.StaffCode</p>
+        </div>
+        <div>
+            <a asp-action="Edit" asp-route-id="@Model.StaffId" class="btn waves-effect waves-light">
+                <i class="material-icons left">edit</i>Sửa
+            </a>
+            <a asp-action="Performance" asp-route-id="@Model.StaffId" class="btn-flat">
+                <i class="material-icons left">bar_chart</i>Hiệu suất
+            </a>
+            <a asp-action="Index" class="btn-flat">
+                <i class="material-icons left">arrow_back</i>Quay lại
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col s12 m6">
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title"><i class="material-icons left">badge</i>Thông tin cá nhân</span>
+                    <table class="striped">
+                        <tr>
+                            <td><strong>Mã nhân viên</strong></td>
+                            <td>@Model.StaffCode</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Họ và tên</strong></td>
+                            <td>@Model.FullName</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Chức vụ</strong></td>
+                            <td>@(Model.Position ?? "-")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Chi nhánh</strong></td>
+                            <td>@Model.BranchName</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Trạng thái</strong></td>
+                            <td>
+                                @if (Model.IsActive)
+                                {
+                                    <span class="chip chip-success"><i class="material-icons tiny">check</i> Đang làm</span>
+                                }
+                                else
+                                {
+                                    <span class="chip"><i class="material-icons tiny">block</i> Đã nghỉ</span>
+                                }
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col s12 m6">
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title"><i class="material-icons left">contact_phone</i>Thông tin liên hệ</span>
+                    <table class="striped">
+                        <tr>
+                            <td><strong>Email</strong></td>
+                            <td>@(Model.Email ?? "-")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Số điện thoại</strong></td>
+                            <td>@(Model.Phone ?? "-")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tên đăng nhập</strong></td>
+                            <td><code>@Model.Username</code></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title"><i class="material-icons left">settings</i>Thao tác</span>
+                    @if (Model.IsActive)
+                    {
+                        <form asp-action="Deactivate" asp-route-id="@Model.StaffId" method="post" style="display: inline;">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn waves-effect waves-light orange"
+                                onclick="return confirm('Xác nhận vô hiệu hóa nhân viên?');">
+                                <i class="material-icons left">block</i>Vô hiệu hóa
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <form asp-action="Activate" asp-route-id="@Model.StaffId" method="post" style="display: inline;">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn waves-effect waves-light green">
+                                <i class="material-icons left">check</i>Kích hoạt lại
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <text>UCarToast.success('@TempData["SuccessMessage"]');</text>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>UCarToast.error('@TempData["ErrorMessage"]');</text>
+            }
+        });
+    </script>
+}
