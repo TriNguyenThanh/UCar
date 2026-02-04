@@ -14,10 +14,12 @@ namespace UCar.Controllers;
 public class VehicleCatalogController : Controller
 {
     private readonly IVehicleCatalogService _catalogService;
+    private readonly IWebHostEnvironment _environment;
 
-    public VehicleCatalogController(IVehicleCatalogService catalogService)
+    public VehicleCatalogController(IVehicleCatalogService catalogService, IWebHostEnvironment environment)
     {
         _catalogService = catalogService;
+        _environment = environment;
     }
 
     #region Vehicle Types
@@ -137,6 +139,62 @@ public class VehicleCatalogController : Controller
     }
 
     /// <summary>
+    /// Tạo dòng xe (Form Upload)
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateVehicleModelWithImage([FromForm] VehicleModelCreateDto dto, IFormFile? imageFile)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["ErrorMessage"] = "Dữ liệu không hợp lệ";
+            return RedirectToAction(nameof(VehicleModels));
+        }
+
+        // Handle image upload
+        if (imageFile != null && imageFile.Length > 0)
+        {
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+            var extension = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+            
+            if (!allowedExtensions.Contains(extension))
+            {
+                TempData["ErrorMessage"] = "Chỉ chấp nhận file ảnh (.jpg, .jpeg, .png, .gif)";
+                return RedirectToAction(nameof(VehicleModels));
+            }
+
+            if (imageFile.Length > 5 * 1024 * 1024) // 5MB
+            {
+                TempData["ErrorMessage"] = "Kích thước file không được vượt quá 5MB";
+                return RedirectToAction(nameof(VehicleModels));
+            }
+
+            var fileName = $"{Guid.NewGuid()}{extension}";
+            var uploadPath = Path.Combine(_environment.WebRootPath, "images", "vehicle-models");
+            
+            if (!Directory.Exists(uploadPath))
+                Directory.CreateDirectory(uploadPath);
+
+            var filePath = Path.Combine(uploadPath, fileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await imageFile.CopyToAsync(stream);
+            }
+
+            dto.ImageFileName = fileName;
+        }
+
+        var result = await _catalogService.CreateVehicleModelAsync(dto);
+        
+        if (result.Success)
+            TempData["SuccessMessage"] = result.Message;
+        else
+            TempData["ErrorMessage"] = result.Errors.FirstOrDefault();
+
+        return RedirectToAction(nameof(VehicleModels));
+    }
+
+    /// <summary>
     /// Tạo dòng xe (AJAX)
     /// </summary>
     [HttpPost]
@@ -171,6 +229,73 @@ public class VehicleCatalogController : Controller
             return Json(new { success = false, message = "Dòng xe không tồn tại" });
         }
         return Json(new { success = true, data = model });
+    }
+
+    /// <summary>
+    /// Cập nhật dòng xe (Form Upload)
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateVehicleModelWithImage(Guid id, [FromForm] VehicleModelUpdateDto dto, IFormFile? imageFile)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["ErrorMessage"] = "Dữ liệu không hợp lệ";
+            return RedirectToAction(nameof(VehicleModels));
+        }
+
+        // Handle image upload
+        if (imageFile != null && imageFile.Length > 0)
+        {
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+            var extension = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+            
+            if (!allowedExtensions.Contains(extension))
+            {
+                TempData["ErrorMessage"] = "Chỉ chấp nhận file ảnh (.jpg, .jpeg, .png, .gif)";
+                return RedirectToAction(nameof(VehicleModels));
+            }
+
+            if (imageFile.Length > 5 * 1024 * 1024) // 5MB
+            {
+                TempData["ErrorMessage"] = "Kích thước file không được vượt quá 5MB";
+                return RedirectToAction(nameof(VehicleModels));
+            }
+
+            // Delete old image if exists
+            var oldModel = await _catalogService.GetVehicleModelByIdAsync(id);
+            if (oldModel != null && !string.IsNullOrEmpty(oldModel.ImageFileName))
+            {
+                var oldImagePath = Path.Combine(_environment.WebRootPath, "images", "vehicle-models", oldModel.ImageFileName);
+                if (System.IO.File.Exists(oldImagePath))
+                {
+                    System.IO.File.Delete(oldImagePath);
+                }
+            }
+
+            var fileName = $"{Guid.NewGuid()}{extension}";
+            var uploadPath = Path.Combine(_environment.WebRootPath, "images", "vehicle-models");
+            
+            if (!Directory.Exists(uploadPath))
+                Directory.CreateDirectory(uploadPath);
+
+            var filePath = Path.Combine(uploadPath, fileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await imageFile.CopyToAsync(stream);
+            }
+
+            dto.ImageFileName = fileName;
+        }
+
+        var result = await _catalogService.UpdateVehicleModelAsync(id, dto);
+        
+        if (result.Success)
+            TempData["SuccessMessage"] = result.Message;
+        else
+            TempData["ErrorMessage"] = result.Errors.FirstOrDefault();
+
+        return RedirectToAction(nameof(VehicleModels));
     }
 
     /// <summary>

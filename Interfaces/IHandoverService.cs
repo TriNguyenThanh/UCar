@@ -99,6 +99,7 @@ public interface IHandoverService
     /// <summary>
     /// Lấy danh sách sự cố của hợp đồng
     /// </summary>
+    Task<IEnumerable<IncidentDto>> GetAllIncidentsAsync();
     Task<IEnumerable<IncidentDto>> GetIncidentsByContractAsync(Guid contractId);
 
     /// <summary>

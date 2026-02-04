@@ -22,31 +22,6 @@
         </a>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="row">
-        <div class="col s12 m4">
-            <a href="@Url.Action("Index")" class="card stats-card hoverable" style="display: block;">
-                <i class="material-icons stats-icon blue-text">assignment</i>
-                <div class="stats-value">-</div>
-                <div class="stats-label">Chờ giao xe</div>
-            </a>
-        </div>
-        <div class="col s12 m4">
-            <div class="card stats-card">
-                <i class="material-icons stats-icon green-text">assignment_return</i>
-                <div class="stats-value">@Model.TotalCount</div>
-                <div class="stats-label">Chờ nhận xe</div>
-            </div>
-        </div>
-        <div class="col s12 m4">
-            <a href="@Url.Action("Overdue")" class="card stats-card hoverable" style="display: block;">
-                <i class="material-icons stats-icon red-text">warning</i>
-                <div class="stats-value">@Model.Items.Count(i => i.IsOverdue)</div>
-                <div class="stats-label">Quá hạn</div>
-            </a>
-        </div>
-    </div>
-
     <!-- Filter Section -->
     <div class="card">
         <div class="card-content">
@@ -132,16 +107,23 @@
                                     }
                                 </td>
                                 <td class="center-align">
+                                    <a asp-controller="Contract" asp-action="Details" asp-route-id="@item.ContractId"
+                                        class="btn-small waves-effect waves-light blue tooltipped"
+                                        data-position="top" data-tooltip="Xem hợp đồng">
+                                        <i class="material-icons">visibility</i>
+                                    </a>
                                     <a asp-action="CheckIn" asp-route-contractId="@item.ContractId"
                                         class="btn-small waves-effect waves-light orange">
                                         <i class="material-icons left">login</i>Nhận xe
                                     </a>
                                     <a asp-action="Incidents" asp-route-contractId="@item.ContractId"
-                                        class="btn-small waves-effect waves-light red" title="Sự cố">
+                                        class="btn-small waves-effect waves-light red tooltipped"
+                                        data-position="top" data-tooltip="Sự cố">
                                         <i class="material-icons">warning</i>
                                     </a>
                                     <a asp-action="Violations" asp-route-contractId="@item.ContractId"
-                                        class="btn-small waves-effect waves-light grey" title="Vi phạm">
+                                        class="btn-small waves-effect waves-light grey tooltipped"
+                                        data-position="top" data-tooltip="Vi phạm">
                                         <i class="material-icons">gavel</i>
                                     </a>
                                 </td>
@@ -203,6 +185,9 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            var tooltipElems = document.querySelectorAll('.tooltipped');
+            M.Tooltip.init(tooltipElems);
+
         @if (TempData["SuccessMessage"] != null)
         {
             <text>UCarToast.success('@TempData["SuccessMessage"]');</text>

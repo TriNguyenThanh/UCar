@@ -71,12 +71,27 @@
                 style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                 <div class="input-field" style="margin: 0; flex: 1; min-width: 200px;">
                     <select name="BranchId" id="BranchId">
-                        <option value="">Tất cả chi nhánh</option>
+                        @if (!filter.BranchId.HasValue)
+                        {
+                            <option value="" selected>Tất cả chi nhánh</option>
+                        }
+                        else
+                        {
+                            <option value="">Tất cả chi nhánh</option>
+                        }
                         @foreach (var b in branches)
                         {
-                            <option value="@b.BranchId" selected="@(filter.BranchId == b.BranchId)">@b.Name</option>
+                            @if (filter.BranchId == b.BranchId)
+                            {
+                                <option value="@b.BranchId" selected>@b.Name</option>
+                            }
+                            else
+                            {
+                                <option value="@b.BranchId">@b.Name</option>
+                            }
                         }
                     </select>
+                    <label>Chi nhánh</label>
                 </div>
                 <button type="submit" class="btn waves-effect waves-light blue">
                     <i class="material-icons left">filter_list</i>Áp dụng
@@ -114,6 +129,15 @@
                     <span class="card-title" style="font-size: 1.1rem;">
                         <i class="material-icons left green-text">person_add</i>Phân công ca
                     </span>
+                    @if (!filter.BranchId.HasValue)
+                    {
+                        <div class="center-align" style="padding: 2rem;">
+                            <i class="material-icons" style="font-size: 3rem; color: #e0e0e0;">business</i>
+                            <p class="grey-text">Vui lòng chọn chi nhánh để phân công ca</p>
+                        </div>
+                    }
+                    else
+                    {
                     <form asp-action="AssignShift" method="post" id="assignForm">
                         @Html.AntiForgeryToken()
 
@@ -130,15 +154,8 @@
                         </div>
 
                         <div class="input-field">
-                            <select name="StaffId" id="StaffIdSelect" required>
-                                <option value="" disabled selected>Chọn nhân viên</option>
-                                @foreach (var s in staff)
-                                {
-                                    <option value="@s.StaffId" data-branch-id="@s.BranchId" data-position="@s.Position"
-                                        data-branch="@s.BranchName">
-                                        @s.FullName (@s.StaffCode)
-                                    </option>
-                                }
+                            <select name="StaffId" id="StaffIdSelect" required disabled>
+                                <option value="" disabled selected>Chọn ca làm trước</option>
                             </select>
                             <label>Nhân viên *</label>
                         </div>
@@ -160,6 +177,7 @@
                             <i class="material-icons left">add_circle</i>Phân công
                         </button>
                     </form>
+                    }
                 </div>
             </div>
 
@@ -168,23 +186,53 @@
                 <div class="card-content">
                     <span class="card-title" style="font-size: 1.1rem;">
                         <i class="material-icons left blue-text">groups</i>Danh sách nhân viên
+                        <span class="grey-text" style="font-size: 0.85rem; font-weight: normal;">(@staff.Count())</span>
                     </span>
                     <div style="max-height: 280px; overflow-y: auto;">
-                        @foreach (var s in staff)
+                        @if (!filter.BranchId.HasValue)
                         {
-                            <div class="staff-item"
-                                style="display: flex; align-items: center; padding: 0.5rem; border-radius: 8px; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s;"
-                                data-staff-id="@s.StaffId" data-staff-name="@s.FullName" data-staff-code="@s.StaffCode"
-                                data-staff-position="@s.Position" data-staff-branch="@s.BranchName">
-                                <div class="chip"
-                                    style="border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; margin: 0 0.75rem 0 0;">
-                                    @s.FullName.Substring(0, 1).ToUpper()
+                            @* Group by branch when viewing all *@
+                            @foreach (var branchGroup in staff.GroupBy(s => s.BranchName).OrderBy(g => g.Key))
+                            {
+                                <div style="font-weight: 600; font-size: 0.85rem; color: #2196F3; margin: 0.75rem 0 0.5rem; padding-bottom: 0.25rem; border-bottom: 1px solid #e0e0e0;">
+                                    <i class="material-icons tiny" style="vertical-align: middle;">business</i> @branchGroup.Key
                                 </div>
-                                <div style="flex: 1;">
-                                    <div style="font-weight: 500;">@s.FullName</div>
-                                    <small class="grey-text">@s.Position</small>
+                                @foreach (var s in branchGroup)
+                                {
+                                    <div class="staff-item"
+                                        style="display: flex; align-items: center; padding: 0.5rem; border-radius: 8px; margin-bottom: 0.25rem; cursor: pointer; transition: all 0.2s;"
+                                        data-staff-id="@s.StaffId" data-staff-name="@s.FullName" data-staff-code="@s.StaffCode"
+                                        data-staff-position="@s.Position" data-staff-branch="@s.BranchName">
+                                        <div class="chip"
+                                            style="border-radius: 50%; width: 32px; height: 32px; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; margin: 0 0.5rem 0 0;">
+                                            @s.FullName.Substring(0, 1).ToUpper()
+                                        </div>
+                                        <div style="flex: 1;">
+                                            <div style="font-weight: 500; font-size: 0.9rem;">@s.FullName</div>
+                                            <small class="grey-text" style="font-size: 0.75rem;">@s.Position</small>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        }
+                        else
+                        {
+                            @foreach (var s in staff)
+                            {
+                                <div class="staff-item"
+                                    style="display: flex; align-items: center; padding: 0.5rem; border-radius: 8px; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s;"
+                                    data-staff-id="@s.StaffId" data-staff-name="@s.FullName" data-staff-code="@s.StaffCode"
+                                    data-staff-position="@s.Position" data-staff-branch="@s.BranchName">
+                                    <div class="chip"
+                                        style="border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; margin: 0 0.75rem 0 0;">
+                                        @s.FullName.Substring(0, 1).ToUpper()
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 500;">@s.FullName</div>
+                                        <small class="grey-text">@s.Position</small>
+                                    </div>
                                 </div>
-                            </div>
+                            }
                         }
                     </div>
                 </div>
@@ -194,19 +242,50 @@
             <div class="card">
                 <div class="card-content">
                     <span class="card-title" style="font-size: 1.1rem;">
-                        <i class="material-icons left orange-text">palette</i>Chú thích màu
+                        <i class="material-icons left orange-text">palette</i>Chú thích ca làm
+                        <span class="grey-text" style="font-size: 0.85rem; font-weight: normal;">(@shifts.Count())</span>
                     </span>
-                    @{
-                        var colors = new[] { "#2196F3", "#4CAF50", "#ff9800", "#9C27B0" };
-                        var idx = 0;
-                    }
-                    @foreach (var s in shifts.Take(4))
+                    @if (!shifts.Any())
                     {
-                        <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
-                            <span
-                                style="display: inline-block; width: 16px; height: 16px; background: @colors[idx++ % 4]; border-radius: 4px; margin-right: 10px;"></span>
-                            <span style="font-size: 0.9rem;">@s.ShiftName</span>
-                            <span class="grey-text" style="margin-left: auto; font-size: 0.85rem;">@s.TimeRange</span>
+                        <p class="grey-text center-align" style="padding: 1rem;">
+                            <i class="material-icons" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;">event_busy</i>
+                            Chưa có ca làm việc nào
+                        </p>
+                    }
+                    else
+                    {
+                        var colors = new[] { "#2196F3", "#4CAF50", "#ff9800", "#9C27B0", "#E91E63", "#00BCD4", "#795548", "#607D8B" };
+                        var colorIdx = 0;
+                        <div style="max-height: 200px; overflow-y: auto;">
+                        @if (!filter.BranchId.HasValue)
+                        {
+                            @* Group by branch when viewing all *@
+                            @foreach (var branchGroup in shifts.GroupBy(s => s.BranchName).OrderBy(g => g.Key))
+                            {
+                                <div style="font-weight: 600; font-size: 0.8rem; color: #666; margin: 0.5rem 0 0.25rem; padding-bottom: 0.25rem; border-bottom: 1px solid #eee;">
+                                    @branchGroup.Key
+                                </div>
+                                @foreach (var s in branchGroup)
+                                {
+                                    <div style="display: flex; align-items: center; margin-bottom: 0.35rem; font-size: 0.85rem;">
+                                        <span style="display: inline-block; width: 12px; height: 12px; background: @colors[colorIdx++ % colors.Length]; border-radius: 3px; margin-right: 8px;"></span>
+                                        <span>@s.ShiftName</span>
+                                        <span class="grey-text" style="margin-left: auto; font-size: 0.8rem;">@s.TimeRange</span>
+                                    </div>
+                                }
+                            }
+                        }
+                        else
+                        {
+                            @foreach (var s in shifts)
+                            {
+                                <div style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                                    <span style="display: inline-block; width: 16px; height: 16px; background: @colors[colorIdx++ % colors.Length]; border-radius: 4px; margin-right: 10px;"></span>
+                                    <span style="font-size: 0.9rem;">@s.ShiftName</span>
+                                    <span class="grey-text" style="margin-left: auto; font-size: 0.85rem;">@s.TimeRange</span>
+                                </div>
+                            }
+                        }
                         </div>
                     }
                 </div>
@@ -313,6 +392,24 @@
             font-weight: 600;
         }
 
+        /* Selected date cell */
+        .fc-day-selected {
+            background-color: rgba(250, 203, 1, 0.2) !important;
+            box-shadow: inset 0 0 0 2px #FACB01 !important;
+        }
+
+        .fc-day-selected .fc-daygrid-day-number {
+            background: #FACB01;
+            color: #00275e;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
         .staff-item:hover {
             background: #f5f5f5;
         }
@@ -326,16 +423,23 @@
             M.FormSelect.init(document.querySelectorAll('select'));
             M.updateTextFields();
 
-            // Store original options for filtering
+            // Store original options for filtering (only if form exists)
             var shiftSelect = document.getElementById('ShiftIdSelect');
             var staffSelect = document.getElementById('StaffIdSelect');
+            var hasBranchSelected = @(filter.BranchId.HasValue ? "true" : "false");
 
-            // Backup innerHTML to restore later
-            var shiftOriginalHTML = shiftSelect.innerHTML;
-            var staffOriginalHTML = staffSelect.innerHTML;
+            // Backup staff data for filtering (hidden in HTML, build from server data)
+            var staffOriginalHTML = `
+                <option value="" disabled selected>Chọn nhân viên</option>
+                @foreach (var s in staff)
+                {
+                    <text><option value="@s.StaffId" data-branch-id="@s.BranchId" data-position="@s.Position" data-branch="@s.BranchName">@s.FullName (@s.StaffCode)</option></text>
+                }
+            `;
 
             function filterOptions(selectId, originalHTML, branchId) {
                 var select = document.getElementById(selectId);
+                if (!select) return;
                 var tempDiv = document.createElement('div');
                 tempDiv.innerHTML = originalHTML;
 
@@ -359,22 +463,25 @@
             // Handle Global Branch Filter Change (Redirects)
             // No JS needed for global filter as it limits the initial data
 
-            // Handle Shift Selection Change -> Filter Staff
-            shiftSelect.addEventListener('change', function () {
-                var selectedOption = this.options[this.selectedIndex];
-                var branchId = selectedOption.getAttribute('data-branch-id');
+            // Handle Shift Selection Change -> Filter Staff (only if form exists)
+            if (shiftSelect) {
+                shiftSelect.addEventListener('change', function () {
+                    var selectedOption = this.options[this.selectedIndex];
+                    var branchId = selectedOption.getAttribute('data-branch-id');
 
-                if (branchId) {
-                    filterOptions('StaffIdSelect', staffOriginalHTML, branchId);
-                    UCarToast.info('Đã lọc nhân viên theo chi nhánh của ca làm việc');
-                } else {
-                    // Reset staff list if shift has no specific branch (or system wide)
-                    // But if global filter is active, we should respect it?
-                    // For now, reset to what was initially loaded
-                    document.getElementById('StaffIdSelect').innerHTML = staffOriginalHTML;
-                    M.FormSelect.init(document.getElementById('StaffIdSelect'));
-                }
-            });
+                    // Enable staff select
+                    staffSelect.disabled = false;
+
+                    if (branchId) {
+                        filterOptions('StaffIdSelect', staffOriginalHTML, branchId);
+                        UCarToast.info('Đã lọc nhân viên theo chi nhánh của ca làm việc');
+                    } else {
+                        // Reset staff list if shift has no specific branch (or system wide)
+                        document.getElementById('StaffIdSelect').innerHTML = staffOriginalHTML;
+                        M.FormSelect.init(document.getElementById('StaffIdSelect'));
+                    }
+                });
+            }
 
             // Initialize FullCalendar
             var calendarEl = document.getElementById('calendar');
@@ -426,7 +533,19 @@
                     }
                 },
                 dateClick: function (info) {
-                    document.getElementById('WorkDate').value = info.dateStr;
+                    // Only handle date click if branch is selected and form exists
+                    var workDateInput = document.getElementById('WorkDate');
+                    if (!workDateInput) return;
+                    
+                    // Remove previous selection
+                    document.querySelectorAll('.fc-day-selected').forEach(el => {
+                        el.classList.remove('fc-day-selected');
+                    });
+                    
+                    // Add selected class to clicked date
+                    info.dayEl.classList.add('fc-day-selected');
+                    
+                    workDateInput.value = info.dateStr;
                     document.getElementById('dayHoverOverlay').style.display = 'none';
 
                     // Block past dates
@@ -438,9 +557,11 @@
                                     return;
                     }
 
-                    UCarToast.info('Đã chọn ngày ' + info.dateStr.split('-').reverse().join('/'));
                 },
                 dayCellDidMount: function (info) {
+                    // Only show hover overlay if branch is selected
+                    if (!hasBranchSelected) return;
+                    
                     var overlay = document.getElementById('dayHoverOverlay');
                     var cellDate = info.date;
                     var today = new Date();
@@ -497,6 +618,10 @@
                 item.addEventListener('click', function () {
                     var staffId = this.dataset.staffId;
                     var select = document.getElementById('StaffIdSelect');
+                    if (!select) {
+                        UCarToast.info('Vui lòng chọn chi nhánh cụ thể để phân công ca');
+                        return;
+                    }
                     select.value = staffId;
                     M.FormSelect.init(select);
                     UCarToast.info('Đã chọn: ' + this.dataset.staffName);

@@ -166,25 +166,52 @@ public class OperationsController : Controller
 
     public async Task<IActionResult> CreateTask()
     {
+        var userId = GetCurrentUserId();
+        var isBranchManager = User.IsInRole("BranchManager");
+        Guid? userBranchId = null;
+
+        if (isBranchManager)
+        {
+            userBranchId = _branchAccess.GetCurrentUserBranchId();
+        }
+
         ViewBag.Branches = await _branchService.GetAllAsync();
         ViewBag.Staff = await _staffService.GetAvailableStaffAsync();
         ViewBag.Vehicles = await _vehicleService.GetAvailableVehiclesAsync();
-        return View(new TaskCreateDto { ScheduledAt = DateTime.Now.AddHours(1) });
+        ViewBag.IsBranchManager = isBranchManager;
+        ViewBag.UserBranchId = userBranchId;
+        
+        return View(new TaskCreateDto 
+        { 
+            ScheduledAt = DateTime.Now.AddHours(1),
+            BranchId = userBranchId // Auto-set branch for BranchManager
+        });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateTask(TaskCreateDto dto)
     {
+        var userId = GetCurrentUserId();
+        var isBranchManager = User.IsInRole("BranchManager");
+
+        // Force BranchManager to use their branch only
+        if (isBranchManager)
+        {
+            var userBranchId = _branchAccess.GetCurrentUserBranchId();
+            dto.BranchId = userBranchId;
+        }
+
         if (!ModelState.IsValid)
         {
             ViewBag.Branches = await _branchService.GetAllAsync();
             ViewBag.Staff = await _staffService.GetAvailableStaffAsync();
             ViewBag.Vehicles = await _vehicleService.GetAvailableVehiclesAsync();
+            ViewBag.IsBranchManager = isBranchManager;
+            ViewBag.UserBranchId = dto.BranchId;
             return View(dto);
         }
 
-        var userId = GetCurrentUserId();
         var result = await _taskService.CreateTaskAsync(dto, userId);
 
         if (!result.Success)
@@ -193,6 +220,8 @@ public class OperationsController : Controller
             ViewBag.Branches = await _branchService.GetAllAsync();
             ViewBag.Staff = await _staffService.GetAvailableStaffAsync();
             ViewBag.Vehicles = await _vehicleService.GetAvailableVehiclesAsync();
+            ViewBag.IsBranchManager = isBranchManager;
+            ViewBag.UserBranchId = dto.BranchId;
             return View(dto);
         }
 
@@ -355,7 +384,7 @@ public class OperationsController : Controller
         ViewBag.Filter = filter;
         ViewBag.IsBranchManager = userBranchId.HasValue;
 
-        return View();
+        return View(filter);
     }
 
     /// <summary>API endpoint for FullCalendar</summary>
@@ -392,6 +421,20 @@ public class OperationsController : Controller
             TempData["SuccessMessage"] = result.Message;
 
         return RedirectToAction(nameof(ShiftSchedule));
+    }
+
+    #endregion
+
+    #region API Endpoints
+
+    /// <summary>
+    /// API lấy danh sách xe theo loại nhiệm vụ
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> GetVehiclesByTaskType([FromQuery] TaskType taskType, [FromQuery] Guid? branchId)
+    {
+        var vehicles = await _vehicleService.GetVehiclesByTaskTypeAsync(taskType, branchId);
+        return Json(vehicles);
     }
 
     #endregion

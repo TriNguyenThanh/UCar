@@ -25,6 +25,14 @@
             <form asp-action="CreateViolation" method="post">
                 @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="ContractId" />
+                
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="card-panel red lighten-4 red-text text-darken-4">
+                        <h6><i class="material-icons left">error</i>Vui lòng kiểm tra lại thông tin:</h6>
+                        <div asp-validation-summary="All" class=""></div>
+                    </div>
+                }
 
                 <div class="row">
                     <!-- Select - Materialize style -->

@@ -30,7 +30,15 @@ public class BranchService : IBranchService
                 Address = b.Address,
                 PhoneContact = b.PhoneContact,
                 StaffCount = b.StaffProfiles.Count(s => s.IsActive),
-                VehicleCount = b.Vehicles.Count()
+                VehicleCount = b.Vehicles.Count(),
+                ManagerId = b.StaffProfiles
+                    .Where(s => s.IsActive && s.UserAccount != null && s.UserAccount.Role.Code == UCar.Models.Enums.RoleCode.BranchManager)
+                    .Select(s => (Guid?)s.StaffId)
+                    .FirstOrDefault(),
+                ManagerName = b.StaffProfiles
+                    .Where(s => s.IsActive && s.UserAccount != null && s.UserAccount.Role.Code == UCar.Models.Enums.RoleCode.BranchManager)
+                    .Select(s => s.FullName)
+                    .FirstOrDefault()
             })
             .OrderBy(b => b.Name)
             .ToListAsync();
@@ -47,7 +55,15 @@ public class BranchService : IBranchService
                 Address = b.Address,
                 PhoneContact = b.PhoneContact,
                 StaffCount = b.StaffProfiles.Count(s => s.IsActive),
-                VehicleCount = b.Vehicles.Count()
+                VehicleCount = b.Vehicles.Count(),
+                ManagerId = b.StaffProfiles
+                    .Where(s => s.IsActive && s.UserAccount != null && s.UserAccount.Role.Code == UCar.Models.Enums.RoleCode.BranchManager)
+                    .Select(s => (Guid?)s.StaffId)
+                    .FirstOrDefault(),
+                ManagerName = b.StaffProfiles
+                    .Where(s => s.IsActive && s.UserAccount != null && s.UserAccount.Role.Code == UCar.Models.Enums.RoleCode.BranchManager)
+                    .Select(s => s.FullName)
+                    .FirstOrDefault()
             })
             .FirstOrDefaultAsync();
     }

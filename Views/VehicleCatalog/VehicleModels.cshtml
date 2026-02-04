@@ -81,7 +81,23 @@
                         @foreach (var vm in Model)
                         {
                             <tr data-id="@vm.ModelId">
-                                <td><strong>@vm.Make</strong></td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        @if (!string.IsNullOrEmpty(vm.ImageFileName))
+                                        {
+                                            <img src="~/images/vehicle-models/@vm.ImageFileName" 
+                                                 alt="@vm.Make @vm.ModelName"
+                                                 style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px;">
+                                        }
+                                        else
+                                        {
+                                            <img src="https://placehold.co/600x400/e0e0e0/757575?text=No+Image" 
+                                                 alt="No image" 
+                                                 style="width: 60px; height: 40px; object-fit: cover; border-radius: 4px;">
+                                        }
+                                        <strong>@vm.Make</strong>
+                                    </div>
+                                </td>
                                 <td>@vm.ModelName</td>
                                 <td>
                                     <span class="chip chip-primary">@vm.VehicleTypeName</span>
@@ -192,6 +208,22 @@
                 </div>
             </div>
         </div>
+        <div class="row">
+            <div class="col s12">
+                <div class="file-field input-field">
+                    <div class="btn">
+                        <span><i class="material-icons left">image</i>Chọn ảnh</span>
+                        <input type="file" accept="image/*" id="createImageFile">
+                    </div>
+                    <div class="file-path-wrapper">
+                        <input class="file-path validate" type="text" placeholder="Tải ảnh dòng xe (tùy chọn, tối đa 5MB)">
+                    </div>
+                </div>
+                <div id="createImagePreview" style="margin-top: 10px; display: none;">
+                    <img id="createPreviewImg" src="" alt="Preview" style="max-width: 200px; max-height: 150px; border-radius: 4px;">
+                </div>
+            </div>
+        </div>
     </div>
     <div class="modal-footer">
         <a href="#!" class="modal-close waves-effect btn-flat">Hủy</a>
@@ -267,6 +299,28 @@
                 </div>
             </div>
         </div>
+        <div class="row">
+            <div class="col s12">
+                <div id="editCurrentImage" style="margin-bottom: 10px; display: none;">
+                    <p style="margin-bottom: 5px;"><strong>Ảnh hiện tại:</strong></p>
+                    <img id="editCurrentImagePreview" src="" alt="Current" style="max-width: 200px; max-height: 150px; border-radius: 4px;">
+                    <p class="grey-text" style="margin-top: 5px; font-size: 0.9rem;" id="editCurrentImageName"></p>
+                </div>
+                <div class="file-field input-field">
+                    <div class="btn">
+                        <span><i class="material-icons left">image</i>Thay đổi ảnh</span>
+                        <input type="file" accept="image/*" id="editImageFile">
+                    </div>
+                    <div class="file-path-wrapper">
+                        <input class="file-path validate" type="text" placeholder="Tải ảnh mới (tùy chọn, tối đa 5MB)">
+                    </div>
+                </div>
+                <div id="editImagePreview" style="margin-top: 10px; display: none;">
+                    <p style="margin-bottom: 5px;"><strong>Ảnh mới:</strong></p>
+                    <img id="editPreviewImg" src="" alt="Preview" style="max-width: 200px; max-height: 150px; border-radius: 4px;">
+                </div>
+            </div>
+        </div>
     </div>
     <div class="modal-footer">
         <a href="#!" class="modal-close waves-effect btn-flat">Hủy</a>
@@ -306,43 +360,90 @@
         var selectElems = document.querySelectorAll('select');
         M.FormSelect.init(selectElems);
 
+        // Image preview for create
+        document.getElementById('createImageFile')?.addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('createPreviewImg').src = e.target.result;
+                    document.getElementById('createImagePreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Image preview for edit
+        document.getElementById('editImageFile')?.addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            if (file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('editPreviewImg').src = e.target.result;
+                    document.getElementById('editImagePreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
         // Create handler
         document.getElementById('btnCreate').addEventListener('click', function() {
-            var data = {
-                vehicleTypeId: document.getElementById('createVehicleTypeId').value,
-                make: document.getElementById('createMake').value.trim(),
-                modelName: document.getElementById('createModelName').value.trim(),
-                seats: parseInt(document.getElementById('createSeats').value) || 4,
-                transmission: document.getElementById('createTransmission').value ? 
-                    parseInt(document.getElementById('createTransmission').value) : null,
-                fuelType: document.getElementById('createFuelType').value.trim() || null
-            };
+            var formData = new FormData();
+            formData.append('vehicleTypeId', document.getElementById('createVehicleTypeId').value);
+            formData.append('make', document.getElementById('createMake').value.trim());
+            formData.append('modelName', document.getElementById('createModelName').value.trim());
+            formData.append('seats', document.getElementById('createSeats').value);
             
-            if (!data.vehicleTypeId) {
+            var transmission = document.getElementById('createTransmission').value;
+            if (transmission) {
+                formData.append('transmission', transmission);
+            }
+            
+            var fuelType = document.getElementById('createFuelType').value.trim();
+            if (fuelType) {
+                formData.append('fuelType', fuelType);
+            }
+            
+            var imageFile = document.getElementById('createImageFile').files[0];
+            if (imageFile) {
+                formData.append('imageFile', imageFile);
+            }
+            
+            if (!formData.get('vehicleTypeId')) {
                 UCarToast.warning('Vui lòng chọn loại xe');
                 return;
             }
-            if (!data.make) {
+            if (!formData.get('make')) {
                 UCarToast.warning('Vui lòng nhập hãng xe');
                 return;
             }
-            if (!data.modelName) {
+            if (!formData.get('modelName')) {
                 UCarToast.warning('Vui lòng nhập tên dòng xe');
                 return;
             }
             
-            fetch('@Url.Action("CreateVehicleModel")', {
+            fetch('@Url.Action("CreateVehicleModelWithImage")', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                body: formData,
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return null;
+                }
+                return response.json();
+            })
             .then(result => {
-                if (result.success) {
-                    UCarToast.success(result.message);
-                    setTimeout(() => window.location.reload(), 1000);
-                } else {
-                    UCarToast.error(result.message);
+                if (result) {
+                    if (result.success) {
+                        UCarToast.success(result.message);
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                        UCarToast.error(result.message);
+                    }
                 }
             })
             .catch(error => {
@@ -370,6 +471,16 @@
                             document.getElementById('editTransmission').value = data.transmission !== null ? data.transmission : '';
                             document.getElementById('editFuelType').value = data.fuelType || '';
                             
+                            // Show current image if exists
+                            if (data.imageFileName) {
+                                document.getElementById('editCurrentImageName').textContent = data.imageFileName;
+                                document.getElementById('editCurrentImagePreview').src = '/images/vehicle-models/' + data.imageFileName;
+                                document.getElementById('editCurrentImage').style.display = 'block';
+                            } else {
+                                document.getElementById('editCurrentImage').style.display = 'none';
+                            }
+                            document.getElementById('editImagePreview').style.display = 'none';
+                            
                             M.FormSelect.init(document.querySelectorAll('#editModal select'));
                             M.updateTextFields();
                             
@@ -385,41 +496,62 @@
         // Update handler
         document.getElementById('btnUpdate').addEventListener('click', function() {
             var id = document.getElementById('editId').value;
-            var data = {
-                vehicleTypeId: document.getElementById('editVehicleTypeId').value,
-                make: document.getElementById('editMake').value.trim(),
-                modelName: document.getElementById('editModelName').value.trim(),
-                seats: parseInt(document.getElementById('editSeats').value) || 4,
-                transmission: document.getElementById('editTransmission').value ? 
-                    parseInt(document.getElementById('editTransmission').value) : null,
-                fuelType: document.getElementById('editFuelType').value.trim() || null
-            };
+            var formData = new FormData();
+            formData.append('vehicleTypeId', document.getElementById('editVehicleTypeId').value);
+            formData.append('make', document.getElementById('editMake').value.trim());
+            formData.append('modelName', document.getElementById('editModelName').value.trim());
+            formData.append('seats', document.getElementById('editSeats').value);
             
-            if (!data.vehicleTypeId) {
+            var transmission = document.getElementById('editTransmission').value;
+            if (transmission) {
+                formData.append('transmission', transmission);
+            }
+            
+            var fuelType = document.getElementById('editFuelType').value.trim();
+            if (fuelType) {
+                formData.append('fuelType', fuelType);
+            }
+            
+            var imageFile = document.getElementById('editImageFile').files[0];
+            if (imageFile) {
+                formData.append('imageFile', imageFile);
+            }
+            
+            if (!formData.get('vehicleTypeId')) {
                 UCarToast.warning('Vui lòng chọn loại xe');
                 return;
             }
-            if (!data.make) {
+            if (!formData.get('make')) {
                 UCarToast.warning('Vui lòng nhập hãng xe');
                 return;
             }
-            if (!data.modelName) {
+            if (!formData.get('modelName')) {
                 UCarToast.warning('Vui lòng nhập tên dòng xe');
                 return;
             }
             
-            fetch('@Url.Action("UpdateVehicleModel")' + '?id=' + id, {
+            fetch('@Url.Action("UpdateVehicleModelWithImage")' + '?id=' + id, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+                body: formData,
+                headers: {
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return null;
+                }
+                return response.json();
+            })
             .then(result => {
-                if (result.success) {
-                    UCarToast.success(result.message);
-                    setTimeout(() => window.location.reload(), 1000);
-                } else {
-                    UCarToast.error(result.message);
+                if (result) {
+                    if (result.success) {
+                        UCarToast.success(result.message);
+                        setTimeout(() => window.location.reload(), 1000);
+                    } else {
+                        UCarToast.error(result.message);
+                    }
                 }
             })
             .catch(error => {

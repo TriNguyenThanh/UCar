@@ -51,8 +51,7 @@ public class ShiftAssignmentDto
     public TimeOnly EndTime { get; set; }
     public Guid StaffId { get; set; }
     public string StaffName { get; set; } = string.Empty;
-    public string StaffCode { get; set; } = string.Empty;
-    public DateOnly WorkDate { get; set; }
+    public string StaffCode { get; set; } = string.Empty;    public string BranchName { get; set; } = string.Empty;    public DateOnly WorkDate { get; set; }
     public string? Notes { get; set; }
 }
 
