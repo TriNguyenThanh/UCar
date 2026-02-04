@@ -112,16 +112,18 @@
                             </a>
                         </li>
                         
+                        <!-- 9.0 Báo cáo & Phân tích -->
+                        @if (User.IsInRole("Admin") || User.IsInRole("BranchManager"))
+                        {
+                            <li>
+                                <a class="dropdown-trigger" href="#!" data-target="analytics-dropdown">
+                                    <i class="material-icons left">bar_chart</i>Báo cáo<i class="material-icons right">arrow_drop_down</i>
+                                </a>
+                            </li>
+                        }
+                        
                         @* <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons left">event</i>Đặt xe</a></li> *@
                     }
-
-                    @* TODO: Implement ReportsController
-                    @if (User.IsInRole("Admin"))
-                    {
-                        <li><a asp-controller="Reports" asp-action="Index"><i class="material-icons left">bar_chart</i>Báo
-                                cáo</a></li>
-                    }
-                    *@
 
                     @if (User.IsInRole("Customer"))
                     {
@@ -221,6 +223,13 @@
             <li><a asp-controller="Operations" asp-action="Shifts"><i class="material-icons">schedule</i>Ca làm việc</a></li>
         }
         <li><a asp-controller="Operations" asp-action="ShiftSchedule"><i class="material-icons">calendar_month</i>Lịch xếp ca</a></li>
+    </ul>
+    
+    <!-- Analytics & Reports Dropdown Structure (Module 9.0) -->
+    <ul id="analytics-dropdown" class="dropdown-content">
+        <li><a asp-controller="Analytics" asp-action="Revenue"><i class="material-icons">attach_money</i>Doanh thu</a></li>
+        <li><a asp-controller="Analytics" asp-action="VehicleUtilization"><i class="material-icons">directions_car</i>Hiệu suất xe</a></li>
+        <li><a asp-controller="Analytics" asp-action="Customers"><i class="material-icons">people</i>Khách hàng</a></li>
     </ul>
     
     <!-- User Dropdown Structure -->
@@ -373,15 +382,27 @@
                     </ul>
                 </li>
                 
+                <!-- Báo cáo & Phân tích - Collapsible (Module 9.0) -->
+                @if (User.IsInRole("Admin") || User.IsInRole("BranchManager"))
+                {
+                    <li class="no-padding">
+                        <ul class="collapsible collapsible-accordion">
+                            <li>
+                                <a class="collapsible-header"><i class="material-icons">bar_chart</i>Báo cáo<i class="material-icons right">arrow_drop_down</i></a>
+                                <div class="collapsible-body">
+                                    <ul>
+                                        <li><a asp-controller="Analytics" asp-action="Revenue">Doanh thu</a></li>
+                                        <li><a asp-controller="Analytics" asp-action="VehicleUtilization">Hiệu suất xe</a></li>
+                                        <li><a asp-controller="Analytics" asp-action="Customers">Khách hàng</a></li>
+                                    </ul>
+                                </div>
+                            </li>
+                        </ul>
+                    </li>
+                }
+                
                 @* <li><a asp-controller="Bookings" asp-action="Index"><i class="material-icons">event</i>Đặt xe</a></li> *@
             }
-
-            @* TODO: Implement ReportsController
-            @if (User.IsInRole("Admin"))
-            {
-                <li><a asp-controller="Reports" asp-action="Index"><i class="material-icons">bar_chart</i>Báo cáo</a></li>
-            }
-            *@
 
             @if (User.IsInRole("Customer"))
             {
