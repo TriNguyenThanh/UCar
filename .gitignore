@@ -420,3 +420,5 @@ FodyWeavers.xsd
 package-lock.json
 .agent/*
 .vscode/*
+*.no.md
+.github/*
