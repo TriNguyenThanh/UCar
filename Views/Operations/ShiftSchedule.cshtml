@@ -162,9 +162,9 @@
 
                         <div class="input-field">
                             <i class="material-icons prefix">event</i>
-                            <input type="date" name="WorkDate" id="WorkDate" required
-                                value="@DateTime.Today.ToString("yyyy-MM-dd")" />
-                            <label for="WorkDate" class="active">Ngày làm việc *</label>
+                            <input type="text" id="WorkDatePicker" class="datepicker" required />
+                            <input type="hidden" name="WorkDate" id="WorkDate" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                            <label for="WorkDatePicker" class="active">Ngày làm việc *</label>
                         </div>
 
                         <div class="input-field">
@@ -320,14 +320,6 @@
     </div>
 </div>
 
-<!-- Day Hover Overlay -->
-<div id="dayHoverOverlay" style="display: none; position: absolute; z-index: 100; pointer-events: none;">
-    <div
-        style="background: rgba(33, 150, 243, 0.85); color: white; padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
-        <i class="material-icons" style="font-size: 18px;">add_circle</i>
-        <span>Thêm phân công ca</span>
-    </div>
-</div>
 
 
 @section Styles {
@@ -413,6 +405,42 @@
         .staff-item:hover {
             background: #f5f5f5;
         }
+
+        /* Hover effect cho ngày trên calendar - viền xanh + dấu + */
+        .fc-day-hover {
+            box-shadow: inset 0 0 0 2px #2196F3 !important;
+            background-color: rgba(33, 150, 243, 0.08) !important;
+            transition: all 0.15s ease;
+        }
+
+        .fc-day-hover .fc-daygrid-day-frame {
+            position: relative;
+        }
+
+        .fc-day-hover::after {
+            content: '+';
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            width: 20px;
+            height: 20px;
+            background: #2196F3;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* Đảm bảo position relative cho fc-daygrid-day */
+        .fc-daygrid-day {
+            position: relative;
+        }
     </style>
 }
 
@@ -422,6 +450,46 @@
         document.addEventListener('DOMContentLoaded', function () {
             M.FormSelect.init(document.querySelectorAll('select'));
             M.updateTextFields();
+
+            // ===== DATEPICKER cho ngày làm việc với minDate =====
+            var today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            var workDatePickerElem = document.getElementById('WorkDatePicker');
+            var workDateHiddenElem = document.getElementById('WorkDate');
+            
+            if (workDatePickerElem) {
+                // Helper functions
+                function padZero(num) {
+                    return String(num).padStart(2, '0');
+                }
+                
+                function formatDateDisplay(date) {
+                    return padZero(date.getDate()) + '/' + padZero(date.getMonth() + 1) + '/' + date.getFullYear();
+                }
+                
+                function formatDateISO(date) {
+                    return date.getFullYear() + '-' + padZero(date.getMonth() + 1) + '-' + padZero(date.getDate());
+                }
+                
+                // Set initial value
+                workDatePickerElem.value = formatDateDisplay(today);
+                workDateHiddenElem.value = formatDateISO(today);
+                
+                // Initialize datepicker with minDate = today
+                M.Datepicker.init(workDatePickerElem, {
+                    format: 'dd/mm/yyyy',
+                    minDate: today, // Không thể chọn ngày trong quá khứ
+                    i18n: UCarConfig.datepickerI18n,
+                    autoClose: true,
+                    setDefaultDate: true,
+                    defaultDate: today,
+                    onSelect: function(date) {
+                        // Update hidden field với format ISO cho server
+                        workDateHiddenElem.value = formatDateISO(date);
+                    }
+                });
+            }
 
             // Store original options for filtering (only if form exists)
             var shiftSelect = document.getElementById('ShiftIdSelect');
@@ -535,7 +603,17 @@
                 dateClick: function (info) {
                     // Only handle date click if branch is selected and form exists
                     var workDateInput = document.getElementById('WorkDate');
-                    if (!workDateInput) return;
+                    var workDatePicker = document.getElementById('WorkDatePicker');
+                    if (!workDateInput || !workDatePicker) return;
+
+                    // Block past dates
+                    var selectedDate = new Date(info.dateStr);
+                    var today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    if (selectedDate < today) {
+                        @* UCarToast.error('Không thể chọn ngày trong quá khứ'); *@
+                        return;
+                    }
                     
                     // Remove previous selection
                     document.querySelectorAll('.fc-day-selected').forEach(el => {
@@ -545,24 +623,24 @@
                     // Add selected class to clicked date
                     info.dayEl.classList.add('fc-day-selected');
                     
+                    // Update hidden field với format ISO
                     workDateInput.value = info.dateStr;
-                    document.getElementById('dayHoverOverlay').style.display = 'none';
-
-                    // Block past dates
-                    var selectedDate = new Date(info.dateStr);
-                    var today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    if (selectedDate < today) {
-        @* UCarToast.error('Không thể chọn ngày trong quá khứ'); *@
-                                    return;
+                    
+                    // Update datepicker display
+                    var parts = info.dateStr.split('-');
+                    workDatePicker.value = parts[2] + '/' + parts[1] + '/' + parts[0];
+                    
+                    // Update datepicker instance
+                    var datepickerInstance = M.Datepicker.getInstance(workDatePicker);
+                    if (datepickerInstance) {
+                        datepickerInstance.setDate(selectedDate);
                     }
 
                 },
                 dayCellDidMount: function (info) {
-                    // Only show hover overlay if branch is selected
+                    // Only show hover effect if branch is selected
                     if (!hasBranchSelected) return;
                     
-                    var overlay = document.getElementById('dayHoverOverlay');
                     var cellDate = info.date;
                     var today = new Date();
                     today.setHours(0, 0, 0, 0);
@@ -575,16 +653,13 @@
                     } else {
                         info.el.style.cursor = 'pointer';
 
+                        // Thêm viền xanh và dấu + khi hover
                         info.el.addEventListener('mouseenter', function (e) {
-                            var rect = this.getBoundingClientRect();
-                            overlay.style.display = 'block';
-                            overlay.style.position = 'fixed';
-                            overlay.style.left = (rect.left + rect.width / 2 - 90) + 'px';
-                            overlay.style.top = (rect.top + rect.height / 2 - 20) + 'px';
+                            this.classList.add('fc-day-hover');
                         });
 
                         info.el.addEventListener('mouseleave', function () {
-                            overlay.style.display = 'none';
+                            this.classList.remove('fc-day-hover');
                         });
                     }
                 },

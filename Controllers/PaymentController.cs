@@ -123,4 +123,120 @@ public class PaymentController : Controller
         var history = await _paymentService.GetPaymentHistoryAsync(contractId);
         return View(history);
     }
+
+
+    public record TransactionWebhookRequest (decimal transferAmount, string code);
+    [AllowAnonymous]
+    //api webhook
+    [HttpPost("/api/webhook/confirm-payment")]
+    public async Task<IActionResult> WebHookConfirmPayment([FromBody] TransactionWebhookRequest request)
+        {
+            var api_key = HttpContext.Request.Headers["Authorization"].FirstOrDefault();
+            api_key = api_key?.Replace("Apikey ", ""); // Loại bỏ "Apikey " nếu có
+            var expected_api_key = Environment.GetEnvironmentVariable("WEBHOOK_API_KEY") ?? "123456789";
+
+            if (api_key != expected_api_key)
+            {
+                return Unauthorized(new
+                {
+                    status = "failed",
+                    message = "Invalid API Key",
+                    success = false
+                });
+            }
+
+            try
+            {
+                // Tìm mã invoice dạng INV001, INV-001, RF001, RF-001, etc.
+                var match = System.Text.RegularExpressions.Regex.Match(
+                    request.code,
+                    @"(INV)[-]?(\d{6})",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                );
+
+                if (!match.Success)
+                {
+                    return BadRequest(new
+                    {
+                        status = "failed",
+                        message = "Invoice ID not found in transfer content",
+                        success = false,
+                        hint = "Content should contain invoice ID (e.g., 'INV-000001' or 'INV000001')"
+                    });
+                }
+
+                // Tạo mã chuẩn: INV-000001
+                var prefix = match.Groups[1].Value.ToUpper();
+                var number = match.Groups[2].Value;
+                var invoiceID = $"{prefix}-{number}";
+
+                var paymentMethod = "TRANSFER"; // Mặc định là chuyển khoản
+                // string employeeID = extractCode[1].Trim();
+                decimal amount = request.transferAmount;
+
+                // Lấy thông tin hóa đơn
+                // var invoice = await _context.Invoices
+                //     .FirstOrDefaultAsync(i => i.InvoiceID == invoiceID); //có hóa đơn thì bỏ cmt
+
+                // if (invoice == null)
+                // {
+                //     return BadRequest(new
+                //     {
+                //         status = "failed",
+                //         message = "Invoice not found",
+                //         success = false
+                //     });
+                // }
+
+                // Kiểm tra số tiền thanh toán
+                // if (amount <= 0 || amount != invoice.TotalAmount)
+                // {
+                //     return BadRequest(new
+                //     {
+                //         status = "failed",
+                //         message = "Invalid payment amount",
+                //         success = false
+                //     });
+                // }
+
+                // Gọi SP để xác nhận thanh toán
+                // var result = await _context.ConfirmPaymentSP(invoiceID, paymentMethod, employeeID: "");
+
+                // if (result != null && result.Status == "PAYMENT_CONFIRMED")
+                // {
+                //     return Ok(new
+                //     {
+                //         status = "success",
+                //         message = "Payment confirmed successfully",
+                //         success = true,
+                //         invoiceID = invoiceID
+                //     });
+                // }
+                // else
+                // {
+                //     return BadRequest(new
+                //     {
+                //         status = "failed",
+                //         message = result?.Status ?? "Cannot confirm payment",
+                //         success = false
+                //     });
+                // }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    status = "error",
+                    message = ex.Message,
+                    success = false
+                });
+            }
+
+            return Ok(new
+            {
+                status = "success",
+                message = "Payment confirmed successfully",
+                success = true,
+            });
+        }
 }
