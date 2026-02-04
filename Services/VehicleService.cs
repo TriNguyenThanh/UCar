@@ -122,7 +122,8 @@ public class VehicleService : IVehicleService
                 v.CurrentOdoKm,
                 v.Model.Seats,
                 v.Model.Transmission,
-                v.Model.FuelType
+                v.Model.FuelType,
+                v.Model.ImageFileName
             ))
             .ToListAsync();
 
@@ -175,6 +176,7 @@ public class VehicleService : IVehicleService
             vehicle.Branch.Name,
             vehicle.Branch.Address,
             vehicle.CurrentOdoKm,
+            vehicle.Model.ImageFileName,
             statusHistory,
             null // TODO: Add vehicle images when model is created
         );
@@ -358,7 +360,64 @@ public class VehicleService : IVehicleService
                 v.CurrentOdoKm,
                 v.Model.Seats,
                 v.Model.Transmission,
-                v.Model.FuelType
+                v.Model.FuelType,
+                v.Model.ImageFileName
+            ))
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<VehicleListDto>> GetVehiclesByTaskTypeAsync(TaskType taskType, Guid? branchId = null)
+    {
+        var query = _context.Vehicles
+            .Include(v => v.Model)
+                .ThenInclude(m => m.VehicleType)
+            .Include(v => v.Branch)
+            .AsQueryable();
+
+        // Filter by branch if specified
+        if (branchId.HasValue)
+        {
+            query = query.Where(v => v.BranchId == branchId.Value);
+        }
+
+        // Filter by status based on task type
+        query = taskType switch
+        {
+            // Giao xe: xe sẵn sàng hoặc đã được đặt (Reserved)
+            TaskType.Delivery => query.Where(v => v.CurrentStatus == VehicleStatus.Available || v.CurrentStatus == VehicleStatus.Reserved),
+            
+            // Nhận xe: xe đang cho thuê
+            TaskType.Return => query.Where(v => v.CurrentStatus == VehicleStatus.Renting),
+            
+            // Bảo dưỡng: xe cần bảo dưỡng hoặc xe sẵn sàng (định kỳ)
+            TaskType.Maintenance => query.Where(v => v.CurrentStatus == VehicleStatus.Maintenance || v.CurrentStatus == VehicleStatus.Available),
+            
+            // Cứu hộ: xe đang gặp sự cố hoặc đang cho thuê (khách gọi cứu hộ)
+            TaskType.Rescue => query.Where(v => v.CurrentStatus == VehicleStatus.Incident || v.CurrentStatus == VehicleStatus.Renting),
+            
+            // Kiểm tra: tất cả xe (trừ xe đã ngừng khai thác)
+            TaskType.Inspection => query.Where(v => v.CurrentStatus != VehicleStatus.Decommissioned),
+            
+            _ => query
+        };
+
+        return await query
+            .Select(v => new VehicleListDto(
+                v.VehicleId,
+                v.PlateNo,
+                v.Model.Make,
+                v.Model.ModelName,
+                v.Model.VehicleType.TypeName,
+                v.Color,
+                v.ManufactureYear,
+                v.CurrentStatus,
+                v.BranchId,
+                v.Branch.Name,
+                v.CurrentOdoKm,
+                v.Model.Seats,
+                v.Model.Transmission,
+                v.Model.FuelType,
+                v.Model.ImageFileName
             ))
             .ToListAsync();
     }

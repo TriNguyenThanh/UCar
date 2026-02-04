@@ -426,3 +426,5 @@ package-lock.json
 Migrations/*
 Migrations
 appsettings.json
+.github
+*.no.md

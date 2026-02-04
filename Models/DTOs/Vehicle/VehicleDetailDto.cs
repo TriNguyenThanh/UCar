@@ -23,6 +23,7 @@ public record VehicleDetailDto(
     string BranchName,
     string? BranchAddress,
     decimal CurrentOdoKm,
+    string? ImageFileName,
     IEnumerable<VehicleStatusHistoryDto>? RecentStatusHistory,
     IEnumerable<VehicleImageDto>? Images
 );

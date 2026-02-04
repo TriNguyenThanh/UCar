@@ -19,5 +19,6 @@ public record VehicleListDto(
     decimal CurrentOdoKm,
     int Seats,
     TransmissionType? Transmission,
-    string? FuelType
+    string? FuelType,
+    string? ImageFileName
 );

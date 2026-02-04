@@ -70,6 +70,7 @@ public class HomeController : Controller
                 Transmission = v.Model.Transmission != null ? v.Model.Transmission.ToString() : "Tự động",
                 Status = v.CurrentStatus,
                 PlateNo = v.PlateNo,
+                ImageFileName = v.Model.ImageFileName,
                 DailyPrice = _context.Prices
                     .Where(p => p.IsActive && p.VehicleModelId == v.ModelId)
                     .Select(p => p.BaseDailyPrice)

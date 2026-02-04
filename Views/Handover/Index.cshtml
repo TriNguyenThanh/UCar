@@ -19,31 +19,6 @@
         </div>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="row">
-        <div class="col s12 m4">
-            <div class="card stats-card">
-                <i class="material-icons stats-icon blue-text">assignment</i>
-                <div class="stats-value">@Model.TotalCount</div>
-                <div class="stats-label">Chờ giao xe</div>
-            </div>
-        </div>
-        <div class="col s12 m4">
-            <a href="@Url.Action("Return")" class="card stats-card hoverable" style="display: block;">
-                <i class="material-icons stats-icon green-text">assignment_return</i>
-                <div class="stats-value">-</div>
-                <div class="stats-label">Chờ nhận xe</div>
-            </a>
-        </div>
-        <div class="col s12 m4">
-            <a href="@Url.Action("Overdue")" class="card stats-card hoverable" style="display: block;">
-                <i class="material-icons stats-icon red-text">warning</i>
-                <div class="stats-value">-</div>
-                <div class="stats-label">Quá hạn</div>
-            </a>
-        </div>
-    </div>
-
     <!-- Filter Section -->
     <div class="card">
         <div class="card-content">
@@ -130,6 +105,11 @@
                                     <span class="chip blue white-text">@item.StatusDisplayName</span>
                                 </td>
                                 <td class="center-align">
+                                    <a asp-controller="Contract" asp-action="Details" asp-route-id="@item.ContractId"
+                                        class="btn-small waves-effect waves-light blue tooltipped"
+                                        data-position="top" data-tooltip="Xem hợp đồng">
+                                        <i class="material-icons">visibility</i>
+                                    </a>
                                     <a asp-action="CheckOut" asp-route-contractId="@item.ContractId"
                                         class="btn-small waves-effect waves-light green">
                                         <i class="material-icons left">exit_to_app</i>Giao xe
@@ -266,6 +246,9 @@
             }
 
             // Toast messages
+            var tooltipElems = document.querySelectorAll('.tooltipped');
+            M.Tooltip.init(tooltipElems);
+
         @if (TempData["SuccessMessage"] != null)
         {
             <text>UCarToast.success('@TempData["SuccessMessage"]');</text>

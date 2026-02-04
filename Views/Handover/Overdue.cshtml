@@ -77,9 +77,24 @@
                                     <span class="chip red white-text">Quá hạn</span>
                                 </td>
                                 <td class="center-align">
+                                    <a asp-controller="Contract" asp-action="Details" asp-route-id="@item.ContractId"
+                                        class="btn-small waves-effect waves-light blue tooltipped"
+                                        data-position="top" data-tooltip="Xem hợp đồng">
+                                        <i class="material-icons">visibility</i>
+                                    </a>
                                     <a asp-action="CheckIn" asp-route-contractId="@item.ContractId" 
                                        class="btn-small waves-effect waves-light orange">
                                         <i class="material-icons left">login</i>Nhận xe
+                                    </a>
+                                    <a asp-action="Incidents" asp-route-contractId="@item.ContractId"
+                                        class="btn-small waves-effect waves-light red tooltipped"
+                                        data-position="top" data-tooltip="Sự cố">
+                                        <i class="material-icons">warning</i>
+                                    </a>
+                                    <a asp-action="Violations" asp-route-contractId="@item.ContractId"
+                                        class="btn-small waves-effect waves-light grey tooltipped"
+                                        data-position="top" data-tooltip="Vi phạm">
+                                        <i class="material-icons">gavel</i>
                                     </a>
                                 </td>
                             </tr>
@@ -103,6 +118,9 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            var tooltipElems = document.querySelectorAll('.tooltipped');
+            M.Tooltip.init(tooltipElems);
+
             @if (TempData["SuccessMessage"] != null)
             {
                 <text>UCarToast.success('@TempData["SuccessMessage"]');</text>
