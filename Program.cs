@@ -83,7 +83,7 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<UCarDbContext>();
-        await UCarDataSeeder.SeedAllDataAsync(context, force: true);
+        await UCarDataSeeder.SeedAllDataAsync(context, force: false);
     }
     catch (Exception ex)
     {
