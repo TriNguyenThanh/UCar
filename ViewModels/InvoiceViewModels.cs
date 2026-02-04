@@ -46,6 +46,8 @@ namespace UCar.ViewModels
         // Helper properties for display
         public string InvoiceTypeDisplay => InvoiceType switch
         {
+            InvoiceType.Delivery => "Giao xe",
+            InvoiceType.Return => "Trả xe",
             InvoiceType.Deposit => "Đặt cọc",
             InvoiceType.Rental => "Tiền thuê",
             InvoiceType.Surcharge => "Phụ phí",

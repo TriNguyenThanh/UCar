@@ -32,6 +32,7 @@ public class HandoverService : IHandoverService
 
     public async Task<PagedResult<ContractForHandoverListDto>> GetContractsForHandoverAsync(HandoverFilterDto filter)
     {
+        // Luồng mới: Lấy cả Draft, PendingSigning (chưa giao xe hoặc đang chờ thanh toán)
         var query = _context.RentalContracts
             .Include(c => c.Customer)
                 .ThenInclude(cu => cu.UserAccount)
@@ -41,9 +42,8 @@ public class HandoverService : IHandoverService
             .Include(c => c.Vehicle)
                 .ThenInclude(v => v.Branch)
             .Include(c => c.HandoverRecord)
-            .Where(c => c.Status == RentalContractStatus.Active ||
-                       c.Status == RentalContractStatus.AwaitingDelivery)
-            .Where(c => c.HandoverRecord == null)
+            .Where(c => c.Status == RentalContractStatus.Draft ||
+                        c.Status == RentalContractStatus.PendingSigning)
             .AsQueryable();
 
         query = ApplyFilters(query, filter);
@@ -67,6 +67,7 @@ public class HandoverService : IHandoverService
 
     public async Task<PagedResult<ContractForHandoverListDto>> GetContractsForReturnAsync(HandoverFilterDto filter)
     {
+        // Luồng mới: Active = đang thuê, InProgress = đang trả xe
         var query = _context.RentalContracts
             .Include(c => c.Customer)
                 .ThenInclude(cu => cu.UserAccount)
@@ -77,8 +78,8 @@ public class HandoverService : IHandoverService
                 .ThenInclude(v => v.Branch)
             .Include(c => c.HandoverRecord)
             .Include(c => c.ReturnRecord)
-            .Where(c => c.Status == RentalContractStatus.InProgress ||
-                       c.Status == RentalContractStatus.AwaitingReturn)
+            .Where(c => c.Status == RentalContractStatus.Active ||
+                        c.Status == RentalContractStatus.InProgress)
             .Where(c => c.HandoverRecord != null && c.ReturnRecord == null)
             .AsQueryable();
 
@@ -169,7 +170,7 @@ public class HandoverService : IHandoverService
             PlannedStart = contract.PlannedStart,
             PlannedEnd = contract.PlannedEnd,
             DepositAmount = contract.SnapshotDepositAmount,
-            DepositPaid = true, // TODO: Lấy từ P7 khi hoàn thiện
+            DepositPaid = false, // Luồng mới: Thanh toán tại quầy khi giao xe
             RentalAmount = contract.SnapshotUnitPrice,
             BranchName = contract.Vehicle.Branch.Name,
             BranchAddress = contract.Vehicle.Branch.Address ?? "",
@@ -177,6 +178,10 @@ public class HandoverService : IHandoverService
         };
     }
 
+    /// <summary>
+    /// Kiểm tra hợp đồng có thể giao xe không - Luồng mới
+    /// Cho phép giao xe khi hợp đồng ở trạng thái Draft hoặc PendingSigning
+    /// </summary>
     public async Task<ServiceResult> CanCheckOutAsync(Guid contractId)
     {
         var contract = await _context.RentalContracts
@@ -190,18 +195,24 @@ public class HandoverService : IHandoverService
         if (contract.HandoverRecord != null)
             return ServiceResult.Fail("Hợp đồng đã được giao xe");
 
-        if (contract.Status != RentalContractStatus.Active &&
-            contract.Status != RentalContractStatus.AwaitingDelivery)
-            return ServiceResult.Fail("Hợp đồng không ở trạng thái cho phép giao xe");
+        // Luồng mới: Cho phép giao xe khi Draft hoặc PendingSigning
+        // Draft: Hợp đồng nháp, chưa cập nhật phụ kiện
+        // PendingSigning: Đã lập biên bản, chờ ký và thanh toán
+        var allowedStatuses = new[] 
+        { 
+            RentalContractStatus.Draft, 
+            RentalContractStatus.PendingSigning,
+            RentalContractStatus.Active // Giữ để tương thích ngược
+        };
+        
+        if (!allowedStatuses.Contains(contract.Status))
+            return ServiceResult.Fail($"Hợp đồng không ở trạng thái cho phép giao xe (Trạng thái hiện tại: {contract.Status})");
 
         if (contract.Vehicle.CurrentStatus != VehicleStatus.Available &&
             contract.Vehicle.CurrentStatus != VehicleStatus.Reserved)
             return ServiceResult.Fail($"Xe đang ở trạng thái '{VehicleStatusHelper.GetDisplayName(contract.Vehicle.CurrentStatus)}', không thể giao");
 
-        // TODO: Kiểm tra đặt cọc từ P7 (stub logic)
-        // var depositPaid = await _paymentService.IsDepositPaidAsync(contractId);
-        // if (!depositPaid) return ServiceResult.Fail("Khách hàng chưa đặt cọc");
-
+        // Luồng mới: Không kiểm tra đặt cọc vì thanh toán tại quầy sau khi ký
         return ServiceResult.Ok();
     }
 
@@ -247,42 +258,90 @@ public class HandoverService : IHandoverService
             });
         }
 
-        contract.Status = RentalContractStatus.InProgress;
-        contract.ActualStart = DateTime.UtcNow;
-        contract.Vehicle.CurrentStatus = VehicleStatus.Renting;
+        // Luồng mới: Sau khi lập biên bản, chuyển sang PendingSigning để chờ ký + thanh toán
+        // Nếu đã thanh toán và ký rồi thì mới chuyển sang InProgress
+        contract.Status = RentalContractStatus.PendingSigning;
         contract.Vehicle.CurrentOdoKm = dto.OdoKmOut;
 
         _context.VehicleStatusHistories.Add(new VehicleStatusHistory
         {
             VshId = Guid.NewGuid(),
             VehicleId = contract.VehicleId,
-            FromStatus = VehicleStatus.Available.ToString(),
-            ToStatus = VehicleStatus.Renting.ToString(),
+            FromStatus = contract.Vehicle.CurrentStatus.ToString(),
+            ToStatus = VehicleStatus.Reserved.ToString(),
             ChangedAt = DateTime.UtcNow,
             ChangedBy = userId,
-            Note = $"Giao xe theo hợp đồng HD-{dto.ContractId.ToString()[..8].ToUpper()}"
+            Note = $"Lập biên bản giao xe - HD-{dto.ContractId.ToString()[..8].ToUpper()}"
+        });
+
+        contract.Vehicle.CurrentStatus = VehicleStatus.Reserved;
+
+        await _context.SaveChangesAsync();
+
+        // Luồng mới: KHÔNG tạo invoice tự động - thanh toán được xử lý riêng sau khi ký
+        // Hóa đơn giao xe được tạo thủ công bởi nhân viên
+
+        return ServiceResult<Guid>.Ok(handover.HandoverId, "Lập biên bản giao xe thành công. Vui lòng in hợp đồng và biên bản để khách ký.");
+    }
+
+    /// <summary>
+    /// Xác nhận hoàn tất giao xe - Luồng mới
+    /// Gọi sau khi khách đã ký hợp đồng và thanh toán
+    /// </summary>
+    public async Task<ServiceResult> CompleteHandoverAsync(Guid contractId, Guid staffId, Guid? paymentTxnId = null)
+    {
+        var contract = await _context.RentalContracts
+            .Include(c => c.Vehicle)
+            .Include(c => c.HandoverRecord)
+            .FirstOrDefaultAsync(c => c.ContractId == contractId);
+
+        if (contract == null)
+            return ServiceResult.Fail("Hợp đồng không tồn tại");
+
+        if (contract.HandoverRecord == null)
+            return ServiceResult.Fail("Chưa lập biên bản giao xe");
+
+        if (contract.Status != RentalContractStatus.PendingSigning)
+            return ServiceResult.Fail($"Hợp đồng không ở trạng thái chờ ký (Trạng thái hiện tại: {contract.Status})");
+
+        // Kiểm tra đã thanh toán chưa
+        if (paymentTxnId.HasValue)
+        {
+            var payment = await _context.PaymentTransactions.FindAsync(paymentTxnId.Value);
+            if (payment == null || payment.Status != TransactionStatus.Success)
+                return ServiceResult.Fail("Thanh toán chưa được xác nhận");
+        }
+
+        // Cập nhật hợp đồng
+        contract.Status = RentalContractStatus.Active;
+        contract.CustomerSigned = true;
+        contract.CustomerSignedAt = DateTime.UtcNow;
+        contract.ConfirmedBy = staffId;
+        contract.ConfirmedAt = DateTime.UtcNow;
+        contract.ActualStart = DateTime.UtcNow;
+        contract.UpdatedAt = DateTime.UtcNow;
+
+        // Cập nhật biên bản
+        contract.HandoverRecord.CustomerConfirmed = true;
+        contract.HandoverRecord.CustomerConfirmedAt = DateTime.UtcNow;
+
+        // Cập nhật xe
+        contract.Vehicle.CurrentStatus = VehicleStatus.Renting;
+
+        _context.VehicleStatusHistories.Add(new VehicleStatusHistory
+        {
+            VshId = Guid.NewGuid(),
+            VehicleId = contract.VehicleId,
+            FromStatus = VehicleStatus.Reserved.ToString(),
+            ToStatus = VehicleStatus.Renting.ToString(),
+            ChangedAt = DateTime.UtcNow,
+            ChangedBy = staffId,
+            Note = $"Hoàn tất giao xe - HD-{contractId.ToString()[..8].ToUpper()}"
         });
 
         await _context.SaveChangesAsync();
 
-        // Auto-create Rental Invoice (Module 7 Integration)
-        try
-        {
-            var rentalInvoiceId = await _invoiceService.CreateRentalInvoiceAsync(dto.ContractId, userId);
-            
-            if (rentalInvoiceId != Guid.Empty)
-            {
-                // Invoice created successfully - could add to success message
-            }
-        }
-        catch (Exception ex)
-        {
-            // Don't fail handover if invoice creation fails
-            // Log error but continue
-            Console.WriteLine($"Error creating Rental Invoice for contract {dto.ContractId}: {ex.Message}");
-        }
-
-        return ServiceResult<Guid>.Ok(handover.HandoverId, "Giao xe thành công");
+        return ServiceResult.Ok("Hoàn tất giao xe thành công. Khách hàng đã nhận xe.");
     }
 
     #endregion
@@ -349,8 +408,9 @@ public class HandoverService : IHandoverService
         if (contract.ReturnRecord != null)
             return ServiceResult.Fail("Hợp đồng đã được nhận xe");
 
-        if (contract.Status != RentalContractStatus.InProgress &&
-            contract.Status != RentalContractStatus.AwaitingReturn)
+        // Luồng mới: Active = đang thuê, InProgress = đang xử lý trả xe
+        if (contract.Status != RentalContractStatus.Active &&
+            contract.Status != RentalContractStatus.InProgress)
             return ServiceResult.Fail("Hợp đồng không ở trạng thái cho phép nhận xe");
 
         return ServiceResult.Ok();
@@ -431,7 +491,7 @@ public class HandoverService : IHandoverService
 
         if (fuelShortage > 0)
         {
-            var fuelCharge = fuelShortage * 5000;
+            var fuelCharge = fuelShortage * 5000; // 5,000đ/% nhiên liệu thiếu
             _context.ContractCharges.Add(new ContractCharge
             {
                 ChargeId = Guid.NewGuid(),
@@ -444,16 +504,43 @@ public class HandoverService : IHandoverService
             });
         }
 
-        if (overtimeHours > 1)
+        // === TÍNH PHÍ TRẢ TRỄ THEO LUỒNG MỚI ===
+        // - Miễn phí nếu trễ < 3 giờ
+        // - Trễ >= 3 giờ và < 12 giờ: tính theo giờ
+        // - Trễ >= 12 giờ: tính theo ngày
+        if (overtimeHours >= 3)
         {
-            var overtimeCharge = Math.Ceiling(overtimeHours) * 50000;
+            decimal overtimeCharge;
+            string description;
+            var hourlyRate = contract.SnapshotOvertimeHourlyPrice > 0 
+                ? contract.SnapshotOvertimeHourlyPrice 
+                : 50000m; // Default 50,000đ/giờ
+            var dailyRate = contract.SnapshotBaseDailyPrice > 0 
+                ? contract.SnapshotBaseDailyPrice 
+                : 1000000m; // Default 1,000,000đ/ngày
+
+            if (overtimeHours >= 12)
+            {
+                // Tính theo ngày (làm tròn lên)
+                var overtimeDays = Math.Ceiling(overtimeHours / 24m);
+                overtimeCharge = overtimeDays * dailyRate;
+                description = $"Trả trễ {overtimeHours:N1} giờ ({overtimeDays:N0} ngày) x {dailyRate:N0}đ";
+            }
+            else
+            {
+                // Tính theo giờ (làm tròn lên, từ giờ thứ 3)
+                var chargeableHours = Math.Ceiling(overtimeHours);
+                overtimeCharge = chargeableHours * hourlyRate;
+                description = $"Trả trễ {chargeableHours:N0} giờ x {hourlyRate:N0}đ";
+            }
+
             _context.ContractCharges.Add(new ContractCharge
             {
                 ChargeId = Guid.NewGuid(),
                 ContractId = dto.ContractId,
                 ChargeType = ChargeType.OvertimeFee,
                 Amount = overtimeCharge,
-                Description = $"Trễ hạn {overtimeHours:N1} giờ",
+                Description = description,
                 IsPaid = false,
                 CreatedAt = DateTime.UtcNow
             });
@@ -483,29 +570,81 @@ public class HandoverService : IHandoverService
 
         await _context.SaveChangesAsync();
 
-        // Auto-create Surcharge/Penalty Invoice if charges exist (Module 7 Integration)
+        // === LUỒNG MỚI: Tạo Invoice sau khi nhận xe ===
         try
         {
+            // 1. Tạo Surcharge/Penalty Invoice nếu có phí phát sinh
             var hasCharges = await _context.ContractCharges
                 .AnyAsync(c => c.ContractId == dto.ContractId && !c.IsPaid);
             
             if (hasCharges)
             {
                 var surchargeInvoiceId = await _invoiceService.CreateSurchargePenaltyInvoiceAsync(dto.ContractId, userId);
-                
                 if (surchargeInvoiceId.HasValue && surchargeInvoiceId.Value != Guid.Empty)
                 {
-                    // Invoice created successfully
+                    Console.WriteLine($"Surcharge Invoice created: {surchargeInvoiceId.Value} for contract {dto.ContractId}");
                 }
             }
+
+            // 2. Tạo Return Invoice (hoàn cọc) - LUÔN tạo sau khi nhận xe
+            var returnInvoiceId = await _invoiceService.CreateReturnInvoiceAsync(dto.ContractId, userId);
+            Console.WriteLine($"Return Invoice created: {returnInvoiceId} for contract {dto.ContractId}");
         }
         catch (Exception ex)
         {
             // Don't fail check-in if invoice creation fails
-            Console.WriteLine($"Error creating Surcharge/Penalty Invoice for contract {dto.ContractId}: {ex.Message}");
+            Console.WriteLine($"Error creating invoices for contract {dto.ContractId}: {ex.Message}");
         }
 
-        return ServiceResult<Guid>.Ok(returnRecord.ReturnId, "Nhận xe thành công");
+        return ServiceResult<Guid>.Ok(returnRecord.ReturnId, "Nhận xe thành công. Vui lòng tiến hành thanh toán/hoàn tiền.");
+    }
+
+    /// <summary>
+    /// Hoàn tất trả xe - Luồng mới
+    /// Gọi sau khi khách thanh toán/hoàn tiền xong
+    /// </summary>
+    public async Task<ServiceResult> CompleteReturnAsync(Guid contractId, Guid staffId, Guid? paymentTxnId = null)
+    {
+        var contract = await _context.RentalContracts
+            .Include(c => c.ReturnRecord)
+            .Include(c => c.Charges)
+            .FirstOrDefaultAsync(c => c.ContractId == contractId);
+
+        if (contract == null)
+            return ServiceResult.Fail("Hợp đồng không tồn tại");
+
+        if (contract.ReturnRecord == null)
+            return ServiceResult.Fail("Chưa lập biên bản nhận xe");
+
+        if (contract.Status != RentalContractStatus.PendingSettlement)
+            return ServiceResult.Fail($"Hợp đồng không ở trạng thái chờ quyết toán (Trạng thái hiện tại: {contract.Status})");
+
+        // Kiểm tra thanh toán nếu có paymentTxnId
+        if (paymentTxnId.HasValue)
+        {
+            var payment = await _context.PaymentTransactions.FindAsync(paymentTxnId.Value);
+            if (payment == null || payment.Status != TransactionStatus.Success)
+                return ServiceResult.Fail("Thanh toán chưa được xác nhận");
+        }
+
+        // Return Invoice đã được tạo khi CheckIn (ConfirmCheckInAsync)
+        // Không cần tạo lại ở đây
+
+        // Đánh dấu tất cả charges đã thanh toán
+        foreach (var charge in contract.Charges.Where(c => !c.IsPaid))
+        {
+            charge.IsPaid = true;
+        }
+
+        // Cập nhật hợp đồng
+        contract.Status = RentalContractStatus.Completed;
+        contract.ReturnRecord.CustomerConfirmed = true;
+        contract.ReturnRecord.CustomerConfirmedAt = DateTime.UtcNow;
+        contract.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return ServiceResult.Ok("Hoàn tất trả xe thành công. Hợp đồng đã kết thúc.");
     }
 
     #endregion
@@ -647,9 +786,12 @@ public class HandoverService : IHandoverService
             RentalDays = contract.RentalDays,
             RentalUnitPrice = contract.SnapshotUnitPrice,
             RentalAmount = contract.RentalAmount,
-            DepositAmount = contract.SnapshotDepositAmount,
+            // === DEPOSIT INFO ===
+            ResponsibilityDeposit = contract.ResponsibilityDeposit,
+            RentalDeposit = contract.RentalDeposit,
+            DepositAmount = contract.ResponsibilityDeposit + contract.RentalDeposit, // Tổng cọc
             AmountPaid = totalPaid,
-            IsPaid = totalPaid >= (contract.RentalAmount + contract.ExtraCharges - contract.SnapshotDepositAmount),
+            IsPaid = contract.Status == Models.Enums.RentalContractStatus.Completed,
             Note = returnRecord.Note,
             ReceivedByName = returnRecord.ReceivedByUser.StaffProfile?.FullName ?? returnRecord.ReceivedByUser.Username,
             BranchName = contract.Vehicle.Branch.Name

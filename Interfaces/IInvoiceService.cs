@@ -36,6 +36,25 @@ namespace UCar.Interfaces
         /// </summary>
         Task<Guid> CreateRefundInvoiceAsync(Guid contractId, Guid issuedBy);
 
+        // ===== LUỒNG MỚI: DELIVERY & RETURN INVOICES =====
+        
+        /// <summary>
+        /// LUỒNG MỚI: Tạo hóa đơn giao xe (Delivery Invoice)
+        /// Bao gồm: Cọc trách nhiệm + Tiền thuê + Cọc thuê
+        /// NOTE: Phụ kiện chỉ là vật dụng đi kèm, không tính phí
+        /// Thanh toán tại quầy khi ký HĐ giấy
+        /// Nếu đã có hóa đơn sẽ trả về ID hiện tại để thanh toán lại
+        /// </summary>
+        Task<Guid> CreateDeliveryInvoiceAsync(Guid contractId, Guid issuedBy);
+
+        /// <summary>
+        /// LUỒNG MỚI: Tạo hóa đơn trả xe (Return Invoice)
+        /// Nếu không phí phát sinh: Hoàn tiền cọc cho khách (negative amount)
+        /// Nếu có phí phát sinh > cọc: Khách phải bù thêm (positive amount)
+        /// Công thức: Cọc đã đặt - Phí phát sinh
+        /// </summary>
+        Task<Guid> CreateReturnInvoiceAsync(Guid contractId, Guid issuedBy);
+
         // ===== INVOICE QUERIES =====
 
         /// <summary>

@@ -76,9 +76,9 @@ public class ContractEditViewModel
     // Concurrency
     public byte[]? RowVersion { get; set; }
 
-    // ===== Logic =====
-    /// <summary>Chỉ có thể sửa những field quan trọng khi chưa ký</summary>
-    public bool CanEditCriticalFields => CurrentStatus == RentalContractStatus.Draft || CurrentStatus == RentalContractStatus.Pending;
+    // ===== Logic - Luồng mới =====
+    /// <summary>Chỉ có thể sửa những field quan trọng khi chưa ký (Draft hoặc PendingSigning)</summary>
+    public bool CanEditCriticalFields => CurrentStatus == RentalContractStatus.Draft || CurrentStatus == RentalContractStatus.PendingSigning;
 }
 
 /// <summary>

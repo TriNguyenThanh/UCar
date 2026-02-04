@@ -86,6 +86,17 @@ namespace UCar.Models.Enums
         /// </summary>
         Tax = 15,
 
+        // ===== DELIVERY INVOICE (LUỒNG MỚI) =====
+        /// <summary>
+        /// Phụ kiện thuê kèm (GPS, ghế trẻ em, v.v.)
+        /// </summary>
+        Accessory = 16,
+
+        /// <summary>
+        /// Phí bảo hiểm
+        /// </summary>
+        Insurance = 17,
+
         /// <summary>
         /// Khác
         /// </summary>

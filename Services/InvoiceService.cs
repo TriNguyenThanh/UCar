@@ -450,6 +450,348 @@ namespace UCar.Services
             return invoice.InvoiceId;
         }
 
+        // ===== LUỒNG MỚI: DELIVERY & RETURN INVOICES =====
+
+        /// <summary>
+        /// LUỒNG MỚI: Tạo hóa đơn giao xe (Delivery Invoice)
+        /// Bao gồm: Cọc trách nhiệm + Tiền thuê + Cọc thuê
+        /// NOTE: Phụ kiện chỉ là vật dụng đi kèm, không tính phí
+        /// </summary>
+        public async Task<Guid> CreateDeliveryInvoiceAsync(Guid contractId, Guid issuedBy)
+        {
+            var contract = await _context.RentalContracts
+                .Include(c => c.Customer)
+                .Include(c => c.Vehicle)
+                    .ThenInclude(v => v.Model)
+                        .ThenInclude(vm => vm.VehicleType)
+                .FirstOrDefaultAsync(c => c.ContractId == contractId);
+
+            if (contract == null)
+                throw new InvalidOperationException($"Contract {contractId} not found");
+
+            // Retry loop để handle race condition
+            const int maxRetries = 5;
+            for (int attempt = 1; attempt <= maxRetries; attempt++)
+            {
+                // Kiểm tra đã có Delivery Invoice chưa - mỗi lần retry đều check lại
+                var existingInvoice = await _context.Invoices
+                    .FirstOrDefaultAsync(i => i.ContractId == contractId && i.InvoiceType == InvoiceType.Delivery);
+
+                if (existingInvoice != null)
+                {
+                    _logger.LogInformation("Delivery Invoice {InvoiceNumber} already exists for contract {ContractCode}",
+                        existingInvoice.InvoiceNumber, contract.ContractCode);
+                    return existingInvoice.InvoiceId; // Trả về ID hiện tại để thanh toán lại
+                }
+
+                // Sử dụng transaction để đảm bảo tính toàn vẹn
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    // Double check bên trong transaction
+                    existingInvoice = await _context.Invoices
+                        .FirstOrDefaultAsync(i => i.ContractId == contractId && i.InvoiceType == InvoiceType.Delivery);
+
+                    if (existingInvoice != null)
+                    {
+                        await transaction.RollbackAsync();
+                        _logger.LogInformation("Delivery Invoice {InvoiceNumber} already exists (found in transaction)",
+                            existingInvoice.InvoiceNumber);
+                        return existingInvoice.InvoiceId;
+                    }
+
+                    // Lấy các khoản từ contract
+                    var responsibilityDeposit = contract.ResponsibilityDeposit;
+                    var rentalDeposit = contract.RentalDeposit;
+                    var rentalAmount = contract.RentalAmount;
+
+                    // TỔNG: Cọc trách nhiệm + Tiền thuê + Cọc thuê (không tính phụ kiện)
+                    var totalAmount = responsibilityDeposit + rentalAmount + rentalDeposit;
+
+                    // Generate số invoice mới mỗi lần retry
+                    var invoiceNumber = await GenerateInvoiceNumberAsync("DLV");
+
+                    // Tạo Invoice
+                    var invoice = new Invoice
+                    {
+                        InvoiceId = Guid.NewGuid(),
+                        InvoiceNumber = invoiceNumber,
+                        InvoiceType = InvoiceType.Delivery,
+                        ContractId = contractId,
+                        CustomerId = contract.CustomerId,
+                        IssuedDate = DateTime.Now,
+                        DueDate = DateTime.Now, // Phải trả ngay tại quầy
+
+                        BaseRentalAmount = rentalAmount,
+                        SurchargesTotal = 0,
+                        PenaltiesTotal = 0,
+                        DiscountAmount = 0,
+                        TaxAmount = 0,
+                        DepositPaid = 0,
+
+                        TotalAmount = totalAmount,
+                        AmountPaid = 0,
+                        AmountDue = totalAmount,
+
+                        Status = InvoiceStatus.Issued,
+                        IssuedBy = issuedBy,
+                        Notes = "Hóa đơn giao xe - Thanh toán tại quầy",
+                        CreatedAt = DateTime.Now
+                    };
+
+                    _context.Invoices.Add(invoice);
+                    
+                    // Save Invoice trước để có InvoiceId cho FK
+                    await _context.SaveChangesAsync();
+
+                    // Line Items
+                    var lineItems = new List<InvoiceLineItem>();
+                    
+                    // 1. Cọc trách nhiệm
+                    lineItems.Add(new InvoiceLineItem
+                    {
+                        LineItemId = Guid.NewGuid(),
+                        InvoiceId = invoice.InvoiceId,
+                        ItemType = LineItemType.ResponsibilityDeposit,
+                        Description = $"Cọc trách nhiệm - {contract.Vehicle.Model.VehicleType.TypeName}",
+                        Quantity = 1,
+                        Unit = "lần",
+                        UnitPrice = responsibilityDeposit,
+                    Amount = responsibilityDeposit,
+                    CreatedAt = DateTime.Now
+                });
+
+                // 2. Cọc thuê xe
+                lineItems.Add(new InvoiceLineItem
+                {
+                    LineItemId = Guid.NewGuid(),
+                    InvoiceId = invoice.InvoiceId,
+                    ItemType = LineItemType.RentalDeposit,
+                    Description = $"Cọc thuê xe - 50% giá trị hợp đồng",
+                    Quantity = 1,
+                    Unit = "lần",
+                    UnitPrice = rentalDeposit,
+                    Amount = rentalDeposit,
+                    CreatedAt = DateTime.Now
+                });
+
+                // 3. Tiền thuê xe
+                if (contract.IsMonthlyRate)
+                {
+                    lineItems.Add(new InvoiceLineItem
+                    {
+                        LineItemId = Guid.NewGuid(),
+                        InvoiceId = invoice.InvoiceId,
+                        ItemType = LineItemType.MonthlyRental,
+                        Description = $"Thuê xe theo tháng",
+                        Quantity = 1,
+                        Unit = "tháng",
+                        UnitPrice = contract.MonthlyAmount,
+                        Amount = contract.MonthlyAmount,
+                        CreatedAt = DateTime.Now
+                    });
+                }
+                else
+                {
+                    // Ngày thường
+                    if (contract.NormalDays > 0)
+                    {
+                        lineItems.Add(new InvoiceLineItem
+                        {
+                            LineItemId = Guid.NewGuid(),
+                            InvoiceId = invoice.InvoiceId,
+                            ItemType = LineItemType.BaseRental,
+                            Description = $"Thuê xe ngày thường",
+                            Quantity = contract.NormalDays,
+                            Unit = "ngày",
+                            UnitPrice = contract.SnapshotBaseDailyPrice,
+                            Amount = contract.NormalDaysAmount,
+                            CreatedAt = DateTime.Now
+                        });
+                    }
+
+                    // Ngày lễ
+                    if (contract.PeakDays > 0)
+                    {
+                        var peakDailyPrice = contract.SnapshotBaseDailyPrice * contract.SnapshotPeakMultiplier;
+                        lineItems.Add(new InvoiceLineItem
+                        {
+                            LineItemId = Guid.NewGuid(),
+                            InvoiceId = invoice.InvoiceId,
+                            ItemType = LineItemType.PeakRental,
+                            Description = $"Thuê xe ngày lễ (x{contract.SnapshotPeakMultiplier})",
+                            Quantity = contract.PeakDays,
+                            Unit = "ngày",
+                            UnitPrice = peakDailyPrice,
+                            Amount = contract.PeakDaysAmount,
+                            CreatedAt = DateTime.Now
+                        });
+                    }
+                }
+
+                _context.InvoiceLineItems.AddRange(lineItems);
+                await _context.SaveChangesAsync();
+                
+                await transaction.CommitAsync();
+
+                _logger.LogInformation("Created Delivery Invoice {InvoiceNumber} for contract {ContractCode} - Total: {TotalAmount:N0} VNĐ",
+                    invoice.InvoiceNumber, contract.ContractCode, totalAmount);
+
+                return invoice.InvoiceId;
+                }
+                catch (DbUpdateException ex) when (ex.InnerException is Microsoft.Data.SqlClient.SqlException sqlEx && sqlEx.Number == 2601)
+                {
+                    // Duplicate key error - retry với số invoice mới
+                    await transaction.RollbackAsync();
+                    _logger.LogWarning("Duplicate invoice number detected on attempt {Attempt}, retrying...", attempt);
+                    
+                    // Detach tất cả entities đã track để tránh lỗi khi retry
+                    foreach (var entry in _context.ChangeTracker.Entries().ToList())
+                    {
+                        entry.State = Microsoft.EntityFrameworkCore.EntityState.Detached;
+                    }
+                    
+                    if (attempt == maxRetries)
+                    {
+                        _logger.LogError(ex, "Failed to create Delivery Invoice after {MaxRetries} attempts", maxRetries);
+                        throw new InvalidOperationException($"Không thể tạo hóa đơn sau {maxRetries} lần thử. Vui lòng thử lại.", ex);
+                    }
+                    
+                    // Wait a bit before retry to reduce collision chance
+                    await Task.Delay(100 * attempt);
+                    continue;
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    _logger.LogError(ex, "Failed to create Delivery Invoice for contract {ContractId}", contractId);
+                    throw;
+                }
+            }
+
+            // Should never reach here
+            throw new InvalidOperationException("Failed to create Delivery Invoice - unexpected error");
+        }
+
+        /// <summary>
+        /// LUỒNG MỚI: Tạo hóa đơn trả xe (Return Invoice)
+        /// CHỈ tính hoàn cọc, KHÔNG tính phí phát sinh (phí đã có Surcharge Invoice riêng)
+        /// - Hoàn cọc trách nhiệm
+        /// - Hoàn cọc thuê xe
+        /// </summary>
+        public async Task<Guid> CreateReturnInvoiceAsync(Guid contractId, Guid issuedBy)
+        {
+            var contract = await _context.RentalContracts
+                .Include(c => c.Customer)
+                    .ThenInclude(cu => cu.UserAccount)
+                .Include(c => c.Vehicle)
+                .FirstOrDefaultAsync(c => c.ContractId == contractId);
+
+            if (contract == null)
+                throw new InvalidOperationException($"Contract {contractId} not found");
+
+            // Kiểm tra đã có Return Invoice chưa
+            var existingInvoice = await _context.Invoices
+                .FirstOrDefaultAsync(i => i.ContractId == contractId && i.InvoiceType == InvoiceType.Return);
+
+            if (existingInvoice != null)
+            {
+                _logger.LogInformation("Return Invoice {InvoiceNumber} already exists for contract {ContractCode}",
+                    existingInvoice.InvoiceNumber, contract.ContractCode);
+                return existingInvoice.InvoiceId;
+            }
+
+            // Tính tổng cọc cần hoàn (Cọc trách nhiệm + Cọc thuê)
+            // KHÔNG tính tiền thuê vì đã thanh toán khi giao xe
+            var responsibilityDeposit = contract.ResponsibilityDeposit;
+            var rentalDeposit = contract.RentalDeposit;
+            var totalRefund = responsibilityDeposit + rentalDeposit;
+
+            // TotalAmount âm = Hoàn tiền cho khách
+            var invoiceTotalAmount = -totalRefund;
+
+            // Tạo Invoice
+            var invoice = new Invoice
+            {
+                InvoiceId = Guid.NewGuid(),
+                InvoiceNumber = await GenerateInvoiceNumberAsync("RTN"),
+                InvoiceType = InvoiceType.Return,
+                ContractId = contractId,
+                CustomerId = contract.CustomerId,
+                IssuedDate = DateTime.Now,
+                DueDate = DateTime.Now.AddDays(7), // Hoàn tiền trong 7 ngày
+
+                BaseRentalAmount = 0,
+                SurchargesTotal = 0, // Phí đã có invoice riêng
+                PenaltiesTotal = 0,
+                DiscountAmount = 0,
+                TaxAmount = 0,
+                DepositPaid = totalRefund,
+
+                TotalAmount = invoiceTotalAmount, // Số âm = hoàn tiền
+                AmountPaid = 0,
+                AmountDue = invoiceTotalAmount,
+
+                Status = InvoiceStatus.Issued,
+                IssuedBy = issuedBy,
+                Notes = $"Hoàn tiền cọc cho khách hàng: {totalRefund:N0} VNĐ (Cọc TN: {responsibilityDeposit:N0} + Cọc thuê: {rentalDeposit:N0})",
+                CreatedAt = DateTime.Now
+            };
+
+            _context.Invoices.Add(invoice);
+
+            // Line Items
+            // 1. Hoàn cọc trách nhiệm
+            invoice.LineItems.Add(new InvoiceLineItem
+            {
+                LineItemId = Guid.NewGuid(),
+                InvoiceId = invoice.InvoiceId,
+                ItemType = LineItemType.RefundResponsibility,
+                Description = "Hoàn cọc trách nhiệm",
+                Quantity = 1,
+                Unit = "lần",
+                UnitPrice = -responsibilityDeposit, // Số âm = hoàn tiền
+                Amount = -responsibilityDeposit,
+                CreatedAt = DateTime.Now
+            });
+
+            // 2. Hoàn cọc thuê xe
+            invoice.LineItems.Add(new InvoiceLineItem
+            {
+                LineItemId = Guid.NewGuid(),
+                InvoiceId = invoice.InvoiceId,
+                ItemType = LineItemType.RefundRental,
+                Description = "Hoàn cọc thuê xe",
+                Quantity = 1,
+                Unit = "lần",
+                UnitPrice = -rentalDeposit, // Số âm = hoàn tiền
+                Amount = -rentalDeposit,
+                CreatedAt = DateTime.Now
+            });
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Created Return Invoice {InvoiceNumber} for contract {ContractCode} - REFUND: {TotalRefund:N0} VNĐ",
+                invoice.InvoiceNumber, contract.ContractCode, totalRefund);
+
+            return invoice.InvoiceId;
+        }
+
+        /// <summary>
+        /// Kiểm tra ChargeType có phải là Surcharge (phụ phí) hay không
+        /// </summary>
+        private bool IsSurcharge(ChargeType chargeType)
+        {
+            return chargeType switch
+            {
+                ChargeType.OvertimeFee => true,
+                ChargeType.CleaningFee => true,
+                ChargeType.FuelShortage => true,
+                ChargeType.LateFee => true,
+                _ => false
+            };
+        }
+
         // ===== HELPER METHODS =====
 
         private LineItemType DetermineLineItemTypeFromCharge(ContractCharge charge)
@@ -470,24 +812,42 @@ namespace UCar.Services
         public async Task<string> GenerateInvoiceNumberAsync(string prefix)
         {
             var yearMonth = DateTime.Now.ToString("yyMM");
-            var pattern = $"{prefix}-{yearMonth}-%";
-
-            var lastInvoice = await _context.Invoices
-                .Where(i => i.InvoiceNumber.StartsWith($"{prefix}-{yearMonth}-"))
-                .OrderByDescending(i => i.InvoiceNumber)
-                .FirstOrDefaultAsync();
-
-            int nextNumber = 1;
-            if (lastInvoice != null)
+            
+            // Sử dụng vòng lặp để xử lý trường hợp concurrent request
+            for (int attempt = 0; attempt < 5; attempt++)
             {
-                var lastNumberStr = lastInvoice.InvoiceNumber.Split('-').Last();
-                if (int.TryParse(lastNumberStr, out int lastNumber))
+                var lastInvoice = await _context.Invoices
+                    .Where(i => i.InvoiceNumber.StartsWith($"{prefix}-{yearMonth}-"))
+                    .OrderByDescending(i => i.InvoiceNumber)
+                    .FirstOrDefaultAsync();
+
+                int nextNumber = 1;
+                if (lastInvoice != null)
                 {
-                    nextNumber = lastNumber + 1;
+                    var lastNumberStr = lastInvoice.InvoiceNumber.Split('-').Last();
+                    if (int.TryParse(lastNumberStr, out int lastNumber))
+                    {
+                        nextNumber = lastNumber + 1;
+                    }
                 }
+
+                var invoiceNumber = $"{prefix}-{yearMonth}-{nextNumber:D4}";
+                
+                // Kiểm tra xem số này đã tồn tại chưa
+                var exists = await _context.Invoices.AnyAsync(i => i.InvoiceNumber == invoiceNumber);
+                if (!exists)
+                {
+                    return invoiceNumber;
+                }
+                
+                // Nếu trùng, thử lại với số tiếp theo
+                _logger.LogWarning("Invoice number {InvoiceNumber} already exists, retrying...", invoiceNumber);
             }
 
-            return $"{prefix}-{yearMonth}-{nextNumber:D4}";
+            // Nếu vẫn không tìm được số hợp lệ, dùng GUID suffix
+            var fallbackNumber = $"{prefix}-{yearMonth}-{Guid.NewGuid().ToString()[..4].ToUpper()}";
+            _logger.LogWarning("Using fallback invoice number: {InvoiceNumber}", fallbackNumber);
+            return fallbackNumber;
         }
 
         // ===== INVOICE QUERIES =====

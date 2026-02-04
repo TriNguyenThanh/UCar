@@ -128,10 +128,7 @@
                         <li><a asp-controller="Booking" asp-action="Search"><i class="material-icons left">search</i>Thuê xe</a></li>
                         <li><a asp-controller="Booking" asp-action="MyBookings"><i class="material-icons left">event</i>Đặt xe
                                 của tôi</a></li>
-                        <li><a asp-controller="Contract" asp-action="MyContracts"><i
-                                    class="material-icons left">directions_car</i>Hợp đồng của tôi</a></li>
-                        <li><a asp-controller="Invoice" asp-action="MyInvoices"><i
-                                    class="material-icons left">receipt</i>Hóa đơn của tôi</a></li>
+                        @* Luồng mới: Khách không xem được Hợp đồng và Hóa đơn online *@
                     }
 
                     <!-- User Dropdown -->
@@ -390,8 +387,7 @@
             {
                 <li><a asp-controller="Booking" asp-action="MyBookings"><i class="material-icons">event</i>Đặt xe của tôi</a>
                 </li>
-                <li><a asp-controller="Contract" asp-action="MyContracts"><i class="material-icons">directions_car</i>Hợp đồng của tôi</a></li>
-                <li><a asp-controller="Invoice" asp-action="MyInvoices"><i class="material-icons">receipt</i>Hóa đơn của tôi</a></li>
+                @* Luồng mới: Khách không xem được Hợp đồng và Hóa đơn online *@
             }
 
             <li class="divider"></li>

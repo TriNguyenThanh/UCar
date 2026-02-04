@@ -27,10 +27,17 @@
                  <label>Trạng thái</label>
                  <select name="status" onchange="this.form.submit()">
                      <option value="">Tất cả</option>
-                     <!option value="Pending" @(Context.Request.Query["status"] == "Pending" ? "selected" : "")>Chờ duyệt</!option> <!-- Avoiding Razor confusion -->
-                     <option value="Confirmed">Đã xác nhận</option>
-                     <option value="Completed">Hoàn thành</option>
-                     <option value="Cancelled">Đã hủy</option>
+                     @{
+                         var selectedStatus = Context.Request.Query["status"].ToString();
+                     }
+                     <option value="Pending" selected="@(selectedStatus == "Pending")">Chờ duyệt</option>
+                     <option value="Confirmed" selected="@(selectedStatus == "Confirmed")">Đã xác nhận</option>
+                     <option value="Deposited" selected="@(selectedStatus == "Deposited")">Đã đặt cọc</option>
+                     <option value="InProgress" selected="@(selectedStatus == "InProgress")">Đang thực hiện</option>
+                     <option value="Completed" selected="@(selectedStatus == "Completed")">Hoàn thành</option>
+                     <option value="Cancelled" selected="@(selectedStatus == "Cancelled")">Đã hủy</option>
+                     <option value="Rejected" selected="@(selectedStatus == "Rejected")">Từ chối</option>
+                     <option value="Expired" selected="@(selectedStatus == "Expired")">Hết hạn</option>
                  </select>
             </div>
             <div class="col s12 m8">
@@ -67,11 +74,21 @@
                             </td>
                             <td>
                                 @if(item.Status == UCar.Models.Enums.BookingStatus.Pending) {
-                                    <span class="chip orange lighten-4 orange-text text-darken-4">Wait</span>
+                                    <span class="chip orange lighten-4 orange-text text-darken-4">Chờ duyệt</span>
                                 } else if (item.Status == UCar.Models.Enums.BookingStatus.Confirmed) {
-                                    <span class="chip green lighten-4 green-text text-darken-4">Confirmed</span>
+                                    <span class="chip green lighten-4 green-text text-darken-4">Đã xác nhận</span>
+                                } else if (item.Status == UCar.Models.Enums.BookingStatus.Deposited) {
+                                    <span class="chip blue lighten-4 blue-text text-darken-4">Đã đặt cọc</span>
+                                } else if (item.Status == UCar.Models.Enums.BookingStatus.InProgress) {
+                                    <span class="chip teal lighten-4 teal-text text-darken-4">Đang thực hiện</span>
+                                } else if (item.Status == UCar.Models.Enums.BookingStatus.Completed) {
+                                    <span class="chip indigo lighten-4 indigo-text text-darken-4">Hoàn thành</span>
                                 } else if (item.Status == UCar.Models.Enums.BookingStatus.Cancelled) {
-                                    <span class="chip grey lighten-3 grey-text">Cancelled</span>
+                                    <span class="chip grey lighten-3 grey-text">Đã hủy</span>
+                                } else if (item.Status == UCar.Models.Enums.BookingStatus.Rejected) {
+                                    <span class="chip red lighten-4 red-text text-darken-4">Từ chối</span>
+                                } else if (item.Status == UCar.Models.Enums.BookingStatus.Expired) {
+                                    <span class="chip brown lighten-4 brown-text text-darken-4">Hết hạn</span>
                                 } else {
                                     <span class="chip">@item.Status</span>
                                 }
