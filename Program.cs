@@ -68,6 +68,9 @@ builder.Services.AddScoped<IHolidayService, HolidayService>();
 builder.Services.AddScoped<IDepositPolicyService, DepositPolicyService>();
 builder.Services.AddScoped<ISurchargePolicyService, SurchargePolicyService>();
 
+// Register Analytics services (Module 9.0)
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+
 var app = builder.Build();
 
 // Seed database with unified seeder
