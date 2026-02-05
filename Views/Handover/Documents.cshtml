@@ -1,0 +1,270 @@
+@model UCar.Models.DTOs.PagedResult<UCar.Models.DTOs.Handover.HandoverDocumentListDto>
+@using UCar.Models.DTOs.Handover
+@{
+    ViewData["Title"] = "Danh sách biên bản giao nhận";
+    var filter = ViewBag.Filter as HandoverDocumentFilterDto ?? new HandoverDocumentFilterDto();
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header Section -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons teal-text" style="vertical-align: middle; margin-right: 8px;">description</i>
+                Danh sách biên bản giao nhận
+            </h4>
+            <p class="grey-text text-darken-1" style="margin: 0;">Quản lý tất cả biên bản giao xe và nhận xe</p>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card">
+        <div class="card-content">
+            <span class="card-title" style="font-size: 1.1rem; font-weight: 600;">
+                <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">filter_list</i>
+                Bộ lọc
+            </span>
+            <form asp-action="Documents" method="get">
+                <div class="row" style="margin-bottom: 0;">
+                    <div class="col s12 m3">
+                        <div class="input-field">
+                            <i class="material-icons prefix">search</i>
+                            <input type="text" id="searchTerm" name="SearchTerm" value="@filter.SearchTerm">
+                            <label for="searchTerm">Mã HĐ, biển số, tên khách...</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m2">
+                        <div class="input-field">
+                            <select id="documentType" name="DocumentType">
+                                <option value="" selected="@(string.IsNullOrEmpty(filter.DocumentType))">Tất cả</option>
+                                <option value="Handover" selected="@(filter.DocumentType == "Handover")">Biên bản giao xe</option>
+                                <option value="Return" selected="@(filter.DocumentType == "Return")">Biên bản nhận xe</option>
+                            </select>
+                            <label for="documentType">Loại biên bản</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m2">
+                        <div class="input-field">
+                            <i class="material-icons prefix">date_range</i>
+                            <input type="text" id="fromDate" name="FromDate"
+                                value="@filter.FromDate?.ToString("dd/MM/yyyy")" class="datepicker">
+                            <label for="fromDate" class="active">Từ ngày</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m2">
+                        <div class="input-field">
+                            <i class="material-icons prefix">date_range</i>
+                            <input type="text" id="toDate" name="ToDate" value="@filter.ToDate?.ToString("dd/MM/yyyy")"
+                                class="datepicker">
+                            <label for="toDate" class="active">Đến ngày</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m3">
+                        <button type="submit" class="btn waves-effect waves-light teal" style="margin-top: 1.5rem;">
+                            <i class="material-icons left">search</i>Lọc
+                        </button>
+                        <a href="@Url.Action("Documents")" class="btn-flat" style="margin-top: 1.5rem;">Xóa lọc</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="card">
+        <div class="card-content">
+            @if (!Model.Items.Any())
+            {
+                <div class="center-align" style="padding: 3rem;">
+                    <i class="material-icons grey-text" style="font-size: 4rem;">description</i>
+                    <p class="grey-text">Chưa có biên bản nào</p>
+                </div>
+            }
+            else
+            {
+                <table class="striped highlight responsive-table">
+                    <thead>
+                        <tr>
+                            <th>Loại</th>
+                            <th>Mã HĐ</th>
+                            <th>Khách hàng</th>
+                            <th>Xe</th>
+                            <th>Ngày lập</th>
+                            <th>Nhân viên</th>
+                            <th>Chi nhánh</th>
+                            <th style="text-align: center;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var doc in Model.Items)
+                        {
+                            <tr>
+                                <td>
+                                    @if (doc.DocumentType == "Handover")
+                                    {
+                                        <span class="chip blue white-text">
+                                            <i class="material-icons tiny">car_rental</i> Giao xe
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="chip green white-text">
+                                            <i class="material-icons tiny">assignment_return</i> Nhận xe
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("Details", "Contract", new { id = doc.ContractId })" 
+                                       class="blue-text text-darken-2" style="font-weight: 500;">
+                                        @doc.ContractCode
+                                    </a>
+                                </td>
+                                <td>@doc.CustomerName</td>
+                                <td>
+                                    <strong>@doc.PlateNo</strong><br>
+                                    <small class="grey-text">@doc.VehicleName</small>
+                                </td>
+                                <td>@doc.DocumentDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>@doc.StaffName</td>
+                                <td>
+                                    <span class="chip">@doc.BranchName</span>
+                                </td>
+                                <td style="text-align: center;">
+                                    @if (doc.DocumentType == "Handover")
+                                    {
+                                        <a href="@Url.Action("HandoverDocument", new { contractId = doc.ContractId })"
+                                           class="btn-small waves-effect waves-light blue tooltipped"
+                                           data-position="top" data-tooltip="Xem biên bản giao xe">
+                                            <i class="material-icons">visibility</i>
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <a href="@Url.Action("ReturnDocument", new { contractId = doc.ContractId })"
+                                           class="btn-small waves-effect waves-light green tooltipped"
+                                           data-position="top" data-tooltip="Xem biên bản nhận xe">
+                                            <i class="material-icons">visibility</i>
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                <!-- Pagination -->
+                @if (Model.TotalPages > 1)
+                {
+                    <div style="margin-top: 1.5rem; text-align: center;">
+                        <ul class="pagination">
+                            @if (Model.HasPreviousPage)
+                            {
+                                <li class="waves-effect">
+                                    <a href="@Url.Action("Documents", new { 
+                                        Page = filter.Page - 1, 
+                                        SearchTerm = filter.SearchTerm, 
+                                        DocumentType = filter.DocumentType,
+                                        FromDate = filter.FromDate?.ToString("yyyy-MM-dd"),
+                                        ToDate = filter.ToDate?.ToString("yyyy-MM-dd")
+                                    })">
+                                        <i class="material-icons">chevron_left</i>
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="disabled"><a><i class="material-icons">chevron_left</i></a></li>
+                            }
+
+                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            {
+                                if (i == filter.Page)
+                                {
+                                    <li class="active teal"><a>@i</a></li>
+                                }
+                                else if (i <= 3 || i > Model.TotalPages - 3 || Math.Abs(i - filter.Page) <= 2)
+                                {
+                                    <li class="waves-effect">
+                                        <a href="@Url.Action("Documents", new { 
+                                            Page = i, 
+                                            SearchTerm = filter.SearchTerm, 
+                                            DocumentType = filter.DocumentType,
+                                            FromDate = filter.FromDate?.ToString("yyyy-MM-dd"),
+                                            ToDate = filter.ToDate?.ToString("yyyy-MM-dd")
+                                        })">@i</a>
+                                    </li>
+                                }
+                                else if (i == 4 && filter.Page > 5)
+                                {
+                                    <li class="disabled"><a>...</a></li>
+                                }
+                            }
+
+                            @if (Model.HasNextPage)
+                            {
+                                <li class="waves-effect">
+                                    <a href="@Url.Action("Documents", new { 
+                                        Page = filter.Page + 1, 
+                                        SearchTerm = filter.SearchTerm, 
+                                        DocumentType = filter.DocumentType,
+                                        FromDate = filter.FromDate?.ToString("yyyy-MM-dd"),
+                                        ToDate = filter.ToDate?.ToString("yyyy-MM-dd")
+                                    })">
+                                        <i class="material-icons">chevron_right</i>
+                                    </a>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="disabled"><a><i class="material-icons">chevron_right</i></a></li>
+                            }
+                        </ul>
+                        <p class="grey-text" style="margin-top: 0.5rem;">
+                            Hiển thị @((filter.Page - 1) * filter.PageSize + 1) - @Math.Min(filter.Page * filter.PageSize, Model.TotalCount) / @Model.TotalCount biên bản
+                        </p>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Materialize components
+            M.updateTextFields();
+            
+            var selectElems = document.querySelectorAll('select');
+            M.FormSelect.init(selectElems);
+            
+            var tooltipElems = document.querySelectorAll('.tooltipped');
+            M.Tooltip.init(tooltipElems);
+            
+            var dateElems = document.querySelectorAll('.datepicker');
+            M.Datepicker.init(dateElems, {
+                format: 'dd/mm/yyyy',
+                i18n: {
+                    months: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+                    monthsShort: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'],
+                    weekdays: ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'],
+                    weekdaysShort: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+                    weekdaysAbbrev: ['C', '2', '3', '4', '5', '6', '7'],
+                    cancel: 'Hủy',
+                    done: 'Chọn',
+                    clear: 'Xóa'
+                },
+                autoClose: true
+            });
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <text>UCarToast.success('@TempData["SuccessMessage"]');</text>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>UCarToast.error('@TempData["ErrorMessage"]');</text>
+            }
+        });
+    </script>
+}

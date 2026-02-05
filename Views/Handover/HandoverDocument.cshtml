@@ -1,0 +1,165 @@
+@model UCar.Models.DTOs.Handover.HandoverRecordDetailDto
+@{
+    ViewData["Title"] = "Biên bản giao xe - " + Model.ContractCode;
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div>
+            <a href="@Url.Action("Index")" class="btn-flat">
+                <i class="material-icons left">arrow_back</i>Quay lại
+            </a>
+            <h4 style="font-weight: 700; margin-top: 0.5rem;">
+                <i class="material-icons blue-text" style="vertical-align: middle;">description</i>
+                Biên bản giao xe - @Model.ContractCode
+            </h4>
+        </div>
+        <button class="btn waves-effect waves-light" onclick="window.print()">
+            <i class="material-icons left">print</i>In biên bản
+        </button>
+    </div>
+
+    <!-- Document Content -->
+    <div class="card" id="document-content">
+        <div class="card-content">
+            <div class="center-align" style="margin-bottom: 2rem;">
+                <h5><strong>BIÊN BẢN GIAO XE</strong></h5>
+                <p>Mã hợp đồng: <strong>@Model.ContractCode</strong></p>
+                <p>Ngày giao: <strong>@Model.HandedAt.ToString("dd/MM/yyyy HH:mm")</strong></p>
+            </div>
+
+            <div class="row">
+                <!-- Bên A: Chi nhánh -->
+                <div class="col s12 m6">
+                    <h6><strong>BÊN GIAO (Chi nhánh):</strong></h6>
+                    <p>Chi nhánh: @Model.BranchName</p>
+                    <p>Địa chỉ: @Model.BranchAddress</p>
+                    <p>Điện thoại: @Model.BranchPhone</p>
+                    <p>Nhân viên: @Model.HandedOverByName</p>
+                </div>
+
+                <!-- Bên B: Khách hàng -->
+                <div class="col s12 m6">
+                    <h6><strong>BÊN NHẬN (Khách hàng):</strong></h6>
+                    <p>Họ tên: @Model.CustomerName</p>
+                    <p>SĐT: @Model.CustomerPhone</p>
+                    <p>CMND/CCCD: @Model.CustomerIdNumber</p>
+                    <p>Địa chỉ: @Model.CustomerAddress</p>
+                </div>
+            </div>
+
+            <hr/>
+
+            <h6><strong>THÔNG TIN XE:</strong></h6>
+            <div class="row">
+                <div class="col s6 m3"><strong>Biển số:</strong> @Model.PlateNo</div>
+                <div class="col s6 m3"><strong>Loại xe:</strong> @Model.VehicleName</div>
+                <div class="col s6 m3"><strong>Loại:</strong> @Model.VehicleTypeName</div>
+                <div class="col s6 m3"><strong>Màu:</strong> @Model.Color</div>
+            </div>
+
+            <hr/>
+
+            <h6><strong>TÌNH TRẠNG XE KHI GIAO:</strong></h6>
+            <div class="row">
+                <div class="col s6 m3"><strong>Số km (ODO):</strong> @Model.OdoKmOut.ToString("N0") km</div>
+                <div class="col s6 m3"><strong>Nhiên liệu:</strong> @Model.FuelLevelOut.ToString("N0")%</div>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.ExteriorCondition))
+            {
+                <p><strong>Ngoại thất:</strong> @Model.ExteriorCondition</p>
+            }
+            @if (!string.IsNullOrEmpty(Model.InteriorCondition))
+            {
+                <p><strong>Nội thất:</strong> @Model.InteriorCondition</p>
+            }
+            @if (!string.IsNullOrEmpty(Model.PreExistingDamages))
+            {
+                <p><strong>Hư hỏng có sẵn:</strong> @Model.PreExistingDamages</p>
+            }
+
+            <hr/>
+
+            <h6><strong>PHỤ KIỆN BÀN GIAO:</strong></h6>
+            <table class="striped">
+                <thead>
+                    <tr><th>Tên phụ kiện</th><th>Số lượng</th><th>Giá trị ước tính</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var acc in Model.Accessories)
+                    {
+                        <tr>
+                            <td>@acc.AccessoryName</td>
+                            <td>@acc.Quantity</td>
+                            <td>@acc.EstimatedValue.ToString("N0") đ</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2"><strong>Tổng giá trị tài sản kèm theo</strong></td>
+                        <td><strong>@Model.Accessories.Sum(a => a.EstimatedValue * a.Quantity).ToString("N0") đ</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <hr/>
+
+            <h6><strong>THỜI GIAN THUÊ:</strong></h6>
+            <p>Từ: @Model.PlannedStart.ToString("dd/MM/yyyy HH:mm") đến @Model.PlannedEnd.ToString("dd/MM/yyyy HH:mm")</p>
+            <p>Đặt cọc: @Model.DepositAmount.ToString("N0") đ | Giá thuê: @Model.RentalAmount.ToString("N0") đ/ngày</p>
+
+            @if (!string.IsNullOrEmpty(Model.Note))
+            {
+                <hr/>
+                <p><strong>Ghi chú:</strong> @Model.Note</p>
+            }
+
+            <hr/>
+
+            <div class="row" style="margin-top: 2rem;">
+                <div class="col s6 center-align">
+                    <p><strong>BÊN GIAO</strong></p>
+                    <p style="margin-top: 4rem;">(Ký tên)</p>
+                    <p>@Model.HandedOverByName</p>
+                </div>
+                <div class="col s6 center-align">
+                    <p><strong>BÊN NHẬN</strong></p>
+                    <p style="margin-top: 4rem;">(Ký tên)</p>
+                    <p>@Model.CustomerName</p>
+                </div>
+            </div>
+
+            @if (Model.CustomerConfirmed)
+            {
+                <div class="green-text center-align">
+                    <i class="material-icons">verified</i>
+                    Khách hàng đã xác nhận lúc @Model.CustomerConfirmedAt?.ToString("dd/MM/yyyy HH:mm")
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        @@media print {
+            body * { visibility: hidden; }
+            #document-content, #document-content * { visibility: visible; }
+            #document-content { position: absolute; left: 0; top: 0; width: 100%; }
+            .btn, .btn-flat { display: none !important; }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <text>UCarToast.success('@TempData["SuccessMessage"]');</text>
+            }
+        });
+    </script>
+}

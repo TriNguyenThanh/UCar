@@ -1,0 +1,201 @@
+@model UCar.Models.DTOs.PagedResult<UCar.Models.DTOs.Handover.ContractForHandoverListDto>
+@using UCar.Models.DTOs.Handover
+@using UCar.Models.Enums
+@{
+    ViewData["Title"] = "Danh sách chờ nhận xe";
+    var filter = ViewBag.Filter as HandoverFilterDto ?? new HandoverFilterDto();
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header Section -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons green-text"
+                    style="vertical-align: middle; margin-right: 8px;">assignment_return</i>
+                Danh sách chờ nhận xe
+            </h4>
+            <p class="grey-text text-darken-1" style="margin: 0;">Các hợp đồng đang thuê, chờ khách hàng trả xe</p>
+        </div>
+        <a href="@Url.Action("Index")" class="btn-flat">
+            <i class="material-icons left">arrow_back</i>Về danh sách giao
+        </a>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card">
+        <div class="card-content">
+            <form asp-action="Return" method="get">
+                <div class="row" style="margin-bottom: 0;">
+                    <div class="col s12 m3">
+                        <div class="input-field">
+                            <i class="material-icons prefix">search</i>
+                            <input type="text" id="searchTerm" name="SearchTerm" value="@filter.SearchTerm">
+                            <label for="searchTerm">Biển số, tên khách...</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m2" style="margin-top: 1.5rem;">
+                        <label>
+                            <input type="checkbox" name="IsOverdue" value="true" @(filter.IsOverdue == true ? "checked" : "") />
+                            <span>Chỉ quá hạn</span>
+                        </label>
+                    </div>
+                    <div class="col s12 m2">
+                        <button type="submit" class="btn waves-effect waves-light" style="margin-top: 1.5rem;">
+                            <i class="material-icons left">search</i>Lọc
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="card">
+        <div class="card-content">
+            <table class="striped highlight responsive-table">
+                <thead>
+                    <tr>
+                        <th>Mã HĐ</th>
+                        <th>Khách hàng</th>
+                        <th>Xe</th>
+                        <th>Chi nhánh</th>
+                        <th>Ngày giao</th>
+                        <th>Ngày trả DK</th>
+                        <th>Trạng thái</th>
+                        <th class="center-align">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Items.Any())
+                    {
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr class="@(item.IsOverdue ? "red lighten-5" : "")">
+                                <td><strong>@item.ContractCode</strong></td>
+                                <td>
+                                    <div>@item.CustomerName</div>
+                                    <small class="grey-text">@item.CustomerPhone</small>
+                                </td>
+                                <td>
+                                    <div>@item.PlateNo</div>
+                                    <small class="grey-text">@item.VehicleName</small>
+                                </td>
+                                <td>@item.BranchName</td>
+                                <td>@item.PlannedStart.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    @if (item.IsOverdue)
+                                    {
+                                        <span class="red-text">
+                                            @item.PlannedEnd.ToString("dd/MM/yyyy HH:mm")
+                                            <br /><small>Quá hạn!</small>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        @item.PlannedEnd.ToString("dd/MM/yyyy HH:mm")
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.IsOverdue)
+                                    {
+                                        <span class="chip red white-text">Quá hạn</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="chip green white-text">@item.StatusDisplayName</span>
+                                    }
+                                </td>
+                                <td class="center-align">
+                                    <a asp-controller="Contract" asp-action="Details" asp-route-id="@item.ContractId"
+                                        class="btn-small waves-effect waves-light blue tooltipped"
+                                        data-position="top" data-tooltip="Xem hợp đồng">
+                                        <i class="material-icons">visibility</i>
+                                    </a>
+                                    <a asp-action="CheckIn" asp-route-contractId="@item.ContractId"
+                                        class="btn-small waves-effect waves-light orange">
+                                        <i class="material-icons left">login</i>Nhận xe
+                                    </a>
+                                    <a asp-action="Incidents" asp-route-contractId="@item.ContractId"
+                                        class="btn-small waves-effect waves-light red tooltipped"
+                                        data-position="top" data-tooltip="Sự cố">
+                                        <i class="material-icons">warning</i>
+                                    </a>
+                                    <a asp-action="Violations" asp-route-contractId="@item.ContractId"
+                                        class="btn-small waves-effect waves-light grey tooltipped"
+                                        data-position="top" data-tooltip="Vi phạm">
+                                        <i class="material-icons">gavel</i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="center-align grey-text" style="padding: 2rem;">
+                                <i class="material-icons large">inbox</i>
+                                <p>Không có hợp đồng nào đang chờ nhận xe</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <ul class="pagination center-align">
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="@(Model.Page == i ? "active green" : "waves-effect")">
+                    <a href="@Url.Action("Return", new { Page = i, filter.SearchTerm, filter.IsOverdue })">@i</a>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+@section Styles {
+    <style>
+        .stats-card {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stats-icon {
+            font-size: 2.5rem;
+        }
+
+        .stats-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+        }
+
+        .stats-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var tooltipElems = document.querySelectorAll('.tooltipped');
+            M.Tooltip.init(tooltipElems);
+
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <text>UCarToast.success('@TempData["SuccessMessage"]');</text>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <text>UCarToast.error('@TempData["ErrorMessage"]');</text>
+        }
+            });
+    </script>
+}

@@ -1,0 +1,27 @@
+flowchart LR
+  classDef ext fill:#DEFFF8,stroke:#46EDC8,stroke-width:1px,color:#0b5b4a;
+  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px,color:#1f1f6b;
+  classDef store fill:#FFF3BF,stroke:#F2C94C,stroke-width:1.2px,color:#6b5200;
+
+  KH[Khách hàng]:::ext
+
+
+  D5[(Hồ sơ đặt xe)]:::store
+
+  P41((4.1 Tiếp nhận yêu cầu đặt xe)):::proc
+  P42((4.2 Kiểm tra khả dụng và giữ chỗ)):::proc
+  P43((4.3 Xác nhận điều chỉnh và hủy đặt xe)):::proc
+  P44((4.4 Cập nhật lịch đặt theo xe)):::proc
+
+  KH -->|Yêu cầu đặt xe| P41
+  P41 -->|Thông tin yêu cầu đặt xe| P42
+  P41 <--> D5
+
+  P42 -->|Báo giá thuê xe| KH
+  P42 -->|Thông tin giữ chỗ| P43
+
+  KH -->|Yêu cầu điều chỉnh đặt xe| P43
+  P43 -->|Thông báo xác nhận đặt xe| KH
+
+  P43 -->|Dữ liệu lịch đặt| P44
+  P44 <--> D5

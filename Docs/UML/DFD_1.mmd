@@ -1,43 +1,31 @@
----
-config:
-  layout: elk
----
-flowchart TB
-    NV["Nhân viên Điều phối"] -- Thông tin xe mới --> P1(("1.0 Quản lý<br>Danh mục Xe"))
-    P1 -- Dữ liệu xe cập nhật --> DB_XE["DB_XE"]
-    KHACH["Khách hàng"] -- Giấy tờ tùy thân --> P2(("2.0 Quản lý<br>Hồ sơ Khách"))
-    P2 -- Thông tin khách hàng --> DB_KHACH["DB_KHACH"]
-    KHACH -- Yêu cầu thuê xe --> P3(("3.0 Xử lý Tra cứu<br>&amp; Đặt xe"))
-    DB_XE -- Trạng thái xe --> P3
-    P3 -- Kết quả tìm kiếm --> KHACH
-    P3 -- Phiếu giữ chỗ --> DB_HD["DB_HD"]
-    KHACH -- Tiền đặt cọc --> P4(("4.0 Xử lý Hợp đồng<br>&amp; Đặt cọc"))
-    DB_KHACH -- Thông tin định danh --> P4
-    DB_HD -- Thông tin giữ chỗ --> P4
-    P4 -- Phiếu thu cọc --> DB_TC["DB_TC"]
-    P4 -- Hợp đồng chính thức --> DB_HD
-    P4 -- Bản in hợp đồng --> KHACH
-    NV -- Lệnh xuất xe --> P5(("5.0 Xử lý<br>Bàn giao xe"))
-    KHACH -- Tài sản thế chấp --> P5
-    P5 -- Biên bản bàn giao --> KHACH
-    P5 -- Thông tin tài sản gửi --> DB_TS["DB_TS"]
-    P5 -- Số Km và Xăng lúc đi --> DB_HD
-    P5 -- Trạng thái 'Đang thuê' --> DB_XE
-    KHACH -- Xe trả về --> P6(("6.0 Xử lý Trả xe<br>&amp; Quyết toán"))
-    DB_HD -- Thông tin bàn giao gốc --> P6
-    P6 -- Hóa đơn thanh toán --> KHACH
-    P6 -- Phiếu thu tiền --> DB_TC
-    P6 -- Trạng thái 'Sẵn sàng' --> DB_XE
-    P6 -- Cập nhật thanh lý --> DB_HD
-    DB_TS -- Thông tin đối chiếu --> P6
-    P6 -- Tài sản hoàn trả --> KHACH
-    QUANLY["Quản lý"] -- Yêu cầu báo cáo --> P7(("7.0 Lập Báo cáo<br>Thống kê"))
-    DB_HD -- Dữ liệu giao dịch --> P7
-    DB_TC -- Dữ liệu dòng tiền --> P7
-    P7 -- Báo cáo tổng hợp --> QUANLY
+flowchart LR
+  classDef ext fill:#DEFFF8,stroke:#46EDC8,stroke-width:1px,color:#0b5b4a;
+  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px,color:#1f1f6b;
+  classDef store fill:#FFF3BF,stroke:#F2C94C,stroke-width:1.2px,color:#6b5200;
 
-    DB_XE@{ shape: cyl}
-    DB_KHACH@{ shape: cyl}
-    DB_HD@{ shape: cyl}
-    DB_TC@{ shape: cyl}
-    DB_TS@{ shape: cyl}
+  KH[Khách hàng]:::ext
+  CA[Cơ quan công an / CSGT]:::ext
+
+
+  D1[(Hồ sơ khách hàng)]:::store
+
+  P11((1.1 Quản lý hồ sơ khách hàng)):::proc
+  P12((1.2 Xác minh danh tính và điều kiện thuê)):::proc
+  P13((1.3 Cập nhật lịch sử thuê và đánh giá khách)):::proc
+
+  KH -->|Thông tin đăng ký| P11
+  P11 --> D1
+  D1 --> P11
+
+  KH -->|Giấy tờ định danh| P12
+  D1 --> P12
+  P12 --> D1
+
+  KH -->|Đánh giá khách hàng| P13
+  D1 --> P13
+  P13 --> D1
+
+  CA -->|Yêu cầu cung cấp thông tin người điều khiển| P12
+  P12 -->|Thông tin người điều khiển| CA
+
+  P12 -->|Kết quả xác minh khách hàng| KH

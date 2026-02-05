@@ -1,0 +1,116 @@
+@model List<UCar.ViewModels.Booking.BookingListVM>
+@{
+    ViewData["Title"] = "Quản lý đặt xe";
+}
+
+<div class="container" style="margin-top: 2rem;">
+    <!-- Header & Filter -->
+    <div class="card-panel">
+        <div class="row valign-wrapper" style="margin-bottom: 0;">
+            <div class="col s12 m6">
+                <h5 style="margin: 0; font-weight: 600;">
+                    <i class="material-icons blue-text" style="vertical-align: middle;">assignment</i>
+                    Quản lý Đặt xe
+                </h5>
+            </div>
+            <div class="col s12 m6 right-align">
+                <a asp-action="Search" class="btn waves-effect waves-light green">
+                    <i class="material-icons left">add</i>Tạo đơn mới
+                </a>
+            </div>
+        </div>
+        
+        <div class="divider" style="margin: 1rem 0;"></div>
+        
+        <form method="get" class="row" style="margin-bottom: 0;">
+            <div class="col s12 m4">
+                 <label>Trạng thái</label>
+                 <select name="status" onchange="this.form.submit()">
+                     <option value="">Tất cả</option>
+                     @{
+                         var selectedStatus = Context.Request.Query["status"].ToString();
+                     }
+                     <option value="Pending" selected="@(selectedStatus == "Pending")">Chờ duyệt</option>
+                     <option value="Confirmed" selected="@(selectedStatus == "Confirmed")">Đã xác nhận</option>
+                     <option value="Deposited" selected="@(selectedStatus == "Deposited")">Đã đặt cọc</option>
+                     <option value="InProgress" selected="@(selectedStatus == "InProgress")">Đang thực hiện</option>
+                     <option value="Completed" selected="@(selectedStatus == "Completed")">Hoàn thành</option>
+                     <option value="Cancelled" selected="@(selectedStatus == "Cancelled")">Đã hủy</option>
+                     <option value="Rejected" selected="@(selectedStatus == "Rejected")">Từ chối</option>
+                     <option value="Expired" selected="@(selectedStatus == "Expired")">Hết hạn</option>
+                 </select>
+            </div>
+            <div class="col s12 m8">
+                <!-- Can add date filter here later -->
+            </div>
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="card">
+        <div class="card-content" style="padding: 0;">
+            <table class="striped highlight responsive-table">
+                <thead>
+                    <tr>
+                        <th>Mã đơn</th>
+                        <th>Khách hàng</th>
+                        <th>Xe</th>
+                        <th>Lịch trình</th>
+                        <th>Trạng thái</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td><small class="grey-text">#@item.BookingId.ToString().Substring(0, 8)</small></td>
+                            <td>
+                                <strong>@item.CustomerName</strong>
+                            </td>
+                            <td>@item.VehicleName</td>
+                            <td>
+                                <div>@item.StartAt.ToString("dd/MM") - @item.EndAt.ToString("dd/MM")</div>
+                            </td>
+                            <td>
+                                @if(item.Status == UCar.Models.Enums.BookingStatus.Pending) {
+                                    <span class="chip orange lighten-4 orange-text text-darken-4">Chờ duyệt</span>
+                                } else if (item.Status == UCar.Models.Enums.BookingStatus.Confirmed) {
+                                    <span class="chip green lighten-4 green-text text-darken-4">Đã xác nhận</span>
+                                } else if (item.Status == UCar.Models.Enums.BookingStatus.Deposited) {
+                                    <span class="chip blue lighten-4 blue-text text-darken-4">Đã đặt cọc</span>
+                                } else if (item.Status == UCar.Models.Enums.BookingStatus.InProgress) {
+                                    <span class="chip teal lighten-4 teal-text text-darken-4">Đang thực hiện</span>
+                                } else if (item.Status == UCar.Models.Enums.BookingStatus.Completed) {
+                                    <span class="chip indigo lighten-4 indigo-text text-darken-4">Hoàn thành</span>
+                                } else if (item.Status == UCar.Models.Enums.BookingStatus.Cancelled) {
+                                    <span class="chip grey lighten-3 grey-text">Đã hủy</span>
+                                } else if (item.Status == UCar.Models.Enums.BookingStatus.Rejected) {
+                                    <span class="chip red lighten-4 red-text text-darken-4">Từ chối</span>
+                                } else if (item.Status == UCar.Models.Enums.BookingStatus.Expired) {
+                                    <span class="chip brown lighten-4 brown-text text-darken-4">Hết hạn</span>
+                                } else {
+                                    <span class="chip">@item.Status</span>
+                                }
+                            </td>
+                            <td class="right-align">
+                                <a asp-action="Details" asp-route-id="@item.BookingId" class="btn-flat waves-effect btn-small">
+                                    <i class="material-icons">visibility</i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var selects = document.querySelectorAll('select');
+            M.FormSelect.init(selects);
+        });
+    </script>
+}

@@ -1,0 +1,396 @@
+@model UCar.Models.DTOs.Handover.IncidentCreateDto
+@using UCar.Models.Enums
+@{
+    ViewData["Title"] = "Ghi nhận sự cố";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons red-text" style="vertical-align: middle; margin-right: 8px;">add_alert</i>
+                Ghi nhận sự cố
+            </h4>
+            <p class="grey-text text-darken-1" style="margin: 0;">Thêm thông tin sự cố xảy ra trong quá trình thuê xe</p>
+        </div>
+        <a asp-action="Incidents" asp-route-contractId="@Model.ContractId" class="btn-flat">
+            <i class="material-icons left">arrow_back</i>Quay lại
+        </a>
+    </div>
+
+    <!-- Form -->
+    <div class="card">
+        <div class="card-content">
+            <form asp-action="CreateIncident" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ContractId" />
+                
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="card-panel red lighten-4 red-text text-darken-4">
+                        <h6><i class="material-icons left">error</i>Vui lòng kiểm tra lại thông tin:</h6>
+                        <div asp-validation-summary="All" class=""></div>
+                    </div>
+                }
+
+                <div class="row">
+                    <!-- Select - Materialize style -->
+                    <div class="input-field col s12 m6">
+                        <select asp-for="IncidentType" id="IncidentType">
+                            <option value="">Chọn loại sự cố</option>
+                            <option value="@((int)IncidentType.Accident)">Tai nạn giao thông</option>
+                            <option value="@((int)IncidentType.Theft)">Mất cắp / Trộm cướp</option>
+                            <option value="@((int)IncidentType.Fine)">Phạt nguội (CSGT)</option>
+                            <option value="@((int)IncidentType.Impound)">Tạm giữ xe (CSGT)</option>
+                        </select>
+                        <label for="IncidentType">Loại sự cố *</label>
+                        <span asp-validation-for="IncidentType" class="red-text"></span>
+                    </div>
+                    
+                    <!-- Date Picker - Materialize style -->
+                    <div class="col s12 m3">
+                        <div class="input-field">
+                            <i class="material-icons prefix">date_range</i>
+                            <input type="text" id="OccurredDate" class="datepicker" />
+                            <label for="OccurredDate">Ngày xảy ra *</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Time Picker - Materialize style -->
+                    <div class="col s12 m3">
+                        <div class="input-field">
+                            <i class="material-icons prefix">access_time</i>
+                            <input type="text" id="OccurredTime" class="timepicker" />
+                            <label for="OccurredTime">Giờ xảy ra *</label>
+                        </div>
+                    </div>
+                    
+                    <!-- Hidden combined field -->
+                    <input type="hidden" asp-for="OccurredAt" id="OccurredAt" />
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        <i class="material-icons prefix">location_on</i>
+                        <input type="text" asp-for="Location" id="Location" class="validate" />
+                        <label for="Location">Địa điểm xảy ra</label>
+                        <span class="helper-text">VD: Ngã tư Hàng Xanh, Q. Bình Thạnh</span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        <i class="material-icons prefix">description</i>
+                        <textarea asp-for="Description" id="Description" class="materialize-textarea"></textarea>
+                        <label for="Description">Mô tả sự cố *</label>
+                        <span asp-validation-for="Description" class="red-text"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">attach_money</i>
+                        <input type="number" asp-for="EstimatedCost" id="EstimatedCost" class="validate" min="0" step="1000" />
+                        <label for="EstimatedCost">Chi phí ước tính (VNĐ)</label>
+                        <span asp-validation-for="EstimatedCost" class="red-text"></span>
+                    </div>
+                </div>
+
+                <!-- Fine Detail Section (hiện khi chọn Phạt nguội) -->
+                <div id="fineDetailSection" style="display: none;" class="card-panel blue lighten-5">
+                    <h6><i class="material-icons left">receipt</i>Chi tiết phạt nguội</h6>
+                    <div class="row">
+                        <div class="input-field col s12 m6">
+                            <input type="text" asp-for="FineDetail.TicketNumber" id="FineDetail_TicketNumber" />
+                            <label for="FineDetail_TicketNumber">Số biên bản vi phạm</label>
+                        </div>
+                        <div class="input-field col s12 m6">
+                            <input type="text" asp-for="FineDetail.AgencyName" id="FineDetail_AgencyName" />
+                            <label for="FineDetail_AgencyName">Cơ quan xử phạt</label>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="input-field col s12 m6">
+                            <input type="text" id="FineDueDate" class="datepicker" />
+                            <input type="hidden" asp-for="FineDetail.DueDate" id="FineDetail_DueDate" />
+                            <label for="FineDueDate">Hạn nộp phạt</label>
+                        </div>
+                        <div class="input-field col s12 m6">
+                            <input type="number" asp-for="FineDetail.FineAmount" id="FineDetail_FineAmount" min="0" step="1000" />
+                            <label for="FineDetail_FineAmount">Số tiền phạt (VNĐ)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Impound Detail Section (hiện khi chọn Tạm giữ xe) -->
+                <div id="impoundDetailSection" style="display: none;" class="card-panel orange lighten-5">
+                    <h6><i class="material-icons left">local_parking</i>Chi tiết tạm giữ xe</h6>
+                    <div class="row">
+                        <div class="input-field col s12">
+                            <input type="text" asp-for="ImpoundDetail.ImpoundLotAddress" id="ImpoundDetail_ImpoundLotAddress" />
+                            <label for="ImpoundDetail_ImpoundLotAddress">Địa chỉ bãi giữ xe</label>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="input-field col s12 m6">
+                            <input type="text" id="ImpoundedDate" class="datepicker" />
+                            <input type="hidden" asp-for="ImpoundDetail.ImpoundedAt" id="ImpoundDetail_ImpoundedAt" />
+                            <label for="ImpoundedDate">Ngày bị tạm giữ</label>
+                        </div>
+                        <div class="input-field col s12 m6">
+                            <input type="text" id="ReleasedDate" class="datepicker" />
+                            <input type="hidden" asp-for="ImpoundDetail.ReleasedAt" id="ImpoundDetail_ReleasedAt" />
+                            <label for="ReleasedDate">Ngày lấy lại xe (nếu có)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row" style="margin-top: 2rem;">
+                    <div class="col s12">
+                        <button type="submit" class="btn waves-effect waves-light red">
+                            <i class="material-icons left">save</i>Ghi nhận sự cố
+                        </button>
+                        <a asp-action="Incidents" asp-route-contractId="@Model.ContractId" class="btn-flat">Hủy</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Materialize components
+            M.updateTextFields();
+            
+            var selectElems = document.querySelectorAll('select');
+            M.FormSelect.init(selectElems);
+
+            // ===== CUSTOM DATEPICKER với onSelect callback =====
+            var today = new Date();
+            
+            // OccurredDate - ngày xảy ra sự cố (không được chọn ngày tương lai)
+            var occurredDateElem = document.getElementById('OccurredDate');
+            M.Datepicker.init(occurredDateElem, {
+                format: 'dd/mm/yyyy',
+                maxDate: today,
+                i18n: UCarConfig.datepickerI18n,
+                autoClose: true,
+                setDefaultDate: true,
+                defaultDate: today,
+                onSelect: function(date) {
+                    // Khi chọn ngày, kiểm tra và update timepicker
+                    var selectedDate = new Date(date);
+                    var now = new Date();
+                    
+                    // Nếu chọn ngày hôm nay, validate giờ hiện tại
+                    if (selectedDate.toDateString() === now.toDateString()) {
+                        var currentTime = document.getElementById('OccurredTime').value;
+                        if (currentTime) {
+                            var parts = currentTime.split(':');
+                            var hour = parseInt(parts[0]);
+                            var minute = parseInt(parts[1]);
+                            
+                            // Nếu giờ chọn > giờ hiện tại, reset về hiện tại
+                            if (hour > now.getHours() || (hour === now.getHours() && minute > now.getMinutes())) {
+                                document.getElementById('OccurredTime').value = formatTime(now);
+                                UCarToast.warning('Đã điều chỉnh giờ về thời điểm hiện tại');
+                            }
+                        }
+                    }
+                    
+                    updateOccurredAt();
+                }
+            });
+            occurredDateElem.value = formatDate(today);
+            
+            // OccurredTime - giờ xảy ra
+            var occurredTimeElem = document.getElementById('OccurredTime');
+            M.Timepicker.init(occurredTimeElem, {
+                twelveHour: false,
+                i18n: UCarConfig.timepickerI18n,
+                autoClose: true,
+                defaultTime: formatTime(today),
+                onSelect: function(hour, minute) {
+                    occurredTimeElem.value = padZero(hour) + ':' + padZero(minute);
+                    updateOccurredAt();
+                }
+            });
+            occurredTimeElem.value = formatTime(today);
+            updateOccurredAt();
+            
+            // FineDueDate - hạn nộp phạt (phải sau ngày hôm nay)
+            var fineDueDateElem = document.getElementById('FineDueDate');
+            M.Datepicker.init(fineDueDateElem, {
+                format: 'dd/mm/yyyy',
+                minDate: today,
+                i18n: UCarConfig.datepickerI18n,
+                autoClose: true,
+                onSelect: function(date) {
+                    document.getElementById('FineDetail_DueDate').value = toISODate(date);
+                }
+            });
+            
+            // ImpoundedDate - ngày bị tạm giữ (không được chọn ngày tương lai)
+            var impoundedDateElem = document.getElementById('ImpoundedDate');
+            M.Datepicker.init(impoundedDateElem, {
+                format: 'dd/mm/yyyy',
+                maxDate: today,
+                i18n: UCarConfig.datepickerI18n,
+                autoClose: true,
+                setDefaultDate: true,
+                defaultDate: today,
+                onSelect: function(date) {
+                    document.getElementById('ImpoundDetail_ImpoundedAt').value = toISODateTime(date);
+                }
+            });
+            
+            // ReleasedDate - ngày lấy lại xe (phải >= ngày tạm giữ)
+            var releasedDateElem = document.getElementById('ReleasedDate');
+            M.Datepicker.init(releasedDateElem, {
+                format: 'dd/mm/yyyy',
+                minDate: today, // Không thể lấy xe trước ngày hôm nay
+                i18n: UCarConfig.datepickerI18n,
+                autoClose: true,
+                onSelect: function(date) {
+                    document.getElementById('ImpoundDetail_ReleasedAt').value = toISODateTime(date);
+                }
+            });
+
+            // ===== HELPER FUNCTIONS =====
+            function padZero(num) {
+                return String(num).padStart(2, '0');
+            }
+            
+            function formatDate(date) {
+                return padZero(date.getDate()) + '/' + padZero(date.getMonth() + 1) + '/' + date.getFullYear();
+            }
+            
+            function formatTime(date) {
+                return padZero(date.getHours()) + ':' + padZero(date.getMinutes());
+            }
+            
+            function toISODate(date) {
+                return date.getFullYear() + '-' + padZero(date.getMonth() + 1) + '-' + padZero(date.getDate());
+            }
+            
+            function toISODateTime(date) {
+                return toISODate(date) + 'T00:00:00';
+            }
+            
+            function updateOccurredAt() {
+                var dateStr = document.getElementById('OccurredDate').value;
+                var timeStr = document.getElementById('OccurredTime').value || '12:00';
+                
+                if (dateStr) {
+                    var parts = dateStr.split('/');
+                    var selectedDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                    var now = new Date();
+                    
+                    // Nếu chọn ngày hôm nay, kiểm tra giờ không được vượt quá giờ hiện tại
+                    if (selectedDate.toDateString() === now.toDateString()) {
+                        var timeParts = timeStr.split(':');
+                        var selectedHour = parseInt(timeParts[0]);
+                        var selectedMinute = parseInt(timeParts[1]);
+                        var currentHour = now.getHours();
+                        var currentMinute = now.getMinutes();
+                        
+                        if (selectedHour > currentHour || (selectedHour === currentHour && selectedMinute > currentMinute)) {
+                            // Giờ chọn vượt quá giờ hiện tại, reset về giờ hiện tại
+                            timeStr = formatTime(now);
+                            document.getElementById('OccurredTime').value = timeStr;
+                            UCarToast.warning('Không thể chọn giờ ở tương lai. Đã đặt về giờ hiện tại.');
+                        }
+                    }
+                    
+                    var isoDate = parts[2] + '-' + parts[1] + '-' + parts[0] + 'T' + timeStr + ':00';
+                    document.getElementById('OccurredAt').value = isoDate;
+                }
+            }
+            
+            document.getElementById('OccurredTime').addEventListener('change', updateOccurredAt);
+
+            // ===== TOGGLE SECTIONS =====
+            var incidentTypeSelect = document.getElementById('IncidentType');
+            var fineSection = document.getElementById('fineDetailSection');
+            var impoundSection = document.getElementById('impoundDetailSection');
+
+            function toggleDetailSections() {
+                var selectedType = incidentTypeSelect.value;
+                var isFine = (selectedType === '2');
+                var isImpound = (selectedType === '3');
+                
+                fineSection.style.display = isFine ? 'block' : 'none';
+                impoundSection.style.display = isImpound ? 'block' : 'none';
+                
+                // Disable inputs khi không cần thiết để không gửi lên server
+                var fineInputs = fineSection.querySelectorAll('input');
+                var impoundInputs = impoundSection.querySelectorAll('input');
+                
+                fineInputs.forEach(function(input) {
+                    input.disabled = !isFine;
+                    if (!isFine) input.value = ''; // Clear value
+                });
+                
+                impoundInputs.forEach(function(input) {
+                    input.disabled = !isImpound;
+                    if (!isImpound) input.value = ''; // Clear value
+                });
+                
+                if (isImpound) {
+                    var impoundHidden = document.getElementById('ImpoundDetail_ImpoundedAt');
+                    if (!impoundHidden.value) {
+                        impoundedDateElem.value = formatDate(today);
+                        impoundHidden.value = toISODateTime(today);
+                    }
+                }
+            }
+
+            incidentTypeSelect.addEventListener('change', toggleDetailSections);
+            toggleDetailSections();
+            
+            // ===== FORM VALIDATION =====
+            document.querySelector('form').addEventListener('submit', function(e) {
+                var incidentType = document.getElementById('IncidentType').value;
+                var occurredAt = document.getElementById('OccurredAt').value;
+                
+                if (!incidentType) {
+                    e.preventDefault();
+                    UCarToast.error('Vui lòng chọn loại sự cố');
+                    return false;
+                }
+                
+                if (!occurredAt) {
+                    e.preventDefault();
+                    UCarToast.error('Vui lòng chọn ngày giờ xảy ra');
+                    return false;
+                }
+                
+                // Validate ngày giờ không được ở tương lai
+                var selectedDateTime = new Date(occurredAt);
+                var now = new Date();
+                if (selectedDateTime > now) {
+                    e.preventDefault();
+                    UCarToast.error('Ngày giờ sự cố không được ở tương lai');
+                    return false;
+                }
+                
+                if (incidentType === '3') {
+                    var impoundedAt = document.getElementById('ImpoundDetail_ImpoundedAt').value;
+                    if (!impoundedAt) {
+                        document.getElementById('ImpoundDetail_ImpoundedAt').value = toISODateTime(today);
+                    }
+                }
+                
+                return true;
+            });
+            
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>UCarToast.error('@TempData["ErrorMessage"]');</text>
+            }
+        });
+    </script>
+}

@@ -1,0 +1,27 @@
+flowchart LR
+  classDef ext fill:#DEFFF8,stroke:#46EDC8,stroke-width:1px,color:#0b5b4a;
+  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px,color:#1f1f6b;
+  classDef store fill:#FFF3BF,stroke:#F2C94C,stroke-width:1.2px,color:#6b5200;
+
+  BQT[Ban quản trị]:::ext
+
+
+  D10[(Dữ liệu báo cáo)]:::store
+
+  P91((9.1 Lập báo cáo doanh thu lợi nhuận và chi phí)):::proc
+  P92((9.2 Lập báo cáo tỷ lệ sử dụng xe)):::proc
+  P93((9.3 Lập báo cáo khách hàng)):::proc
+
+
+  P91 <--> D10
+  P92 <--> D10
+  P93 <--> D10
+
+  BQT -->|Thông tin yêu cầu báo cáo doanh thu lợi nhuận và chi phí| P91
+  P91 -->|Dữ liệu báo cáo doanh thu lợi nhuận và chi phí| BQT
+
+  BQT -->|Thông tin yêu cầu báo cáo tỷ lệ sử dụng xe| P92
+  P92 -->|Dữ liệu báo cáo tỷ lệ sử dụng xe| BQT
+
+  BQT -->|Thông tin yêu cầu báo cáo khách hàng| P93
+  P93 -->|Dữ liệu báo cáo khách hàng| BQT

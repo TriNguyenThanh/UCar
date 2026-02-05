@@ -1,0 +1,29 @@
+flowchart LR
+  classDef ext fill:#DEFFF8,stroke:#46EDC8,stroke-width:1px,color:#0b5b4a;
+  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px,color:#1f1f6b;
+  classDef store fill:#FFF3BF,stroke:#F2C94C,stroke-width:1.2px,color:#6b5200;
+
+  KH[Khách hàng]:::ext
+  CA[Cơ quan công an / CSGT]:::ext
+
+
+  D6[(Hồ sơ hợp đồng thuê)]:::store
+  D13[(Hồ sơ sự cố và vi phạm)]:::store
+
+  P51((5.1 Tạo và quản lý hợp đồng thuê)):::proc
+  P52((5.2 Quản lý điều khoản và phụ lục)):::proc
+  P53((5.3 Gia hạn đổi xe và nâng cấp gói thuê)):::proc
+  P54((5.4 Quản lý vi phạm hợp đồng)):::proc
+
+  KH -->|Yêu cầu thay đổi hợp đồng| P53
+  CA -->|Thông tin vụ việc| P54
+
+
+  P51 <--> D6
+  P52 <--> D6
+  P53 <--> D6
+
+  P54 <--> D13
+
+  P51 -->|Hợp đồng thuê xe| KH
+  P51 -->|Hợp đồng thuê xe| CA

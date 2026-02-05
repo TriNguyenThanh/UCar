@@ -1,0 +1,190 @@
+@model IEnumerable<UCar.Models.DepositPolicy>
+
+@{
+    ViewData["Title"] = "Quản lý Chính sách Đặt cọc";
+    var isActiveFilter = ViewBag.IsActiveFilter as bool?;
+    var currentPage = (int)ViewBag.CurrentPage;
+    var totalPages = (int)ViewBag.TotalPages;
+}
+
+<div class="container" style="margin-top: 30px;">
+    <!-- Header -->
+    <div class="row">
+        <div class="col s12">
+            <h4 class="blue-text text-darken-2">
+                <i class="material-icons left">account_balance_wallet</i>
+                Chính sách Đặt cọc
+            </h4>
+        </div>
+    </div>
+
+    <!-- Actions & Filters -->
+    <div class="row">
+        <div class="col s12 m6">
+            <a asp-action="Create" class="btn waves-effect waves-light blue darken-2">
+                <i class="material-icons left">add_circle</i>Tạo chính sách mới
+            </a>
+        </div>
+        <div class="col s12 m6 right-align">
+            <div class="chip @(isActiveFilter == null ? "blue white-text" : "")">
+                <a href="@Url.Action("Index")" style="color: inherit;">Tất cả</a>
+            </div>
+            <div class="chip @(isActiveFilter == true ? "green white-text" : "")">
+                <a href="@Url.Action("Index", new { isActive = true })" style="color: inherit;">Đang hoạt động</a>
+            </div>
+            <div class="chip @(isActiveFilter == false ? "grey white-text" : "")">
+                <a href="@Url.Action("Index", new { isActive = false })" style="color: inherit;">Ngưng hoạt động</a>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="row">
+            <div class="col s12">
+                <div class="card-panel green lighten-4 green-text text-darken-4">
+                    <i class="material-icons left">check_circle</i>
+                    @TempData["SuccessMessage"]
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Policies Table -->
+    <div class="row">
+        <div class="col s12">
+            @if (!Model.Any())
+            {
+                <div class="card">
+                    <div class="card-content center-align">
+                        <i class="material-icons large grey-text text-lighten-2">inbox</i>
+                        <p class="grey-text">Chưa có chính sách đặt cọc nào.</p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                var groupedPolicies = Model.GroupBy(p => p.VehicleType).OrderBy(g => g.Key.TypeName);
+                
+                <table class="striped highlight responsive-table">
+                    <thead class="blue darken-2 white-text">
+                        <tr>
+                            <th width="40"></th>
+                            <th>Loại xe</th>
+                            <th>Số lượng chính sách</th>
+                            <th>Đang hoạt động</th>
+                            <th>Tạm ngưng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var group in groupedPolicies)
+                        {
+                            var vehicleTypeId = group.Key.VehicleTypeId;
+                            var totalPolicies = group.Count();
+                            var activePolicies = group.Count(p => p.IsActive);
+                            var inactivePolicies = totalPolicies - activePolicies;
+                            
+                            <!-- Vehicle Type Row -->
+                            <tr class="vehicle-type-row" style="cursor: pointer; background-color: #f5f5f5;" 
+                                onclick="togglePolicies('@vehicleTypeId')">
+                                <td class="center-align">
+                                    <i class="material-icons expand-icon" id="icon-@vehicleTypeId">keyboard_arrow_right</i>
+                                </td>
+                                <td><strong class="blue-text text-darken-2">@group.Key.TypeName</strong></td>
+                                <td><span class="badge blue white-text">@totalPolicies chính sách</span></td>
+                                <td><span class="badge green white-text">@activePolicies</span></td>
+                                <td><span class="badge grey white-text">@inactivePolicies</span></td>
+                            </tr>
+                            
+                            <!-- Policies Detail Rows (Hidden by default) -->
+                            @foreach (var policy in group.OrderByDescending(p => p.IsActive).ThenBy(p => p.PolicyName))
+                            {
+                                var statusClass = policy.IsActive ? "green" : "grey";
+                                var statusText = policy.IsActive ? "Đang áp dụng" : "Tạm ngưng";
+                                
+                                <tr class="policy-detail policy-@vehicleTypeId" style="display: none;">
+                                    <td></td>
+                                    <td colspan="4">
+                                        <div class="row" style="margin-bottom: 0; padding: 10px 0; border-left: 3px solid #2196F3;">
+                                            <div class="col s12 m3">
+                                                <strong>@policy.PolicyName</strong><br/>
+                                                <span class="badge @statusClass white-text">@statusText</span>
+                                            </div>
+                                            <div class="col s12 m3">
+                                                <small class="grey-text">Cọc trách nhiệm</small><br/>
+                                                <strong class="blue-text">@policy.ResponsibilityDepositAmount.ToString("N0") VNĐ</strong>
+                                            </div>
+                                            <div class="col s12 m3">
+                                                <small class="grey-text">Cọc thuê xe</small><br/>
+                                                <strong class="teal-text">
+                                                    @if (policy.RentalDepositCalculationType == UCar.Models.Enums.DepositCalculationType.Percentage)
+                                                    {
+                                                        @($"{policy.RentalDepositValue}%")
+                                                    }
+                                                    else
+                                                    {
+                                                        @($"{policy.RentalDepositValue:N0} VNĐ")
+                                                    }
+                                                </strong><br/>
+                                                <small class="grey-text">Min: @policy.RentalDepositMinimum.ToString("N0") - Max: @policy.RentalDepositMaximum.ToString("N0")</small>
+                                            </div>
+                                            <div class="col s12 m3 right-align">
+                                                <small class="grey-text">Hoàn cọc: @policy.RefundProcessingDays ngày</small><br/><br/>
+                                                <a asp-action="Edit" asp-route-id="@policy.DepositPolicyId" 
+                                                   class="btn-small blue darken-2 tooltipped" data-position="top" data-tooltip="Chỉnh sửa">
+                                                    <i class="material-icons">edit</i>
+                                                </a>
+                                                
+                                                <form asp-action="ToggleStatus" method="post" style="display: inline;">
+                                                    <input type="hidden" name="id" value="@policy.DepositPolicyId" />
+                                                    <input type="hidden" name="isActive" value="@(!policy.IsActive)" />
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn-small amber darken-2 tooltipped" 
+                                                            data-position="top" data-tooltip="@(policy.IsActive ? "Tạm ngưng" : "Kích hoạt")">
+                                                        <i class="material-icons">@(policy.IsActive ? "pause_circle" : "play_circle")</i>
+                                                    </button>
+                                                </form>
+                                                
+                                                <form asp-action="Delete" method="post" style="display: inline;" 
+                                                      onsubmit="return confirm('Bạn có chắc muốn xóa chính sách này?');">
+                                                    <input type="hidden" name="id" value="@policy.DepositPolicyId" />
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn-small red tooltipped" 
+                                                            data-position="top" data-tooltip="Xóa">
+                                                        <i class="material-icons">delete</i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltips = document.querySelectorAll('.tooltipped');
+            M.Tooltip.init(tooltips);
+        });
+        
+        function togglePolicies(vehicleTypeId) {
+            var policyRows = document.querySelectorAll('.policy-' + vehicleTypeId);
+            var icon = document.getElementById('icon-' + vehicleTypeId);
+            
+            var isVisible = policyRows[0].style.display !== 'none';
+            
+            policyRows.forEach(function(row) {
+                row.style.display = isVisible ? 'none' : 'table-row';
+            });
+            
+            icon.textContent = isVisible ? 'keyboard_arrow_right' : 'keyboard_arrow_down';
+        }
+    </script>
+}

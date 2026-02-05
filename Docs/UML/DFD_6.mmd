@@ -1,0 +1,31 @@
+flowchart LR
+  classDef ext fill:#DEFFF8,stroke:#46EDC8,stroke-width:1px,color:#0b5b4a;
+  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px,color:#1f1f6b;
+  classDef store fill:#FFF3BF,stroke:#F2C94C,stroke-width:1.2px,color:#6b5200;
+
+  KH[Khách hàng]:::ext
+  CA[Cơ quan công an / CSGT]:::ext
+
+  D7[(Biên bản giao nhận)]:::store
+  D13[(Hồ sơ sự cố và vi phạm)]:::store
+
+  P61((6.1 Bàn giao xe cho khách)):::proc
+  P62((6.2 Ghi nhận tình trạng trước khi thuê)):::proc
+  P63((6.3 Nhận xe từ khách)):::proc
+  P64((6.4 Đối soát tình trạng sau thuê)):::proc
+
+  KH -->|Yêu cầu nhận xe| P61
+
+  P61 -->|Thông tin bàn giao| P62
+  P62 <--> D7
+  P62 -->|Biên bản giao xe| KH
+
+  KH -->|Yêu cầu trả xe| P63
+  KH -->|Thông báo sự cố| P64
+  CA -->|Biên bản tạm giữ phương tiện| P64
+  CA -->|Thông báo phạt nguội| P64
+
+  P63 -->|Thông tin nhận xe| P64
+  P64 <--> D7
+  P64 -->|Biên bản nhận xe| KH
+  P64 <--> D13

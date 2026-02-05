@@ -1,0 +1,336 @@
+@model UCar.ViewModels.CustomerDocumentUpdateViewModel
+@using UCar.Models.Enums
+@{
+    ViewData["Title"] = "Cập nhật giấy tờ tùy thân";
+}
+@section Styles {
+    <link rel="stylesheet" href="/css/account.css">
+}
+
+<!-- Page Header -->
+<div class="section ucar-header-section">
+    <div class="container">
+        <div class="row">
+            <div class="col s12">
+                <h4 class="white-text">
+                    <i class="material-icons left">credit_card</i>
+                    Giấy tờ tùy thân
+                </h4>
+                <p class="white-text text-lighten-2">Cập nhật thông tin giấy tờ và hình ảnh của bạn</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="section">
+    <div class="container">
+        <!-- Success/Error Messages -->
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="card-panel green lighten-4 green-text text-darken-4" style="margin-bottom: 1.5rem;">
+                <i class="material-icons tiny" style="vertical-align: middle;">check_circle</i>
+                @TempData["SuccessMessage"]
+            </div>
+        }
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="card-panel red lighten-4 red-text text-darken-4" style="margin-bottom: 1.5rem;">
+                <i class="material-icons tiny" style="vertical-align: middle;">error</i>
+                @TempData["ErrorMessage"]
+            </div>
+        }
+
+        <div class="row">
+            <!-- Left Column - Current Status -->
+            <div class="col s12 m4">
+                <div class="card">
+                    <div class="card-content center-align">
+                        <div class="ucar-doc-icon">
+                            <i class="material-icons">badge</i>
+                        </div>
+                        <h5 class="mt-4">@Model.CustomerFullName</h5>
+                        <p class="grey-text">Giấy tờ tùy thân</p>
+                        
+                        @if (Model.DocId.HasValue)
+                        {
+                            @if (Model.IsVerified)
+                            {
+                                <div class="mt-3">
+                                    <span class="chip green white-text">
+                                        <i class="material-icons tiny">verified</i> Đã xác minh
+                                    </span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="mt-3">
+                                    <span class="chip orange white-text">
+                                        <i class="material-icons tiny">pending</i> Chờ xác minh
+                                    </span>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="mt-3">
+                                <span class="chip grey white-text">
+                                    <i class="material-icons tiny">warning</i> Chưa có giấy tờ
+                                </span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-content">
+                        <span class="card-title">Điều hướng</span>
+                        <ul class="collection">
+                            <li class="collection-item">
+                                <a asp-action="Profile" class="black-text">
+                                    <i class="material-icons left">account_circle</i>Thông tin tài khoản
+                                </a>
+                            </li>
+                            <li class="collection-item active blue lighten-5">
+                                <a asp-action="Documents" class="blue-text">
+                                    <i class="material-icons left">credit_card</i>Giấy tờ tùy thân
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Current Images Preview -->
+                @if (!string.IsNullOrEmpty(Model.ExistingImageFrontUrl) || !string.IsNullOrEmpty(Model.ExistingImageBackUrl))
+                {
+                    <div class="card">
+                        <div class="card-content">
+                            <span class="card-title">Ảnh hiện tại</span>
+                            
+                            @if (!string.IsNullOrEmpty(Model.ExistingImageFrontUrl))
+                            {
+                                <div class="document-image-preview">
+                                    <p class="grey-text" style="margin-bottom: 0.5rem;"><strong>Mặt trước:</strong></p>
+                                    <img src="/@Model.ExistingImageFrontUrl.TrimStart('/')" alt="Mặt trước" class="responsive-img materialboxed" style="cursor: pointer;">
+                                </div>
+                            }
+                            
+                            @if (!string.IsNullOrEmpty(Model.ExistingImageBackUrl))
+                            {
+                                <div class="document-image-preview" style="margin-top: 1rem;">
+                                    <p class="grey-text" style="margin-bottom: 0.5rem;"><strong>Mặt sau:</strong></p>
+                                    <img src="/@Model.ExistingImageBackUrl.TrimStart('/')" alt="Mặt sau" class="responsive-img materialboxed" style="cursor: pointer;">
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Right Column - Edit Form -->
+            <div class="col s12 m8">
+                <div class="card">
+                    <div class="card-content">
+                        <span class="card-title">
+                            <i class="material-icons left">edit</i>
+                            Cập nhật thông tin giấy tờ
+                        </span>
+
+                        <form asp-action="Documents" method="post" enctype="multipart/form-data">
+                            <input type="hidden" asp-for="CustomerId" />
+                            <input type="hidden" asp-for="DocId" />
+                            <div asp-validation-summary="ModelOnly" class="red-text" style="margin-bottom: 1rem;"></div>
+
+                            <!-- Document Type & Number -->
+                            <div class="row">
+                                <div class="input-field col s12 m6">
+                                    <select asp-for="DocType" class="validate" required id="docTypeSelect">
+                                        <option value="" disabled>Chọn loại giấy tờ</option>
+                                        <option value="@CustomerDocumentType.IdCard">CCCD/CMND</option>
+                                        <option value="@CustomerDocumentType.License">Giấy phép lái xe</option>
+                                    </select>
+                                    <label asp-for="DocType"></label>
+                                    <span asp-validation-for="DocType" class="red-text"></span>
+                                </div>
+
+                                <div class="input-field col s12 m6">
+                                    <i class="material-icons prefix">confirmation_number</i>
+                                    <input asp-for="DocNumber" type="text" class="validate" required id="docNumberInput">
+                                    <label asp-for="DocNumber"></label>
+                                    <span asp-validation-for="DocNumber" class="red-text"></span>
+                                </div>
+                            </div>
+
+                            <!-- Issue Date & Place -->
+                            <div class="row">
+                                <div class="input-field col s12 m6">
+                                    <i class="material-icons prefix">date_range</i>
+                                    <input asp-for="IssuedDate" type="date" class="validate" id="issuedDateInput">
+                                    <label asp-for="IssuedDate"></label>
+                                    <span asp-validation-for="IssuedDate" class="red-text"></span>
+                                </div>
+
+                                <div class="input-field col s12 m6">
+                                    <i class="material-icons prefix">place</i>
+                                    <input asp-for="IssuedPlace" type="text" class="validate" id="issuedPlaceInput">
+                                    <label asp-for="IssuedPlace"></label>
+                                    <span asp-validation-for="IssuedPlace" class="red-text"></span>
+                                </div>
+                            </div>
+
+                            <div class="divider" style="margin: 2rem 0;"></div>
+
+                            <!-- Document Images Upload -->
+                            <h6 style="font-weight: 600; margin-bottom: 1.5rem;">
+                                <i class="material-icons" style="vertical-align: middle; margin-right: 8px;">photo_camera</i>
+                                Cập nhật hình ảnh
+                            </h6>
+
+                            <div class="row">
+                                <div class="col s12 m6">
+                                    <div class="file-field input-field">
+                                        <div class="btn blue">
+                                            <span><i class="material-icons left">image</i>Ảnh mặt trước</span>
+                                            <input asp-for="DocumentImageFront" type="file" accept="image/*">
+                                        </div>
+                                        <div class="file-path-wrapper">
+                                            <input class="file-path validate" type="text" placeholder="Chọn ảnh mặt trước mới">
+                                        </div>
+                                    </div>
+                                    <span asp-validation-for="DocumentImageFront" class="red-text"></span>
+                                    @if (!string.IsNullOrEmpty(Model.ExistingImageFrontUrl))
+                                    {
+                                        <p class="grey-text" style="font-size: 0.9rem;">
+                                            <i class="material-icons tiny">check_circle</i> Đã có ảnh. Upload mới để thay thế.
+                                        </p>
+                                    }
+                                </div>
+
+                                <div class="col s12 m6">
+                                    <div class="file-field input-field">
+                                        <div class="btn blue">
+                                            <span><i class="material-icons left">image</i>Ảnh mặt sau</span>
+                                            <input asp-for="DocumentImageBack" type="file" accept="image/*">
+                                        </div>
+                                        <div class="file-path-wrapper">
+                                            <input class="file-path validate" type="text" placeholder="Chọn ảnh mặt sau mới">
+                                        </div>
+                                    </div>
+                                    <span asp-validation-for="DocumentImageBack" class="red-text"></span>
+                                    @if (!string.IsNullOrEmpty(Model.ExistingImageBackUrl))
+                                    {
+                                        <p class="grey-text" style="font-size: 0.9rem;">
+                                            <i class="material-icons tiny">check_circle</i> Đã có ảnh. Upload mới để thay thế.
+                                        </p>
+                                    }
+                                </div>
+                            </div>
+
+                            @if (!Model.DocId.HasValue || 
+                                string.IsNullOrEmpty(Model.ExistingImageFrontUrl) || 
+                                string.IsNullOrEmpty(Model.ExistingImageBackUrl))
+                            {
+                                <div class="card-panel blue lighten-5" style="margin-top: 1rem;">
+                                    <p style="margin: 0;">
+                                        <i class="material-icons tiny blue-text" style="vertical-align: middle;">info</i>
+                                        <strong>Lưu ý:</strong> Vui lòng upload đầy đủ ảnh mặt trước và mặt sau để được xác minh sớm hơn.
+                                    </p>
+                                </div>
+                            }
+
+                            <div class="divider" style="margin: 2rem 0;"></div>
+
+                            <!-- Submit Button -->
+                            <div class="row">
+                                <div class="col s12 center-align">
+                                    <button type="submit" class="btn waves-effect waves-light green" style="margin-right: 1rem;">
+                                        <i class="material-icons left">save</i>Lưu thay đổi
+                                    </button>
+                                    <a asp-action="Profile" class="btn-flat waves-effect">
+                                        <i class="material-icons left">arrow_back</i>Quay lại
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Verification Notice -->
+                <div class="card-panel orange lighten-4" style="margin-top: 1.5rem;">
+                    <p style="margin: 0;">
+                        <i class="material-icons tiny orange-text text-darken-3" style="vertical-align: middle;">warning</i>
+                        <strong>Lưu ý:</strong> Sau khi cập nhật, giấy tờ của bạn sẽ cần được xác minh lại bởi nhân viên trước khi có thể sử dụng để thuê xe.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Materialize components
+            var selects = document.querySelectorAll('select');
+            M.FormSelect.init(selects);
+
+            // Initialize materialbox for image preview
+            var materialboxed = document.querySelectorAll('.materialboxed');
+            M.Materialbox.init(materialboxed);
+
+            // Update labels for pre-filled inputs
+            M.updateTextFields();
+
+            // Show success/error toast messages
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <text>
+                M.toast({html: '<i class="material-icons left">check_circle</i> @TempData["SuccessMessage"]', classes: 'green'});
+                </text>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>
+                M.toast({html: '<i class="material-icons left">error</i> @TempData["ErrorMessage"]', classes: 'red'});
+                </text>
+            }
+
+            // File input preview
+            var frontInput = document.querySelector('input[name="DocumentImageFront"]');
+            var backInput = document.querySelector('input[name="DocumentImageBack"]');
+
+            if (frontInput) {
+                frontInput.addEventListener('change', function() {
+                    validateImageFile(this, 'Ảnh mặt trước');
+                });
+            }
+
+            if (backInput) {
+                backInput.addEventListener('change', function() {
+                    validateImageFile(this, 'Ảnh mặt sau');
+                });
+            }
+
+            function validateImageFile(input, label) {
+                if (input.files && input.files[0]) {
+                    var file = input.files[0];
+                    var validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                    
+                    if (!validTypes.includes(file.type)) {
+                        M.toast({html: '<i class="material-icons left">error</i> ' + label + ' phải là file ảnh (JPEG, PNG, GIF, WEBP)', classes: 'red'});
+                        input.value = '';
+                        return;
+                    }
+
+                    // Check file size (max 5MB)
+                    if (file.size > 5 * 1024 * 1024) {
+                        M.toast({html: '<i class="material-icons left">error</i> ' + label + ' không được vượt quá 5MB', classes: 'red'});
+                        input.value = '';
+                        return;
+                    }
+                }
+            }
+        });
+    </script>
+}

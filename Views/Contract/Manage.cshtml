@@ -1,0 +1,244 @@
+@model UCar.ViewModels.Contract.ContractListResultViewModel
+@{
+    ViewData["Title"] = "Quản lý hợp đồng";
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons blue-text" style="vertical-align: middle; margin-right: 8px;">description</i>
+                Quản lý hợp đồng thuê xe
+            </h4>
+            <p class="grey-text text-darken-1" style="margin: 0;">Tổng cộng: @Model.TotalCount hợp đồng</p>
+        </div>
+        <div>
+            <a asp-action="Create" class="btn waves-effect waves-light">
+                <i class="material-icons left">add</i>Tạo hợp đồng
+            </a>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="card">
+        <div class="card-content">
+            <form asp-action="Manage" method="get">
+                <div class="row" style="margin-bottom: 0;">
+                    <div class="col s12 m4">
+                        <div class="input-field">
+                            <i class="material-icons prefix">search</i>
+                            <input type="text" id="Keyword" name="Keyword" value="@Model.Filter.Keyword">
+                            <label for="Keyword">Tìm kiếm (mã HĐ, tên KH, SĐT, biển số)</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m3">
+                        <div class="input-field">
+                            <select id="Status" name="Status">
+                                <option value="">Tất cả trạng thái</option>
+                                @foreach (var status in Model.StatusOptions)
+                                {
+                                    <option value="@status.Value" selected="@(Model.Filter.Status == status.Value)">@status.Display</option>
+                                }
+                            </select>
+                            <label for="Status">Trạng thái</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m2">
+                        <div class="input-field">
+                            <input type="date" id="FromDate" name="FromDate" value="@Model.Filter.FromDate?.ToString("yyyy-MM-dd")">
+                            <label for="FromDate" class="active">Từ ngày</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m2">
+                        <div class="input-field">
+                            <input type="date" id="ToDate" name="ToDate" value="@Model.Filter.ToDate?.ToString("yyyy-MM-dd")">
+                            <label for="ToDate" class="active">Đến ngày</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m1">
+                        <button type="submit" class="btn waves-effect waves-light" style="margin-top: 1.5rem;">
+                            <i class="material-icons">filter_list</i>
+                        </button>
+                    </div>
+                </div>
+                <input type="hidden" name="SortBy" value="@Model.Filter.SortBy" />
+                <input type="hidden" name="SortDesc" value="@Model.Filter.SortDesc" />
+            </form>
+        </div>
+    </div>
+
+    <!-- Success/Error Messages -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="card-panel green lighten-4 green-text text-darken-4" style="margin-bottom: 1rem;">
+            <i class="material-icons left">check_circle</i>
+            @TempData["Success"]
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="card-panel red lighten-4 red-text text-darken-4" style="margin-bottom: 1rem;">
+            <i class="material-icons left">error</i>
+            @TempData["Error"]
+        </div>
+    }
+
+    <!-- Table -->
+    <div class="card">
+        <div class="card-content" style="padding: 0;">
+            @if (Model.Items.Any())
+            {
+                <table class="striped highlight responsive-table">
+                    <thead>
+                        <tr>
+                            <th>Mã HĐ</th>
+                            <th>Khách hàng</th>
+                            <th>Xe</th>
+                            <th>Thời gian thuê</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th title="Sẵn sàng giao xe">Giao xe</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@item.ContractCode</strong>
+                                    @if (item.BookingId.HasValue)
+                                    {
+                                        <br><small class="grey-text">Từ đặt xe</small>
+                                    }
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div class="chip" style="border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; margin: 0;">
+                                            @(item.CustomerName.Length > 0 ? item.CustomerName[0].ToString().ToUpper() : "?")
+                                        </div>
+                                        <div>
+                                            <span>@item.CustomerName</span>
+                                            <br><small class="grey-text">@item.CustomerPhone</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong>@item.VehiclePlateNo</strong>
+                                    <br><small class="grey-text">@item.VehicleModel</small>
+                                </td>
+                                <td>
+                                    @item.PlannedStart.ToString("dd/MM/yyyy")
+                                    <br>→ @item.PlannedEnd.ToString("dd/MM/yyyy")
+                                    <br><small class="grey-text">(@item.RentalDays ngày)</small>
+                                </td>
+                                <td>
+                                    <strong>@item.TotalAmount.ToString("N0")đ</strong>
+                                    <br><small class="grey-text">Cọc: @item.DepositAmount.ToString("N0")đ</small>
+                                </td>
+                                <td>
+                                    <span class="@item.StatusClass">@item.StatusDisplay</span>
+                                </td>
+                                <td class="center-align">
+                                    <i class="material-icons @item.HandoverStatusClass" title="@item.HandoverStatusText">@item.HandoverStatusIcon</i>
+                                </td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@item.ContractId" class="btn-flat waves-effect" title="Chi tiết">
+                                        <i class="material-icons">visibility</i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="empty-state" style="padding: 3rem;">
+                    <i class="material-icons grey-text" style="font-size: 4rem;">inbox</i>
+                    <h5 class="grey-text">Không có hợp đồng nào</h5>
+                    <p class="grey-text">Chưa có hợp đồng nào phù hợp với bộ lọc.</p>
+                    <a asp-action="Create" class="btn waves-effect waves-light" style="margin-top: 1rem;">
+                        <i class="material-icons left">add</i>Tạo hợp đồng đầu tiên
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="card-panel center-align">
+            <ul class="pagination">
+                @if (Model.HasPrevious)
+                {
+                    <li class="waves-effect">
+                        <a asp-action="Manage" asp-route-PageNumber="@(Model.PageNumber - 1)" 
+                           asp-route-Keyword="@Model.Filter.Keyword" asp-route-Status="@Model.Filter.Status"
+                           asp-route-FromDate="@Model.Filter.FromDate?.ToString("yyyy-MM-dd")"
+                           asp-route-ToDate="@Model.Filter.ToDate?.ToString("yyyy-MM-dd")">
+                            <i class="material-icons">chevron_left</i>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="disabled"><a href="#!"><i class="material-icons">chevron_left</i></a></li>
+                }
+
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    if (i == Model.PageNumber)
+                    {
+                        <li class="active"><a href="#!">@i</a></li>
+                    }
+                    else if (Math.Abs(i - Model.PageNumber) <= 2 || i == 1 || i == Model.TotalPages)
+                    {
+                        <li class="waves-effect">
+                            <a asp-action="Manage" asp-route-PageNumber="@i"
+                               asp-route-Keyword="@Model.Filter.Keyword" asp-route-Status="@Model.Filter.Status"
+                               asp-route-FromDate="@Model.Filter.FromDate?.ToString("yyyy-MM-dd")"
+                               asp-route-ToDate="@Model.Filter.ToDate?.ToString("yyyy-MM-dd")">@i</a>
+                        </li>
+                    }
+                }
+
+                @if (Model.HasNext)
+                {
+                    <li class="waves-effect">
+                        <a asp-action="Manage" asp-route-PageNumber="@(Model.PageNumber + 1)"
+                           asp-route-Keyword="@Model.Filter.Keyword" asp-route-Status="@Model.Filter.Status"
+                           asp-route-FromDate="@Model.Filter.FromDate?.ToString("yyyy-MM-dd")"
+                           asp-route-ToDate="@Model.Filter.ToDate?.ToString("yyyy-MM-dd")">
+                            <i class="material-icons">chevron_right</i>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="disabled"><a href="#!"><i class="material-icons">chevron_right</i></a></li>
+                }
+            </ul>
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var selects = document.querySelectorAll('select');
+        M.FormSelect.init(selects);
+        
+        @if (TempData["Success"] != null)
+        {
+            <text>UCarToast.success('@TempData["Success"]');</text>
+        }
+        @if (TempData["Error"] != null)
+        {
+            <text>UCarToast.error('@TempData["Error"]');</text>
+        }
+    });
+</script>
+}

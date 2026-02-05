@@ -1,0 +1,27 @@
+flowchart LR
+  classDef ext fill:#DEFFF8,stroke:#46EDC8,stroke-width:1px,color:#0b5b4a;
+  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px,color:#1f1f6b;
+  classDef store fill:#FFF3BF,stroke:#F2C94C,stroke-width:1.2px,color:#6b5200;
+
+
+  NVVH[Nhân viên vận hành]:::ext
+  D2[(Danh mục xe)]:::store
+  D3[(Tình trạng xe)]:::store
+
+  P21((2.1 Quản lý danh mục xe)):::proc
+  P22((2.2 Quản lý thông tin xe)):::proc
+  P23((2.3 Quản lý tình trạng xe)):::proc
+
+  P21 <--> D2
+  P22 <--> D2
+
+  P23 <--> D3
+
+  NVVH -->|Thông tin yêu cầu cập nhật danh mục xe| P21
+  P21 -->|Kết quả cập nhật danh mục xe| NVVH
+
+  NVVH -->|Thông tin yêu cầu cập nhật thông tin xe| P22
+  P22 -->|Kết quả cập nhật thông tin xe| NVVH
+
+  NVVH -->|Thông tin yêu cầu cập nhật tình trạng xe| P23
+  P23 -->|Kết quả cập nhật tình trạng xe| NVVH

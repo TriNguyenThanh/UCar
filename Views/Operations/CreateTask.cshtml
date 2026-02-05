@@ -1,0 +1,475 @@
+@model UCar.Models.DTOs.Operations.TaskCreateDto
+@using UCar.Models.DTOs.Operations
+@using UCar.Models.DTOs.Vehicle
+@using UCar.Models.Enums
+@{
+    ViewData["Title"] = "Tạo nhiệm vụ";
+    var branches = ViewBag.Branches as IEnumerable<BranchDto> ?? Enumerable.Empty<BranchDto>();
+    var staff = ViewBag.Staff as IEnumerable<StaffListDto> ?? Enumerable.Empty<StaffListDto>();
+    var vehicles = ViewBag.Vehicles as IEnumerable<VehicleListDto> ?? Enumerable.Empty<VehicleListDto>();
+    var isBranchManager = ViewBag.IsBranchManager as bool? ?? false;
+    var userBranchId = ViewBag.UserBranchId as Guid?;
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+        <div>
+            <h4 style="font-weight: 700; margin-bottom: 0.5rem;">
+                <i class="material-icons green-text" style="vertical-align: middle; margin-right: 8px;">add_task</i>
+                Tạo nhiệm vụ mới
+            </h4>
+        </div>
+        <a asp-action="Tasks" class="btn-flat">
+            <i class="material-icons left">arrow_back</i>Quay lại
+        </a>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <script>document.addEventListener('DOMContentLoaded', () => UCarToast.error('@TempData["ErrorMessage"]'));</script>
+    }
+
+
+    <!-- Form -->
+    <div class="card">
+        <div class="card-content">
+            <form asp-action="CreateTask" method="post" id="createTaskForm">
+                @Html.AntiForgeryToken()
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <select asp-for="TaskType" id="TaskType">
+                            <option value="" disabled selected>Chọn loại nhiệm vụ</option>
+                            <option value="@TaskType.Delivery">Giao xe</option>
+                            <option value="@TaskType.Return">Nhận xe</option>
+                            <option value="@TaskType.Maintenance">Bảo dưỡng</option>
+                            <option value="@TaskType.Rescue">Cứu hộ</option>
+                            <option value="@TaskType.Inspection">Kiểm tra</option>
+                        </select>
+                        <label for="TaskType">Loại nhiệm vụ *</label>
+                        <span asp-validation-for="TaskType" class="red-text"></span>
+                    </div>
+                    <div class="input-field col s12 m6">
+                        @if (isBranchManager)
+                        {
+                            <select id="BranchId" disabled>
+                                @foreach (var b in branches)
+                                {
+                                    <option value="@b.BranchId" selected="@(b.BranchId == userBranchId)">@b.Name</option>
+                                }
+                            </select>
+                            <input type="hidden" asp-for="BranchId" value="@userBranchId" />
+                        }
+                        else
+                        {
+                            <select asp-for="BranchId" id="BranchId">
+                                <option value="" disabled selected>Chọn chi nhánh</option>
+                                @foreach (var b in branches)
+                                {
+                                    <option value="@b.BranchId">@b.Name</option>
+                                }
+                            </select>
+                        }
+                        <label for="BranchId">Chi nhánh *</label>
+                        <span asp-validation-for="BranchId" class="red-text"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">title</i>
+                        <input type="text" asp-for="Title" id="Title" class="validate" />
+                        <label for="Title">Tiêu đề *</label>
+                        <span asp-validation-for="Title" class="red-text"></span>
+                    </div>
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">directions_car</i>
+                        <input type="text" id="VehicleSearchInput" class="autocomplete" 
+                               placeholder="Chọn chi nhánh trước..." readonly />
+                        <input type="hidden" asp-for="VehicleId" id="VehicleId" />
+                        <label for="VehicleSearchInput" class="active">
+                            Phương tiện <span id="vehicleRequired" style="display:none; color: red;">*</span>
+                        </label>
+                        <span asp-validation-for="VehicleId" class="red-text"></span>
+                        <div id="VehicleDropdown" class="vehicle-dropdown" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col s12 m4">
+                        <div class="input-field">
+                            <i class="material-icons prefix">date_range</i>
+                            <input type="text" id="ScheduledDate" class="datepicker" />
+                            <label for="ScheduledDate">Ngày thực hiện *</label>
+                        </div>
+                    </div>
+                    <div class="col s12 m4">
+                        <div class="input-field">
+                            <i class="material-icons prefix">access_time</i>
+                            <input type="text" id="ScheduledTime" class="timepicker" />
+                            <label for="ScheduledTime">Giờ *</label>
+                        </div>
+                    </div>
+                    <div class="input-field col s12 m4">
+                        <i class="material-icons prefix">timer</i>
+                        <input type="number" asp-for="EstimatedDurationMinutes" id="EstimatedDurationMinutes" value="60"
+                            min="15" step="15" />
+                        <label for="EstimatedDurationMinutes">Thời gian (phút)</label>
+                    </div>
+                    <input type="hidden" asp-for="ScheduledAt" id="ScheduledAtValue" />
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12 m6">
+                        <select asp-for="AssignedToStaffId" id="AssignedToStaffId" disabled>
+                            <option value="">Chọn chi nhánh trước...</option>
+                        </select>
+                        <label for="AssignedToStaffId">Phân công cho</label>
+                    </div>
+                    <div class="input-field col s12 m6">
+                        <i class="material-icons prefix">location_on</i>
+                        <input type="text" asp-for="Location" id="Location" />
+                        <label for="Location">Địa điểm</label>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="input-field col s12">
+                        <i class="material-icons prefix">notes</i>
+                        <textarea asp-for="Notes" id="Notes" class="materialize-textarea"></textarea>
+                        <label for="Notes">Ghi chú</label>
+                    </div>
+                </div>
+
+                <div class="row" style="margin-top: 1.5rem;">
+                    <div class="col s12">
+                        <button type="submit" class="btn waves-effect waves-light green">
+                            <i class="material-icons left">save</i>Tạo nhiệm vụ
+                        </button>
+                        <a asp-action="Tasks" class="btn-flat">Hủy</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initial Select Init
+            var elems = document.querySelectorAll('select');
+            var instances = M.FormSelect.init(elems);
+            M.updateTextFields();
+
+            // Store elements
+            var staffSelect = document.getElementById('AssignedToStaffId');
+            var vehicleInput = document.getElementById('VehicleSearchInput');
+            var vehicleHidden = document.getElementById('VehicleId');
+            var vehicleDropdown = document.getElementById('VehicleDropdown');
+            var taskTypeSelect = document.getElementById('TaskType');
+            var branchSelect = document.getElementById('BranchId');
+            var vehicleRequiredIndicator = document.getElementById('vehicleRequired');
+
+            // Task types that require a vehicle
+            var taskTypesRequiringVehicle = ['Delivery', 'Return', 'Maintenance', 'Rescue'];
+
+            // Store staff data for filtering
+            var allStaffData = @Html.Raw(Json.Serialize(staff.Select(s => new { 
+                staffId = s.StaffId, 
+                fullName = s.FullName, 
+                staffCode = s.StaffCode, 
+                position = s.Position, 
+                branchId = s.BranchId 
+            })));
+
+            // Store all vehicle options for search filtering
+            var allVehicleOptions = [];
+
+            // Update vehicle required indicator based on task type
+            function updateVehicleRequired() {
+                var selectedTaskType = taskTypeSelect.value;
+                var label = vehicleInput.closest('.input-field').querySelector('label');
+                if (taskTypesRequiringVehicle.includes(selectedTaskType)) {
+                    vehicleRequiredIndicator.style.display = 'inline';
+                    label.innerHTML = 'Phương tiện <span style="color: red;">*</span>';
+                } else {
+                    vehicleRequiredIndicator.style.display = 'none';
+                    label.innerHTML = 'Phương tiện <span style="color: #999; font-size: 0.85em;">(Không bắt buộc)</span>';
+                }
+            }
+
+            // Render dropdown list
+            function renderDropdown(options) {
+                if (options.length === 0) {
+                    vehicleDropdown.innerHTML = '<div class="vehicle-dropdown-item disabled">Không có xe phù hợp</div>';
+                } else {
+                    var html = '';
+                    options.forEach(function(opt) {
+                        html += '<div class="vehicle-dropdown-item" data-value="' + opt.value + '" data-text="' + opt.text + '">' +
+                                '<strong>' + opt.plateNo + '</strong> - ' + opt.modelName + 
+                                '<br><small class="grey-text">' + opt.statusText + '</small>' +
+                                '</div>';
+                    });
+                    vehicleDropdown.innerHTML = html;
+                }
+            }
+
+            // Show dropdown
+            function showDropdown() {
+                if (allVehicleOptions.length > 0 || vehicleDropdown.innerHTML) {
+                    vehicleDropdown.style.display = 'block';
+                }
+            }
+
+            // Hide dropdown
+            function hideDropdown() {
+                setTimeout(function() {
+                    vehicleDropdown.style.display = 'none';
+                }, 200);
+            }
+
+            // Filter dropdown by search term
+            function filterDropdown(searchTerm) {
+                var filtered = allVehicleOptions.filter(function(opt) {
+                    return opt.text.toLowerCase().includes(searchTerm.toLowerCase());
+                });
+                renderDropdown(filtered);
+            }
+
+            // Vehicle input events
+            vehicleInput.addEventListener('focus', showDropdown);
+            vehicleInput.addEventListener('blur', hideDropdown);
+            vehicleInput.addEventListener('input', function() {
+                filterDropdown(this.value);
+                showDropdown();
+            });
+
+            // Dropdown item click
+            vehicleDropdown.addEventListener('click', function(e) {
+                var item = e.target.closest('.vehicle-dropdown-item');
+                if (item && !item.classList.contains('disabled')) {
+                    vehicleHidden.value = item.dataset.value;
+                    vehicleInput.value = item.dataset.text;
+                    vehicleDropdown.style.display = 'none';
+                }
+            });
+
+            // Clear vehicle selection
+            function clearVehicle() {
+                vehicleHidden.value = '';
+                vehicleInput.value = '';
+                allVehicleOptions = [];
+                vehicleDropdown.innerHTML = '';
+            }
+
+            // Load and filter staff by branch
+            function loadStaffByBranch(branchId) {
+                if (!branchId) {
+                    // No branch selected - disable
+                    staffSelect.disabled = true;
+                    staffSelect.innerHTML = '<option value="">Chọn chi nhánh trước...</option>';
+                    M.FormSelect.init(staffSelect);
+                    return;
+                }
+
+                // Enable and populate
+                staffSelect.disabled = false;
+                var html = '<option value="">Chưa phân công</option>';
+                
+                var filteredStaff = allStaffData.filter(function(s) {
+                    return s.branchId === branchId;
+                });
+
+                filteredStaff.forEach(function(s) {
+                    html += '<option value="' + s.staffId + '">' + s.fullName + ' (' + s.staffCode + ') - ' + s.position + '</option>';
+                });
+
+                if (filteredStaff.length === 0) {
+                    html = '<option value="">Không có nhân viên trong chi nhánh này</option>';
+                }
+
+                staffSelect.innerHTML = html;
+                M.FormSelect.init(staffSelect);
+            }
+
+            // Load vehicles by task type from API
+            async function loadVehiclesByTaskType() {
+                var selectedTaskType = taskTypeSelect.value;
+                var selectedBranchId = branchSelect.value;
+
+                // Clear current selection
+                clearVehicle();
+
+                // Must select branch first
+                if (!selectedBranchId) {
+                    vehicleInput.placeholder = 'Chọn chi nhánh trước...';
+                    vehicleInput.readOnly = true;
+                    return;
+                }
+
+                // Must select task type
+                if (!selectedTaskType) {
+                    vehicleInput.placeholder = 'Chọn loại nhiệm vụ trước...';
+                    vehicleInput.readOnly = true;
+                    return;
+                }
+
+                // Enable input
+                vehicleInput.readOnly = false;
+                vehicleInput.placeholder = 'Gõ để tìm kiếm xe...';
+
+                try {
+                    var url = '@Url.Action("GetVehiclesByTaskType", "Operations")?taskType=' + selectedTaskType + '&branchId=' + selectedBranchId;
+
+                    var response = await fetch(url);
+                    var vehicles = await response.json();
+
+                    // Store all options for search
+                    allVehicleOptions = vehicles.map(function(v) {
+                        var statusText = getStatusText(v.currentStatus);
+                        return {
+                            value: v.vehicleId,
+                            text: v.plateNo + ' - ' + v.modelName,
+                            plateNo: v.plateNo,
+                            modelName: v.modelName,
+                            statusText: statusText,
+                            branchId: v.branchId
+                        };
+                    });
+
+                    renderDropdown(allVehicleOptions);
+
+                    if (allVehicleOptions.length === 0) {
+                        vehicleInput.placeholder = 'Không có xe phù hợp';
+                    }
+                } catch (error) {
+                    console.error('Error loading vehicles:', error);
+                    vehicleInput.placeholder = 'Lỗi tải dữ liệu';
+                }
+            }
+
+            function getStatusText(status) {
+                switch(status) {
+                    case 0: return 'Sẵn sàng';
+                    case 1: return 'Đã đặt';
+                    case 2: return 'Đang thuê';
+                    case 3: return 'Bảo dưỡng';
+                    case 4: return 'Bị giữ';
+                    case 5: return 'Sự cố';
+                    default: return '';
+                }
+            }
+
+            // Listen to TaskType change
+            taskTypeSelect.addEventListener('change', function() {
+                updateVehicleRequired();
+                loadVehiclesByTaskType();
+            });
+
+            // Listen to Branch change - reload vehicles with new branch filter
+            branchSelect.addEventListener('change', function () {
+                var selectedBranchId = this.value;
+                
+                // Filter staff by branch
+                loadStaffByBranch(selectedBranchId);
+                
+                // Reload vehicles with branch filter
+                loadVehiclesByTaskType();
+            });
+
+            // Initialize on load
+            updateVehicleRequired();
+
+            var datepickers = document.querySelectorAll('.datepicker');
+            M.Datepicker.init(datepickers, {
+                format: 'dd/mm/yyyy',
+                i18n: {
+                    months: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+                    monthsShort: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'],
+                    weekdays: ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'],
+                    weekdaysShort: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+                    cancel: 'Hủy',
+                    done: 'Chọn'
+                },
+                defaultDate: new Date(),
+                setDefaultDate: true,
+                autoClose: true
+            });
+
+            var timepickers = document.querySelectorAll('.timepicker');
+            M.Timepicker.init(timepickers, {
+                twelveHour: false,
+                defaultTime: 'now',
+                autoClose: true
+            });
+
+            // Combine date/time on submit
+            document.getElementById('createTaskForm').addEventListener('submit', function (e) {
+                var dateStr = document.getElementById('ScheduledDate').value;
+                var timeStr = document.getElementById('ScheduledTime').value || '09:00';
+
+                if (dateStr) {
+                    var parts = dateStr.split('/');
+                    // Format: YYYY-MM-DDTHH:mm:00
+                    var isoDate = parts[2] + '-' + parts[1] + '-' + parts[0] + 'T' + timeStr + ':00';
+                    document.getElementById('ScheduledAtValue').value = isoDate;
+                }
+
+                // Client-side validation for vehicle when required
+                var selectedTaskType = taskTypeSelect.value;
+                var selectedVehicle = vehicleHidden.value;
+                
+                if (taskTypesRequiringVehicle.includes(selectedTaskType) && !selectedVehicle) {
+                    e.preventDefault();
+                    UCarToast.error('Vui lòng chọn phương tiện cho loại nhiệm vụ này');
+                    vehicleInput.focus();
+                    return false;
+                }
+            });
+        });
+    </script>
+
+    <style>
+        .vehicle-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 100;
+        }
+        .vehicle-dropdown-item {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f5f5f5;
+            transition: background 0.2s;
+        }
+        .vehicle-dropdown-item:last-child {
+            border-bottom: none;
+        }
+        .vehicle-dropdown-item:hover {
+            background: #e8f5e9;
+        }
+        .vehicle-dropdown-item.disabled {
+            color: #999;
+            cursor: default;
+        }
+        .vehicle-dropdown-item.disabled:hover {
+            background: white;
+        }
+        #VehicleSearchInput {
+            cursor: text;
+        }
+        #VehicleSearchInput[readonly] {
+            cursor: not-allowed;
+            color: #999;
+        }
+    </style>
+}

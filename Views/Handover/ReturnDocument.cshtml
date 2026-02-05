@@ -1,0 +1,284 @@
+@model UCar.Models.DTOs.Handover.ReturnRecordDetailDto
+@{
+    ViewData["Title"] = "Biên bản nhận xe - " + Model.ContractCode;
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div>
+            <a href="@Url.Action("Return")" class="btn-flat">
+                <i class="material-icons left">arrow_back</i>Quay lại
+            </a>
+            <h4 style="font-weight: 700; margin-top: 0.5rem;">
+                <i class="material-icons orange-text" style="vertical-align: middle;">description</i>
+                Biên bản nhận xe - @Model.ContractCode
+            </h4>
+        </div>
+        <div>
+            <button class="btn waves-effect waves-light" onclick="window.print()">
+                <i class="material-icons left">print</i>In biên bản
+            </button>
+            @if (!Model.IsPaid && Model.RefundAmount < 0)
+            {
+                <!-- Khách cần trả thêm tiền -->
+                <a href="@Url.Action("Payment", "Payment", new { contractId = Model.ContractId })" 
+                   class="btn waves-effect waves-light red" style="margin-left: 0.5rem;">
+                    <i class="material-icons left">payment</i>Thu thêm (@Math.Abs(Model.RefundAmount).ToString("N0")đ)
+                </a>
+            }
+            else if (Model.IsPaid)
+            {
+                <span class="btn disabled green lighten-2" style="margin-left: 0.5rem;">
+                    <i class="material-icons left">check_circle</i>Đã hoàn tất
+                </span>
+            }
+            else if (Model.RefundAmount > 0)
+            {
+                <!-- Hoàn tiền cho khách -->
+                <a href="@Url.Action("Refund", "Payment", new { contractId = Model.ContractId })" 
+                   class="btn waves-effect waves-light orange" style="margin-left: 0.5rem;">
+                    <i class="material-icons left">money_off</i>Hoàn tiền (@Model.RefundAmount.ToString("N0")đ)
+                </a>
+            }
+            else
+            {
+                <!-- RefundAmount = 0: Không cần hoàn/thu -->
+                <span class="btn disabled grey lighten-2" style="margin-left: 0.5rem;">
+                    <i class="material-icons left">check</i>Không phát sinh
+                </span>
+            }
+        </div>
+    </div>
+
+    <!-- Document Content -->
+    <div class="card" id="document-content">
+        <div class="card-content">
+            <div class="center-align" style="margin-bottom: 2rem;">
+                <h5><strong>BIÊN BẢN NHẬN XE</strong></h5>
+                <p>Mã hợp đồng: <strong>@Model.ContractCode</strong></p>
+                <p>Ngày nhận: <strong>@Model.ReturnedAt.ToString("dd/MM/yyyy HH:mm")</strong></p>
+            </div>
+
+            <div class="row">
+                <div class="col s12 m6">
+                    <h6><strong>CHI NHÁNH:</strong></h6>
+                    <p>@Model.BranchName</p>
+                    <p>Nhân viên: @Model.ReceivedByName</p>
+                </div>
+                <div class="col s12 m6">
+                    <h6><strong>KHÁCH HÀNG:</strong></h6>
+                    <p>Họ tên: @Model.CustomerName</p>
+                    <p>SĐT: @Model.CustomerPhone</p>
+                </div>
+            </div>
+
+            <hr/>
+
+            <h6><strong>THÔNG TIN XE:</strong></h6>
+            <p><strong>Biển số:</strong> @Model.PlateNo | <strong>Loại:</strong> @Model.VehicleName</p>
+
+            <hr/>
+
+            <h6><strong>ĐỐI SOÁT TÌNH TRẠNG:</strong></h6>
+            <table class="striped">
+                <thead><tr><th></th><th>Khi giao</th><th>Khi nhận</th><th>Chênh lệch</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Số km (ODO)</strong></td>
+                        <td>@Model.OdoKmOut.ToString("N0") km</td>
+                        <td>@Model.OdoKmIn.ToString("N0") km</td>
+                        <td>+@Model.KmDriven.ToString("N0") km</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Nhiên liệu</strong></td>
+                        <td>@Model.FuelLevelOut.ToString("N0")%</td>
+                        <td>@Model.FuelLevelIn.ToString("N0")%</td>
+                        <td class="@(Model.FuelShortage > 0 ? "red-text" : "")">
+                            @(Model.FuelShortage > 0 ? $"-{Model.FuelShortage:N0}%" : "OK")
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="row" style="margin-top: 1rem;">
+                <div class="col s6">
+                    <p><strong>Thời gian giao:</strong> @Model.HandedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                </div>
+                <div class="col s6">
+                    <p><strong>Thời gian nhận:</strong> @Model.ReturnedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                </div>
+            </div>
+
+            @if (Model.OvertimeHours > 0)
+            {
+                <p class="red-text"><strong>Quá hạn:</strong> @Model.OvertimeHours.ToString("N1") giờ</p>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.DamagesFound))
+            {
+                <p class="red-text"><strong>Hư hỏng phát hiện:</strong> @Model.DamagesFound</p>
+            }
+
+            <p>
+                <strong>Trạng thái:</strong>
+                @(Model.NeedsCleaning ? "⚠ Cần vệ sinh " : "")
+                @(Model.NeedsMaintenance ? "⚠ Cần bảo dưỡng" : "")
+                @(!Model.NeedsCleaning && !Model.NeedsMaintenance ? "✓ Tốt" : "")
+            </p>
+
+            <hr/>
+
+            @if (Model.AccessoriesReturned.Any())
+            {
+                <h6><strong>PHỤ KIỆN TRẢ LẠI:</strong></h6>
+                <table class="striped">
+                    <thead><tr><th>Tên</th><th>Giao</th><th>Nhận</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead>
+                    <tbody>
+                        @foreach (var acc in Model.AccessoriesReturned)
+                        {
+                            <tr class="@(!acc.IsReturnedOk ? "red lighten-5" : "")">
+                                <td>@acc.AccessoryName</td>
+                                <td>@acc.QuantityOut</td>
+                                <td>@acc.QuantityIn</td>
+                                <td>@(acc.IsReturnedOk ? "✓ OK" : "✗ Thiếu/Hỏng")</td>
+                                <td>@acc.DamageNote</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <hr/>
+            }
+
+            @if (Model.AdditionalCharges.Any())
+            {
+                <h6><strong>PHỤ PHÍ PHÁT SINH:</strong></h6>
+                <table class="striped">
+                    <thead><tr><th>Loại phí</th><th>Số tiền</th><th>Mô tả</th></tr></thead>
+                    <tbody>
+                        @foreach (var charge in Model.AdditionalCharges)
+                        {
+                            <tr>
+                                <td>@charge.ChargeTypeName</td>
+                                <td>@charge.Amount.ToString("N0") đ</td>
+                                <td>@charge.Description</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td><strong>Tổng phụ phí</strong></td>
+                            <td colspan="2"><strong>@Model.TotalCharges.ToString("N0") đ</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <hr/>
+            }
+
+            <!-- TỔNG QUYẾT TOÁN KHI TRẢ XE -->
+            <h6><strong>QUYẾT TOÁN:</strong></h6>
+            <table class="striped">
+                <tbody>
+                    <!-- Thông tin tham khảo: Tiền thuê đã thanh toán -->
+                    <tr class="grey lighten-4">
+                        <td><i class="material-icons tiny">info</i> Tiền thuê xe (@Model.RentalDays ngày x @Model.RentalUnitPrice.ToString("N0") đ/ngày)</td>
+                        <td class="right-align grey-text">@Model.RentalAmount.ToString("N0") đ <em>(đã TT khi giao xe)</em></td>
+                    </tr>
+                    
+                    <!-- Cọc đã đặt -->
+                    <tr style="border-top: 2px solid #333;">
+                        <td><strong>Cọc trách nhiệm</strong></td>
+                        <td class="right-align">@Model.ResponsibilityDeposit.ToString("N0") đ</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Cọc thuê xe</strong></td>
+                        <td class="right-align">@Model.RentalDeposit.ToString("N0") đ</td>
+                    </tr>
+                    <tr style="background-color: #e8f5e9;">
+                        <td><strong>TỔNG CỌC</strong></td>
+                        <td class="right-align"><strong class="green-text">@Model.DepositAmount.ToString("N0") đ</strong></td>
+                    </tr>
+
+                    <!-- Phí phát sinh -->
+                    @if (Model.TotalCharges > 0)
+                    {
+                        <tr>
+                            <td>Phụ phí phát sinh</td>
+                            <td class="right-align red-text">-@Model.TotalCharges.ToString("N0") đ</td>
+                        </tr>
+                    }
+                    @if (Model.AccessoryDamageCost > 0)
+                    {
+                        <tr>
+                            <td>Chi phí hư hỏng/thiếu phụ kiện</td>
+                            <td class="right-align red-text">-@Model.AccessoryDamageCost.ToString("N0") đ</td>
+                        </tr>
+                    }
+                    @if (Model.TotalSurcharges > 0)
+                    {
+                        <tr style="background-color: #ffebee;">
+                            <td><strong>TỔNG PHÍ PHÁT SINH</strong></td>
+                            <td class="right-align"><strong class="red-text">-@Model.TotalSurcharges.ToString("N0") đ</strong></td>
+                        </tr>
+                    }
+
+                    <!-- Kết quả: Hoàn tiền hoặc Thu thêm -->
+                    <tr style="background-color: #e3f2fd; border-top: 3px solid #333;">
+                        @if (Model.RefundAmount >= 0)
+                        {
+                            <td><strong style="font-size: 1.1rem;">SỐ TIỀN HOÀN LẠI KHÁCH</strong></td>
+                            <td class="right-align"><strong style="font-size: 1.1rem;" class="green-text">@Model.RefundAmount.ToString("N0") đ</strong></td>
+                        }
+                        else
+                        {
+                            <td><strong style="font-size: 1.1rem;">SỐ TIỀN KHÁCH CẦN TRẢ THÊM</strong></td>
+                            <td class="right-align"><strong style="font-size: 1.1rem;" class="red-text">@Math.Abs(Model.RefundAmount).ToString("N0") đ</strong></td>
+                        }
+                    </tr>
+                </tbody>
+            </table>
+            <hr/>
+
+            @if (!string.IsNullOrEmpty(Model.Note))
+            {
+                <p><strong>Ghi chú:</strong> @Model.Note</p>
+                <hr/>
+            }
+
+            <div class="row" style="margin-top: 2rem;">
+                <div class="col s6 center-align">
+                    <p><strong>NHÂN VIÊN</strong></p>
+                    <p style="margin-top: 4rem;">(Ký tên)</p>
+                    <p>@Model.ReceivedByName</p>
+                </div>
+                <div class="col s6 center-align">
+                    <p><strong>KHÁCH HÀNG</strong></p>
+                    <p style="margin-top: 4rem;">(Ký tên)</p>
+                    <p>@Model.CustomerName</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        @@media print {
+            body * { visibility: hidden; }
+            #document-content, #document-content * { visibility: visible; }
+            #document-content { position: absolute; left: 0; top: 0; width: 100%; }
+            .btn, .btn-flat { display: none !important; }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <text>UCarToast.success('@TempData["SuccessMessage"]');</text>
+            }
+        });
+    </script>
+}

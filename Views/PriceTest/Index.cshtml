@@ -1,0 +1,407 @@
+@using UCar.Models
+@{
+    ViewData["Title"] = "Price Calculation Test - Phase 2";
+    var models = ViewBag.VehicleModels as List<VehicleModel>;
+}
+
+<div class="container-fluid mt-4">
+    <h2>@ViewData["Title"]</h2>
+    <p class="text-muted">Test PriceCalculationService và HolidayService</p>
+
+    <div class="row">
+        <!-- Test Form -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Test Price Calculation</h5>
+                </div>
+                <div class="card-body">
+                    <form id="priceTestForm">
+                        <div class="mb-3">
+                            <label class="form-label">Vehicle Model</label>
+                            <select class="form-select" id="vehicleModelId" required>
+                                <option value="">-- Chọn xe --</option>
+                                @if (models != null)
+                                {
+                                    @foreach (var m in models)
+                                    {
+                                        <option value="@m.ModelId">
+                                            @m.Make @m.ModelName (@m.Seats chỗ, @m.VehicleType.TypeName)
+                                        </option>
+                                    }
+                                }
+                            </select>
+                            <small class="text-muted">Hoặc nhập GUID thủ công bên dưới</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Hoặc nhập Model ID (GUID)</label>
+                            <input type="text" class="form-control" id="manualModelId" 
+                                   placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Pickup Date</label>
+                            <input type="date" class="form-control" id="pickupDate" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Return Date</label>
+                            <input type="date" class="form-control" id="returnDate" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-calculator"></i> Calculate Price
+                        </button>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <h6>Quick Test Scenarios:</h6>
+                    <div class="btn-group-vertical w-100">
+                        <button class="btn btn-outline-secondary btn-sm" onclick="testScenario1()">
+                            Scenario 1: 5 days (Feb 10-15) - No holidays
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="testScenario2()">
+                            Scenario 2: 5 days during Tết (Feb 1-6) - With holidays
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="testScenario3()">
+                            Scenario 3: 35 days (Feb 10 - Mar 17) - Monthly rate
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="testScenario4()">
+                            Scenario 4: Spanning 30/4 holiday
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Holiday Count Test -->
+            <div class="card mt-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Test Holiday Counting</h5>
+                </div>
+                <div class="card-body">
+                    <form id="holidayCountForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="startDate" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">End Date</label>
+                                <input type="date" class="form-control" id="endDate" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-calendar-check"></i> Count Holidays
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Results</h5>
+                </div>
+                <div class="card-body">
+                    <div id="results">
+                        <p class="text-muted text-center py-5">
+                            <i class="bi bi-arrow-left"></i> Run a test to see results
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Available Vehicle Models -->
+            @if (models != null && models.Count > 0)
+            {
+                <div class="card mt-3">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">📋 Available Models (@models.Count xe)</h5>
+                    </div>
+                    <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Make</th>
+                                        <th>Model</th>
+                                        <th>Type</th>
+                                        <th>ModelId</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var m in models.Take(10))
+                                    {
+                                        <tr style="cursor: pointer;" onclick="copyModelId('@m.ModelId')">
+                                            <td>@m.Make</td>
+                                            <td>@m.ModelName</td>
+                                            <td><small>@m.VehicleType.TypeName</small></td>
+                                            <td>
+                                                <code class="small">@m.ModelId.ToString().Substring(0, 8)...</code>
+                                                <button class="btn btn-sm btn-outline-primary py-0" onclick="copyModelId('@m.ModelId'); event.stopPropagation();">
+                                                    <i class="bi bi-clipboard"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <small class="text-muted">Click row để copy ModelId</small>
+                    </div>
+                </div>
+            }
+
+            <!-- Active Holidays -->
+            <div class="card mt-3">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0">Active Holidays in Database</h5>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Holidays != null && ViewBag.Holidays.Count > 0)
+                    {
+                        <ul class="list-group">
+                            @foreach (var holiday in ViewBag.Holidays)
+                            {
+                                <li class="list-group-item">
+                                    <strong>@holiday.HolidayName</strong><br>
+                                    <small class="text-muted">
+                                        @holiday.StartDate.ToString("dd/MM/yyyy") - @holiday.EndDate.ToString("dd/MM/yyyy")
+                                        (@((holiday.EndDate - holiday.StartDate).Days + 1) ngày)
+                                    </small>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No active holidays found. Run seeder to create sample holidays.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Price calculation test
+    document.getElementById('priceTestForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Get modelId from dropdown or manual input
+        const dropdownValue = document.getElementById('vehicleModelId').value;
+        const manualValue = document.getElementById('manualModelId').value;
+        const vehicleModelId = manualValue || dropdownValue;
+        
+        if (!vehicleModelId) {
+            alert('Vui lòng chọn xe hoặc nhập Model ID');
+            return;
+        }
+        
+        const pickupDate = document.getElementById('pickupDate').value;
+        const returnDate = document.getElementById('returnDate').value;
+
+        showLoading();
+
+        try {
+            const response = await fetch('/PriceTest/Calculate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    vehicleModelId,
+                    pickupDate,
+                    returnDate
+                })
+            });
+
+            const data = await response.json();
+            displayPriceResult(data);
+        } catch (error) {
+            displayError('Error: ' + error.message);
+        }
+    });
+
+    // Holiday count test
+    document.getElementById('holidayCountForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const start = document.getElementById('startDate').value;
+        const end = document.getElementById('endDate').value;
+
+        showLoading();
+
+        try {
+            const response = await fetch(`/PriceTest/CountHolidays?start=${start}&end=${end}`);
+            const data = await response.json();
+            displayHolidayResult(data);
+        } catch (error) {
+            displayError('Error: ' + error.message);
+        }
+    });
+
+    function displayPriceResult(data) {
+        if (data.error) {
+            displayError(data.error);
+            return;
+        }
+
+        let html = `
+            <h5 class="text-success mb-3">✓ Price Calculated Successfully</h5>
+            
+            <table class="table table-sm">
+                <tr><th>Vehicle:</th><td>${data.vehicleModelName}</td></tr>
+                <tr><th>Period:</th><td>${data.pickupDate} → ${data.returnDate}</td></tr>
+                <tr><th>Total Days:</th><td><strong>${data.totalDays}</strong> ngày</td></tr>
+                <tr><th>Normal Days:</th><td>${data.normalDays} ngày</td></tr>
+                <tr><th>Peak Days:</th><td class="text-danger"><strong>${data.peakDays}</strong> ngày</td></tr>
+                <tr><th>Pricing Mode:</th><td>${data.isMonthlyRate ? '<span class="badge bg-info">Monthly Rate</span>' : '<span class="badge bg-primary">Daily Rate</span>'}</td></tr>
+            </table>
+
+            <h6 class="mt-3">Price Details:</h6>
+            <table class="table table-sm">
+                <tr><th>Base Daily Price:</th><td>${formatMoney(data.baseDailyPrice)}</td></tr>
+                <tr><th>Month Multiplier:</th><td>${data.monthMultiplier}</td></tr>
+                <tr><th>Peak Multiplier:</th><td>${data.peakMultiplier}</td></tr>
+            </table>
+
+            <h6 class="mt-3">Amount Breakdown:</h6>
+            <table class="table table-bordered">
+        `;
+
+        data.breakdown.forEach(line => {
+            html += `
+                <tr>
+                    <td>${line.description}</td>
+                    <td class="text-end">${formatMoney(line.lineTotal)}</td>
+                </tr>
+            `;
+        });
+
+        html += `
+            </table>
+
+            <div class="alert alert-success mt-3">
+                <h5 class="mb-2">Total Amount: ${formatMoney(data.totalAmount)}</h5>
+                <small>
+                    Rental: ${formatMoney(data.subTotal)} + 
+                    Deposits: ${formatMoney(data.totalDeposit)}
+                    (Responsibility: ${formatMoney(data.responsibilityDeposit)} + 
+                    Rental: ${formatMoney(data.rentalDeposit)})
+                </small>
+            </div>
+        `;
+
+        document.getElementById('results').innerHTML = html;
+    }
+
+    function displayHolidayResult(data) {
+        let html = `
+            <h5 class="text-success mb-3">✓ Holiday Count Result</h5>
+            
+            <table class="table table-sm">
+                <tr><th>Period:</th><td>${data.startDate} → ${data.endDate}</td></tr>
+                <tr><th>Total Days:</th><td>${data.totalDays} ngày</td></tr>
+                <tr><th>Holiday Days:</th><td class="text-danger"><strong>${data.holidayDays}</strong> ngày</td></tr>
+                <tr><th>Normal Days:</th><td>${data.normalDays} ngày</td></tr>
+            </table>
+
+            ${data.overlappingHolidays.length > 0 ? `
+                <h6 class="mt-3">Overlapping Holidays:</h6>
+                <ul class="list-group">
+                    ${data.overlappingHolidays.map(h => `
+                        <li class="list-group-item">
+                            <strong>${h.name}</strong><br>
+                            <small>${h.start} - ${h.end}</small>
+                        </li>
+                    `).join('')}
+                </ul>
+            ` : '<p class="text-muted">No holidays in this period.</p>'}
+        `;
+
+        document.getElementById('results').innerHTML = html;
+    }
+
+    function displayError(message) {
+        document.getElementById('results').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle"></i> ${message}
+            </div>
+        `;
+    }
+
+    function showLoading() {
+        document.getElementById('results').innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 text-muted">Calculating...</p>
+            </div>
+        `;
+    }
+
+    function formatMoney(amount) {
+        return new Intl.NumberFormat('vi-VN', { 
+            style: 'currency', 
+            currency: 'VND' 
+        }).format(amount);
+    }
+
+    // Quick test scenarios - you need to replace with actual ModelId from your database
+    function testScenario1() {
+        document.getElementById('pickupDate').value = '2026-02-10';
+        document.getElementById('returnDate').value = '2026-02-15';
+        alert('Set dates for Scenario 1. Now enter a VehicleModelId and submit.');
+    }
+
+    function testScenario2() {
+        document.getElementById('pickupDate').value = '2026-02-01';
+        document.getElementById('returnDate').value = '2026-02-06';
+        alert('Set dates for Scenario 2 (during Tết). Now enter a VehicleModelId and submit.');
+    }
+
+    function testScenario3() {
+        document.getElementById('pickupDate').value = '2026-02-10';
+        document.getElementById('returnDate').value = '2026-03-17';
+        alert('Set dates for Scenario 3 (35 days = monthly rate). Now enter a VehicleModelId and submit.');
+    }
+
+    function testScenario4() {
+        document.getElementById('pickupDate').value = '2026-04-28';
+        document.getElementById('returnDate').value = '2026-05-05';
+        alert('Set dates for Scenario 4 (spanning 30/4 holiday). Now enter a VehicleModelId and submit.');
+    }
+
+    // Copy ModelId to clipboard
+    function copyModelId(modelId) {
+        navigator.clipboard.writeText(modelId).then(() => {
+            // Set to manual input field
+            document.getElementById('manualModelId').value = modelId;
+            // Show toast notification
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 end-0 p-3';
+            toast.style.zIndex = '9999';
+            toast.innerHTML = `
+                <div class="toast show" role="alert">
+                    <div class="toast-header bg-success text-white">
+                        <strong class="me-auto">✓ Copied!</strong>
+                        <button type="button" class="btn-close btn-close-white" onclick="this.parentElement.parentElement.parentElement.remove()"></button>
+                    </div>
+                    <div class="toast-body">
+                        ModelId đã được copy và điền vào form
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        });
+    }
+</script>
+}

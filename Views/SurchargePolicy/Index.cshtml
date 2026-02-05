@@ -1,0 +1,316 @@
+@model IEnumerable<UCar.Models.SurchargePolicy>
+@{
+    ViewData["Title"] = "Quản lý Chính sách Phụ phí";
+    var currentType = ViewBag.CurrentType as UCar.Models.Enums.SurchargeType?;
+    var currentActive = ViewBag.CurrentActive as bool?;
+}
+
+<div class="container" style="margin-top: 30px;">
+    <!-- Header -->
+    <div class="row">
+        <div class="col s12">
+            <div class="card-panel purple lighten-5">
+                <h4 class="purple-text text-darken-2">
+                    <i class="material-icons left">monetization_on</i>
+                    Chính sách Phụ phí
+                </h4>
+                <p class="grey-text">Quản lý các chính sách phụ phí theo loại xe và loại phụ phí</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Actions -->
+    <div class="row">
+        <div class="col s12">
+            <div class="card">
+                <div class="card-content">
+                    <div class="row" style="margin-bottom: 0;">
+                        <div class="col s12 m8">
+                            <div class="chip-container">
+                                <a href="@Url.Action("Index")" class="chip @(currentType == null && currentActive == null ? "purple white-text" : "")">
+                                    Tất cả
+                                </a>
+                                <a href="@Url.Action("Index", new { type = UCar.Models.Enums.SurchargeType.Overtime })" 
+                                   class="chip @(currentType == UCar.Models.Enums.SurchargeType.Overtime ? "orange white-text" : "")">
+                                    Quá giờ
+                                </a>
+                                <a href="@Url.Action("Index", new { type = UCar.Models.Enums.SurchargeType.ExtraKilometer })" 
+                                   class="chip @(currentType == UCar.Models.Enums.SurchargeType.ExtraKilometer ? "red white-text" : "")">
+                                    Quá km
+                                </a>
+                                <a href="@Url.Action("Index", new { type = UCar.Models.Enums.SurchargeType.HolidaySurcharge })" 
+                                   class="chip @(currentType == UCar.Models.Enums.SurchargeType.HolidaySurcharge ? "teal white-text" : "")">
+                                    Ngày lễ
+                                </a>
+                                <a href="@Url.Action("Index", new { isActive = true })" 
+                                   class="chip @(currentActive == true ? "green white-text" : "")">
+                                    Đang hoạt động
+                                </a>
+                                <a href="@Url.Action("Index", new { isActive = false })" 
+                                   class="chip @(currentActive == false ? "grey white-text" : "")">
+                                    Không hoạt động
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col s12 m4 right-align">
+                            <a href="@Url.Action("Create")" class="btn waves-effect waves-light purple">
+                                <i class="material-icons left">add</i>
+                                Thêm Chính sách
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Policies Table -->
+    <div class="row">
+        <div class="col s12">
+            @if (!Model.Any())
+            {
+                <div class="card">
+                    <div class="card-content center-align">
+                        <i class="material-icons large grey-text text-lighten-2">inbox</i>
+                        <p class="grey-text">Không có chính sách phụ phí nào</p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                var groupedPolicies = Model.GroupBy(p => p.VehicleType).OrderBy(g => g.Key.TypeName);
+                
+                <table class="striped highlight responsive-table">
+                    <thead class="purple darken-2 white-text">
+                        <tr>
+                            <th width="40"></th>
+                            <th>Loại xe</th>
+                            <th>Số lượng chính sách</th>
+                            <th>Đang hoạt động</th>
+                            <th>Tạm ngưng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var group in groupedPolicies)
+                        {
+                            var vehicleTypeId = group.Key.VehicleTypeId;
+                            var totalPolicies = group.Count();
+                            var activePolicies = group.Count(p => p.IsActive);
+                            var inactivePolicies = totalPolicies - activePolicies;
+                            
+                            <!-- Vehicle Type Row -->
+                            <tr class="vehicle-type-row" style="cursor: pointer; background-color: #f5f5f5;" 
+                                onclick="togglePolicies('@vehicleTypeId')">
+                                <td class="center-align">
+                                    <i class="material-icons expand-icon" id="icon-@vehicleTypeId">keyboard_arrow_right</i>
+                                </td>
+                                <td><strong class="purple-text text-darken-2">@group.Key.TypeName</strong></td>
+                                <td><span class="badge purple white-text">@totalPolicies chính sách</span></td>
+                                <td><span class="badge green white-text">@activePolicies</span></td>
+                                <td><span class="badge grey white-text">@inactivePolicies</span></td>
+                            </tr>
+                            
+                            <!-- Policies Detail Rows (Hidden by default) -->
+                            @foreach (var policy in group.OrderByDescending(p => p.IsActive).ThenBy(p => p.PolicyName))
+                            {
+                                var typeColor = policy.SurchargeType switch
+                                {
+                                    UCar.Models.Enums.SurchargeType.Overtime => "orange",
+                                    UCar.Models.Enums.SurchargeType.ExtraKilometer => "red",
+                                    UCar.Models.Enums.SurchargeType.HolidaySurcharge => "teal",
+                                    UCar.Models.Enums.SurchargeType.DeliveryService => "blue",
+                                    UCar.Models.Enums.SurchargeType.CleaningFee => "cyan",
+                                    UCar.Models.Enums.SurchargeType.DriverService => "indigo",
+                                    UCar.Models.Enums.SurchargeType.InsuranceExtra => "deep-purple",
+                                    UCar.Models.Enums.SurchargeType.FuelShortage => "amber",
+                                    _ => "grey"
+                                };
+
+                                var typeText = policy.SurchargeType switch
+                                {
+                                    UCar.Models.Enums.SurchargeType.Overtime => "Quá giờ",
+                                    UCar.Models.Enums.SurchargeType.ExtraKilometer => "Quá km",
+                                    UCar.Models.Enums.SurchargeType.HolidaySurcharge => "Ngày lễ",
+                                    UCar.Models.Enums.SurchargeType.DeliveryService => "Giao xe",
+                                    UCar.Models.Enums.SurchargeType.CleaningFee => "Vệ sinh",
+                                    UCar.Models.Enums.SurchargeType.DriverService => "Lái xe",
+                                    UCar.Models.Enums.SurchargeType.InsuranceExtra => "Bảo hiểm",
+                                    UCar.Models.Enums.SurchargeType.FuelShortage => "Thiếu nhiên liệu",
+                                    _ => "Khác"
+                                };
+
+                                var calculationType = policy.CalculationType switch
+                                {
+                                    UCar.Models.Enums.SurchargeCalculationType.FixedAmount => "Cố định",
+                                    UCar.Models.Enums.SurchargeCalculationType.Percentage => "Phần trăm",
+                                    UCar.Models.Enums.SurchargeCalculationType.PerUnit => "Theo đơn vị",
+                                    _ => ""
+                                };
+                                
+                                var valueDisplay = "";
+                                if (policy.CalculationType == UCar.Models.Enums.SurchargeCalculationType.Percentage)
+                                {
+                                    valueDisplay = $"{policy.Value}%";
+                                }
+                                else if (policy.CalculationType == UCar.Models.Enums.SurchargeCalculationType.PerUnit)
+                                {
+                                    valueDisplay = $"{policy.Value:N0} VNĐ/{policy.Unit ?? "đơn vị"}";
+                                }
+                                else
+                                {
+                                    valueDisplay = $"{policy.Value:N0} VNĐ";
+                                }
+                                
+                                <tr class="policy-detail policy-@vehicleTypeId" style="display: none;">
+                                    <td></td>
+                                    <td colspan="4">
+                                        <div class="row" style="margin-bottom: 0; padding: 10px 0; border-left: 3px solid #9C27B0;">
+                                            <div class="col s12 m3">
+                                                <strong>@policy.PolicyName</strong><br/>
+                                                <span class="badge @typeColor white-text">@typeText</span>
+                                                @if (policy.IsActive)
+                                                {
+                                                    <span class="badge green white-text">Hoạt động</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge grey white-text">Tắt</span>
+                                                }
+                                            </div>
+                                            <div class="col s12 m2">
+                                                <small class="grey-text">Phương thức tính</small><br/>
+                                                <strong>@calculationType</strong>
+                                            </div>
+                                            <div class="col s12 m2">
+                                                <small class="grey-text">Giá trị</small><br/>
+                                                <strong class="purple-text">@valueDisplay</strong>
+                                            </div>
+                                            <div class="col s12 m2">
+                                                <small class="grey-text">Áp dụng trên</small><br/>
+                                                @if (!string.IsNullOrEmpty(policy.AppliesTo))
+                                                {
+                                                    <span>@policy.AppliesTo</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="grey-text">-</span>
+                                                }
+                                            </div>
+                                            <div class="col s12 m3 right-align">
+                                                <small class="grey-text">
+                                                    @policy.ValidFrom.ToString("dd/MM/yyyy")
+                                                    @if (policy.ValidUntil.HasValue)
+                                                    {
+                                                        <text> - @policy.ValidUntil.Value.ToString("dd/MM/yyyy")</text>
+                                                    }
+                                                    else
+                                                    {
+                                                        <text> - Vô thời hạn</text>
+                                                    }
+                                                </small><br/><br/>
+                                                <a href="@Url.Action("Edit", new { id = policy.SurchargePolicyId })" 
+                                                   class="btn-small purple darken-2 tooltipped" data-position="top" data-tooltip="Chỉnh sửa">
+                                                    <i class="material-icons">edit</i>
+                                                </a>
+                                                
+                                                <form method="post" action="@Url.Action("ToggleStatus", new { id = policy.SurchargePolicyId })" style="display:inline;">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn-small @(policy.IsActive ? "amber darken-2" : "green") tooltipped" 
+                                                            data-position="top" data-tooltip="@(policy.IsActive ? "Tắt" : "Bật")"
+                                                            onclick="return confirm('@(policy.IsActive ? "Tắt chính sách này?" : "Bật chính sách này?")')">
+                                                        <i class="material-icons">@(policy.IsActive ? "toggle_on" : "toggle_off")</i>
+                                                    </button>
+                                                </form>
+
+                                                <form method="post" action="@Url.Action("Delete", new { id = policy.SurchargePolicyId })" style="display:inline;">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn-small red tooltipped" 
+                                                            data-position="top" data-tooltip="Xóa"
+                                                            onclick="return confirm('Xóa chính sách này?')">
+                                                        <i class="material-icons">delete</i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (ViewBag.TotalPages > 1)
+    {
+        <div class="row">
+            <div class="col s12 center-align">
+                <ul class="pagination">
+                    @if (ViewBag.CurrentPage > 1)
+                    {
+                        <li class="waves-effect">
+                            <a href="@Url.Action("Index", new { type = currentType, isActive = currentActive, page = ViewBag.CurrentPage - 1 })">
+                                <i class="material-icons">chevron_left</i>
+                            </a>
+                        </li>
+                    }
+
+                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    {
+                        <li class="@(i == ViewBag.CurrentPage ? "active purple" : "waves-effect")">
+                            <a href="@Url.Action("Index", new { type = currentType, isActive = currentActive, page = i })">@i</a>
+                        </li>
+                    }
+
+                    @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+                    {
+                        <li class="waves-effect">
+                            <a href="@Url.Action("Index", new { type = currentType, isActive = currentActive, page = ViewBag.CurrentPage + 1 })">
+                                <i class="material-icons">chevron_right</i>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltips = document.querySelectorAll('.tooltipped');
+            M.Tooltip.init(tooltips);
+        });
+        
+        function togglePolicies(vehicleTypeId) {
+            var policyRows = document.querySelectorAll('.policy-' + vehicleTypeId);
+            var icon = document.getElementById('icon-' + vehicleTypeId);
+            
+            var isVisible = policyRows[0].style.display !== 'none';
+            
+            policyRows.forEach(function(row) {
+                row.style.display = isVisible ? 'none' : 'table-row';
+            });
+            
+            icon.textContent = isVisible ? 'keyboard_arrow_right' : 'keyboard_arrow_down';
+        }
+    </script>
+}
+
+<style>
+    .chip-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    .chip {
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .chip:hover {
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+</style>

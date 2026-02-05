@@ -1,50 +1,660 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - UCar</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/UCar.styles.css" asp-append-version="true" />
+    <meta name="description" content="@(ViewData["Description"] ?? "Hệ thống quản lý thuê xe UCar")" />
+
+    <!-- Google Fonts: Be Vietnam Pro + Material Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!-- Materialize CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" rel="stylesheet">
+
+    <!-- iziToast - Toast Notifications (giống react-toastify) -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/css/iziToast.min.css" rel="stylesheet">
+
+    <!-- UCar Custom Theme (override Materialize) -->
+    <link rel="stylesheet" href="~/css/ucar-theme.css" asp-append-version="true" />
+
+    <!-- Page specific styles -->
+    @await RenderSectionAsync("Styles", required: false)
 </head>
+
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">UCar</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+    <!-- Top Navigation Bar -->
+    <nav class="ucar-topbar">
+        <div class="nav-wrapper">
+            <!-- Mobile Toggle -->
+            <a href="#" data-target="mobile-nav" class="sidenav-trigger">
+                <i class="material-icons">menu</i>
+            </a>
+            
+            <!-- Brand Logo -->
+            <a asp-controller="Home" asp-action="Index" class="brand-logo">
+                <i class="material-icons">directions_car</i>
+                <span>UCar</span>
+            </a>
+
+            <!-- Right Side - User Info -->
+            <ul class="right">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <li>
+                        <a class="dropdown-trigger" href="#!" data-target="user-dropdown">
+                            <i class="material-icons left">account_circle</i>
+                            <span class="hide-on-small-only">@(User.Claims.FirstOrDefault(c => c.Type == "FullName")?.Value ?? User.Identity.Name)</span>
+                            <i class="material-icons right">arrow_drop_down</i>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li><a asp-controller="Account" asp-action="Login"><i class="material-icons left">login</i>Đăng nhập</a></li>
+                }
+            </ul>
+        </div>
+    </nav>
+
+    @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff"))
+    {
+        <!-- Vertical Sidebar Navigation -->
+        <aside class="ucar-sidebar hide-on-med-and-down" id="desktop-sidebar">
+            <div class="sidebar-content">
+                <!-- Sidebar Toggle Button -->
+                <div class="sidebar-toggle-wrapper">
+                    <button class="sidebar-toggle-btn" id="sidebarToggle" title="Thu gọn menu">
+                        <i class="material-icons">menu</i>
+                    </button>
+                </div>
+                
+                <!-- Navigation Sections -->
+                <ul class="sidebar-menu">
+                    <li class="menu-item">
+                        <a asp-controller="Home" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")">
+                            <i class="material-icons">home</i>
+                            <span class="menu-text">Trang chủ</span>
+                        </a>
+                    </li>
+
+                    <!-- Khách hàng Section -->
+                    <li class="menu-section">
+                        <div class="section-header" data-section="customer">
+                            <i class="material-icons section-icon">people</i>
+                            <span class="menu-text">Khách hàng</span>
+                            <i class="material-icons toggle-icon">expand_more</i>
+                        </div>
+                        <ul class="section-items">
+                            <li><a asp-controller="Customer" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Customer" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">Danh sách</a></li>
+                            <li><a asp-controller="Customer" asp-action="PendingDocuments" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "PendingDocuments" ? "active" : "")">Duyệt giấy tờ</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Quản lý xe Section -->
+                    <li class="menu-section">
+                        <div class="section-header" data-section="vehicle">
+                            <i class="material-icons section-icon">directions_car</i>
+                            <span class="menu-text">Quản lý xe</span>
+                            <i class="material-icons toggle-icon">expand_more</i>
+                        </div>
+                        <ul class="section-items">
+                            <li><a asp-controller="Booking" asp-action="Manage" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Manage" && ViewContext.RouteData.Values["controller"]?.ToString() == "Booking" ? "active" : "")">Quản lý Đặt xe</a></li>
+                            <li><a asp-controller="Vehicle" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Vehicle" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">Danh sách xe</a></li>
+                            <li><a asp-controller="Vehicle" asp-action="Create" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Create" && ViewContext.RouteData.Values["controller"]?.ToString() == "Vehicle" ? "active" : "")">Thêm xe mới</a></li>
+                            <li class="divider-item"></li>
+                            <li><a asp-controller="VehicleCatalog" asp-action="VehicleTypes" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "VehicleTypes" ? "active" : "")">Loại xe</a></li>
+                            <li><a asp-controller="VehicleCatalog" asp-action="VehicleModels" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "VehicleModels" ? "active" : "")">Dòng xe</a></li>
+                            <li class="divider-item"></li>
+                            <li><a asp-controller="Pricing" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Pricing" ? "active" : "")">Bảng giá</a></li>
+                            <li><a asp-controller="Holiday" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Holiday" ? "active" : "")">Ngày lễ</a></li>
+                            <li><a asp-controller="DepositPolicy" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "DepositPolicy" ? "active" : "")">Chính sách đặt cọc</a></li>
+                            <li><a asp-controller="SurchargePolicy" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "SurchargePolicy" ? "active" : "")">Chính sách phụ phí</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Giao nhận xe Section -->
+                    <li class="menu-section">
+                        <div class="section-header" data-section="handover">
+                            <i class="material-icons section-icon">swap_horiz</i>
+                            <span class="menu-text">Giao nhận</span>
+                            <i class="material-icons toggle-icon">expand_more</i>
+                        </div>
+                        <ul class="section-items">
+                            <li><a asp-controller="Handover" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Handover" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">Chờ giao xe</a></li>
+                            <li><a asp-controller="Handover" asp-action="Return" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Return" ? "active" : "")">Chờ nhận xe</a></li>
+                            <li class="divider-item"></li>
+                            <li><a asp-controller="Handover" asp-action="Overdue" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Overdue" ? "active" : "")">Quá hạn</a></li>
+                            <li><a asp-controller="Handover" asp-action="Documents" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Documents" ? "active" : "")">Biên bản</a></li>
+                            <li><a asp-controller="Handover" asp-action="AllIncidents" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "AllIncidents" ? "active" : "")">Sự cố</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Hợp đồng Section -->
+                    <li class="menu-section">
+                        <div class="section-header" data-section="contract">
+                            <i class="material-icons section-icon">description</i>
+                            <span class="menu-text">Hợp đồng</span>
+                            <i class="material-icons toggle-icon">expand_more</i>
+                        </div>
+                        <ul class="section-items">
+                            <li><a asp-controller="Contract" asp-action="Manage" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Contract" && ViewContext.RouteData.Values["action"]?.ToString() == "Manage" ? "active" : "")">Quản lý hợp đồng</a></li>
+                            <li><a asp-controller="Contract" asp-action="Create" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Create" && ViewContext.RouteData.Values["controller"]?.ToString() == "Contract" ? "active" : "")">Tạo hợp đồng mới</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Hóa đơn Section -->
+                    <li class="menu-section">
+                        <div class="section-header" data-section="invoice">
+                            <i class="material-icons section-icon">receipt</i>
+                            <span class="menu-text">Hóa đơn</span>
+                            <i class="material-icons toggle-icon">expand_more</i>
+                        </div>
+                        <ul class="section-items">
+                            <li><a asp-controller="Invoice" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Invoice" ? "active" : "")">Tất cả hóa đơn</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Vận hành Section -->
+                    <li class="menu-section">
+                        <div class="section-header" data-section="operations">
+                            <i class="material-icons section-icon">assignment_ind</i>
+                            <span class="menu-text">Vận hành</span>
+                            <i class="material-icons toggle-icon">expand_more</i>
+                        </div>
+                        <ul class="section-items">
+                            <li><a asp-controller="Staff" asp-action="Index" class="@(ViewContext.RouteData.Values["controller"]?.ToString() == "Staff" ? "active" : "")">Nhân viên</a></li>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li><a asp-controller="Operations" asp-action="Branches" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Branches" ? "active" : "")">Chi nhánh</a></li>
+                            }
+                            <li class="divider-item"></li>
+                            <li><a asp-controller="Operations" asp-action="Tasks" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Tasks" ? "active" : "")">Nhiệm vụ</a></li>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li><a asp-controller="Operations" asp-action="Shifts" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Shifts" ? "active" : "")">Ca làm việc</a></li>
+                            }
+                            <li><a asp-controller="Operations" asp-action="ShiftSchedule" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "ShiftSchedule" ? "active" : "")">Lịch xếp ca</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Báo cáo Section -->
+                    @if (User.IsInRole("Admin") || User.IsInRole("BranchManager"))
+                    {
+                        <li class="menu-section">
+                            <div class="section-header" data-section="analytics">
+                                <i class="material-icons section-icon">bar_chart</i>
+                                <span class="menu-text">Báo cáo</span>
+                                <i class="material-icons toggle-icon">expand_more</i>
+                            </div>
+                            <ul class="section-items">
+                                <li><a asp-controller="Analytics" asp-action="Revenue" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Revenue" ? "active" : "")">Doanh thu</a></li>
+                                <li><a asp-controller="Analytics" asp-action="VehicleUtilization" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "VehicleUtilization" ? "active" : "")">Hiệu suất xe</a></li>
+                                <li><a asp-controller="Analytics" asp-action="Customers" class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Customers" && ViewContext.RouteData.Values["controller"]?.ToString() == "Analytics" ? "active" : "")">Khách hàng</a></li>
+                            </ul>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                    }
+                </ul>
+            </div>
+        </aside>
+    }
+
+    <!-- User Dropdown Structure (for topbar) -->
+    <ul id="user-dropdown" class="dropdown-content">
+        <li><a asp-controller="Account" asp-action="Profile"><i class="material-icons">person</i>Hồ sơ</a></li>
+        <li><a href="#!"><i class="material-icons">settings</i>Cài đặt</a></li>
+        <li class="divider"></li>
+        <li>
+            <a href="#" onclick="document.getElementById('logoutForm').submit(); return false;" class="red-text">
+                <i class="material-icons">exit_to_app</i>Đăng xuất
+            </a>
+        </li>
+    </ul>
+
+    <form id="logoutForm" asp-controller="Account" asp-action="Logout" method="post" style="display: none;">
+        @Html.AntiForgeryToken()
+    </form>
+
+    <!-- Mobile Sidenav -->
+    <ul class="sidenav" id="mobile-nav">
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <li>
+                <div class="user-view">
+                    <div class="background" style="background: linear-gradient(135deg, #00275e 0%, #667eea 100%);"></div>
+                    <a href="#!"><span class="white-text name">@(User.Claims.FirstOrDefault(c => c.Type == "FullName")?.Value ?? "User")</span></a>
+                    <a href="#!"><span class="white-text email">@(User.Identity.Name)</span></a>
+                    <a href="#!"><span class="white-text role">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span></a>
+                </div>
+            </li>
+
+            @if (User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff"))
+            {
+                <li><a asp-controller="Home" asp-action="Index"><i class="material-icons">home</i>Trang chủ</a></li>
+                
+                <!-- Khách hàng - Collapsible -->
+                <li class="no-padding">
+                    <ul class="collapsible collapsible-accordion">
+                        <li>
+                            <a class="collapsible-header"><i class="material-icons">people</i>Khách hàng<i class="material-icons right">arrow_drop_down</i></a>
+                            <div class="collapsible-body">
+                                <ul>
+                                    <li><a asp-controller="Customer" asp-action="Index">DS Khách hàng</a></li>
+                                    <li><a asp-controller="Customer" asp-action="PendingDocuments">Duyệt giấy tờ</a></li>
+                                </ul>
+                            </div>
                         </li>
                     </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+                </li>
+
+                <!-- Quản lý xe - Collapsible -->
+                <li class="no-padding">
+                    <ul class="collapsible collapsible-accordion">
+                        <li>
+                            <a class="collapsible-header"><i class="material-icons">directions_car</i>Quản lý xe<i class="material-icons right">arrow_drop_down</i></a>
+                            <div class="collapsible-body">
+                                <ul>
+                                    <li><a asp-controller="Booking" asp-action="Manage">Quản lý Đặt xe</a></li>
+                                    <li><a asp-controller="Vehicle" asp-action="Index">Danh sách xe</a></li>
+                                    <li><a asp-controller="Vehicle" asp-action="Create">Thêm xe mới</a></li>
+                                    <li><a asp-controller="VehicleCatalog" asp-action="VehicleTypes">Loại xe</a></li>
+                                    <li><a asp-controller="VehicleCatalog" asp-action="VehicleModels">Dòng xe</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Giao nhận xe - Collapsible -->
+                <li class="no-padding">
+                    <ul class="collapsible collapsible-accordion">
+                        <li>
+                            <a class="collapsible-header"><i class="material-icons">swap_horiz</i>Giao nhận<i class="material-icons right">arrow_drop_down</i></a>
+                            <div class="collapsible-body">
+                                <ul>
+                                    <li><a asp-controller="Handover" asp-action="Index">Chờ giao xe</a></li>
+                                    <li><a asp-controller="Handover" asp-action="Return">Chờ nhận xe</a></li>
+                                    <li><a asp-controller="Handover" asp-action="Overdue">Quá hạn</a></li>
+                                    <li><a asp-controller="Handover" asp-action="Documents">Biên bản</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+                
+                <!-- Hợp đồng - Collapsible (Module 5.0) -->
+                <li class="no-padding">
+                    <ul class="collapsible collapsible-accordion">
+                        <li>
+                            <a class="collapsible-header"><i class="material-icons">description</i>Hợp đồng<i class="material-icons right">arrow_drop_down</i></a>
+                            <div class="collapsible-body">
+                                <ul>
+                                    <li><a asp-controller="Contract" asp-action="Manage">Quản lý hợp đồng</a></li>
+                                    <li><a asp-controller="Contract" asp-action="Create">Tạo mới</a></li>
+                                    <li><a asp-controller="Contract" asp-action="Manage" asp-route-status="Pending">Chờ xác nhận</a></li>
+                                    <li><a asp-controller="Contract" asp-action="Manage" asp-route-status="Active">Đang hoạt động</a></li>
+                                    <li><a asp-controller="Contract" asp-action="Manage" asp-route-status="InProgress">Đang thuê</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+                
+                <!-- Hóa đơn - Collapsible (Module 7.0) -->
+                <li class="no-padding">
+                    <ul class="collapsible collapsible-accordion">
+                        <li>
+                            <a class="collapsible-header"><i class="material-icons">receipt</i>Hóa đơn<i class="material-icons right">arrow_drop_down</i></a>
+                            <div class="collapsible-body">
+                                <ul>
+                                    <li><a asp-controller="Invoice" asp-action="Index">Tất cả hóa đơn</a></li>
+                                    <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="Deposit">Hóa đơn cọc</a></li>
+                                    <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="Rental">Hóa đơn thuê xe</a></li>
+                                    <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="SurchargePenalty">Phụ thu/Phạt</a></li>
+                                    <li><a asp-controller="Invoice" asp-action="Index" asp-route-type="Refund">Hoàn tiền</a></li>
+                                    <li><a asp-controller="Invoice" asp-action="Index" asp-route-status="Overdue">Quá hạn</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+                
+                <!-- Vận hành & Nhân sự - Collapsible (Module 8.0) -->
+                <li class="no-padding">
+                    <ul class="collapsible collapsible-accordion">
+                        <li>
+                            <a class="collapsible-header"><i class="material-icons">assignment_ind</i>Vận hành<i class="material-icons right">arrow_drop_down</i></a>
+                            <div class="collapsible-body">
+                                <ul>
+                                    <li><a asp-controller="Staff" asp-action="Index">Nhân viên</a></li>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <li><a asp-controller="Operations" asp-action="Branches">Chi nhánh</a></li>
+                                    }
+                                    <li><a asp-controller="Operations" asp-action="Tasks">Nhiệm vụ</a></li>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <li><a asp-controller="Operations" asp-action="Shifts">Ca làm việc</a></li>
+                                    }
+                                    <li><a asp-controller="Operations" asp-action="ShiftSchedule">Lịch xếp ca</a></li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+                </li>
+                
+                <!-- Báo cáo & Phân tích - Collapsible (Module 9.0) -->
+                @if (User.IsInRole("Admin") || User.IsInRole("BranchManager"))
+                {
+                    <li class="no-padding">
+                        <ul class="collapsible collapsible-accordion">
+                            <li>
+                                <a class="collapsible-header"><i class="material-icons">bar_chart</i>Báo cáo<i class="material-icons right">arrow_drop_down</i></a>
+                                <div class="collapsible-body">
+                                    <ul>
+                                        <li><a asp-controller="Analytics" asp-action="Revenue">Doanh thu</a></li>
+                                        <li><a asp-controller="Analytics" asp-action="VehicleUtilization">Hiệu suất xe</a></li>
+                                        <li><a asp-controller="Analytics" asp-action="Customers">Khách hàng</a></li>
+                                    </ul>
+                                </div>
+                            </li>
+                        </ul>
+                    </li>
+                }
+            }
+
+            @if (User.IsInRole("Customer"))
+            {
+                <li><a asp-controller="Booking" asp-action="MyBookings"><i class="material-icons">event</i>Đặt xe của tôi</a></li>
+            }
+
+            <li class="divider"></li>
+            <li><a asp-controller="Account" asp-action="Profile"><i class="material-icons">person</i>Hồ sơ</a></li>
+            <li>
+                <a href="#" onclick="document.getElementById('logoutForm').submit(); return false;" class="red-text">
+                    <i class="material-icons">exit_to_app</i>Đăng xuất
+                </a>
+            </li>
+        }
+        else
+        {
+            <li><a asp-controller="Account" asp-action="Register"><i class="material-icons">person_add</i>Đăng ký</a></li>
+            <li><a asp-controller="Account" asp-action="Login"><i class="material-icons">login</i>Đăng nhập</a></li>
+        }
+    </ul>
+
+    <!-- Main Content Wrapper -->
+    <div class="main-wrapper @(User.IsInRole("Admin") || User.IsInRole("BranchManager") || User.IsInRole("Staff") ? "with-sidebar" : "")">
+        <main>
             @RenderBody()
         </main>
+        
+        <!-- Footer -->
+        <footer class="page-footer ucar-footer">
+            <div class="container">
+                <div class="row">
+                    <div class="col s12 center-align">
+                        <p class="grey-text text-lighten-4">
+                            &copy; @DateTime.Now.Year UCar - Hệ thống quản lý thuê xe thông minh
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
 
-    <footer class="border-top footer text-muted">
+    <!-- Footer -->
+    <footer class="page-footer ucar-footer">
         <div class="container">
-            &copy; 2025 - UCar - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            <div class="row">
+                <div class="col s12 center-align">
+                    <p class="grey-text text-lighten-4">
+                        &copy; @DateTime.Now.Year UCar - Hệ thống quản lý thuê xe thông minh
+                    </p>
+                </div>
+            </div>
         </div>
     </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <!-- Materialize JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+    <!-- Initialize Materialize Components -->
+    <script>
+        // ===== GLOBAL CONFIG cho Materialize Components =====
+        window.UCarConfig = {
+            datepickerI18n: {
+                cancel: 'Hủy',
+                clear: 'Xóa',
+                done: 'Chọn',
+                months: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'],
+                monthsShort: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'],
+                weekdays: ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'],
+                weekdaysShort: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'],
+                weekdaysAbbrev: ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+            },
+            timepickerI18n: {
+                cancel: 'Hủy',
+                clear: 'Xóa',
+                done: 'Chọn'
+            }
+        };
+        
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize sidenav
+            var sidenavElems = document.querySelectorAll('.sidenav');
+            M.Sidenav.init(sidenavElems);
+
+            // Initialize dropdowns
+            var dropdownElems = document.querySelectorAll('.dropdown-trigger');
+            M.Dropdown.init(dropdownElems, {
+                coverTrigger: false,
+                constrainWidth: false
+            });
+
+            // Initialize collapsible (for mobile sidenav)
+            var collapsibleElems = document.querySelectorAll('.collapsible');
+            M.Collapsible.init(collapsibleElems);
+
+            // Initialize select
+            var selectElems = document.querySelectorAll('select');
+            M.FormSelect.init(selectElems);
+
+            // Initialize datepickers
+            var dateElems = document.querySelectorAll('.datepicker');
+            M.Datepicker.init(dateElems, {
+                format: 'dd/mm/yyyy',
+                i18n: UCarConfig.datepickerI18n
+            });
+
+            // Initialize timepickers
+            var timeElems = document.querySelectorAll('.timepicker');
+            M.Timepicker.init(timeElems, {
+                twelveHour: false,
+                i18n: UCarConfig.timepickerI18n
+            });
+
+            // Initialize tooltips
+            var tooltipElems = document.querySelectorAll('.tooltipped');
+            M.Tooltip.init(tooltipElems);
+
+            // Initialize modals
+            var modalElems = document.querySelectorAll('.modal');
+            M.Modal.init(modalElems);
+
+            // Initialize floating action buttons
+            var fabElems = document.querySelectorAll('.fixed-action-btn');
+            M.FloatingActionButton.init(fabElems);
+
+            // Initialize tabs
+            var tabElems = document.querySelectorAll('.tabs');
+            M.Tabs.init(tabElems);
+
+            // Initialize textareas
+            M.textareaAutoResize(document.querySelectorAll('textarea'));
+            
+            // ===== SIDEBAR FUNCTIONALITY =====
+            var sidebar = document.getElementById('desktop-sidebar');
+            var sidebarToggle = document.getElementById('sidebarToggle');
+            var mainWrapper = document.querySelector('.main-wrapper.with-sidebar');
+            
+            // Sidebar Toggle (collapse/expand)
+            if (sidebarToggle && sidebar) {
+                // Load saved state from localStorage
+                var sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+                if (sidebarCollapsed) {
+                    sidebar.classList.add('collapsed');
+                    if (mainWrapper) mainWrapper.classList.add('sidebar-collapsed');
+                }
+                
+                sidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('collapsed');
+                    if (mainWrapper) mainWrapper.classList.toggle('sidebar-collapsed');
+                    
+                    // Save state to localStorage
+                    localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+                });
+            }
+            
+            // Section Headers - Dropdown Toggle
+            var sectionHeaders = document.querySelectorAll('.menu-section .section-header');
+            sectionHeaders.forEach(function(header) {
+                var section = header.closest('.menu-section');
+                var sectionItems = section.querySelector('.section-items');
+                
+                // Check if any child is active, then expand that section
+                var hasActiveChild = sectionItems && sectionItems.querySelector('a.active');
+                if (hasActiveChild) {
+                    section.classList.add('expanded');
+                    header.classList.add('active');
+                }
+                
+                header.addEventListener('click', function() {
+                    // Don't toggle if sidebar is collapsed
+                    if (sidebar && sidebar.classList.contains('collapsed')) return;
+                    
+                    // Toggle this section
+                    section.classList.toggle('expanded');
+                    header.classList.toggle('active');
+                    
+                    // Save expanded sections to localStorage
+                    var sectionName = header.getAttribute('data-section');
+                    var expandedSections = JSON.parse(localStorage.getItem('expandedSections') || '{}');
+                    expandedSections[sectionName] = section.classList.contains('expanded');
+                    localStorage.setItem('expandedSections', JSON.stringify(expandedSections));
+                });
+                
+                // Load saved expanded state from localStorage
+                var sectionName = header.getAttribute('data-section');
+                var expandedSections = JSON.parse(localStorage.getItem('expandedSections') || '{}');
+                if (expandedSections[sectionName] && !hasActiveChild) {
+                    section.classList.add('expanded');
+                }
+            });
+        });
+    </script>
+
+    <!-- iziToast JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/izitoast/1.4.0/js/iziToast.min.js"></script>
+
+    <!-- UCar Toast Wrapper - sử dụng giống react-toastify -->
+    <script>
+        // UCar Toast - wrapper cho iziToast
+        const UCarToast = {
+            // Default settings
+            defaults: {
+                position: 'topRight',
+                timeout: 3000,
+                progressBar: true,
+                progressBarColor: 'rgba(255,255,255,0.7)',
+                close: true,
+                closeOnClick: true,
+                pauseOnHover: true,
+                transitionIn: 'flipInX',
+                transitionOut: 'flipOutX'
+            },
+
+            // Success toast
+            success: function (message, title = 'Thành công!') {
+                iziToast.success({
+                    ...this.defaults,
+                    title: title,
+                    message: message,
+                    icon: 'material-icons',
+                    iconText: 'check_circle',
+                    color: '#4CAF50'
+                });
+            },
+
+            // Error toast
+            error: function (message, title = 'Lỗi!') {
+                iziToast.error({
+                    ...this.defaults,
+                    title: title,
+                    message: message,
+                    icon: 'material-icons',
+                    iconText: 'error',
+                    color: '#f44336'
+                });
+            },
+
+            // Warning toast
+            warning: function (message, title = 'Cảnh báo!') {
+                iziToast.warning({
+                    ...this.defaults,
+                    title: title,
+                    message: message,
+                    icon: 'material-icons',
+                    iconText: 'warning',
+                    color: '#ff9800'
+                });
+            },
+
+            // Info toast
+            info: function (message, title = 'Thông tin') {
+                iziToast.info({
+                    ...this.defaults,
+                    title: title,
+                    message: message,
+                    icon: 'material-icons',
+                    iconText: 'info',
+                    color: '#2196F3'
+                });
+            },
+
+            // Custom toast with options
+            show: function (options) {
+                iziToast.show({
+                    ...this.defaults,
+                    ...options
+                });
+            }
+        };
+
+        // Expose globally
+        window.UCarToast = UCarToast;
+
+        // Legacy support - showToast function
+        function showToast(type, message, duration = 3000) {
+            UCarToast.defaults.timeout = duration;
+            switch (type) {
+                case 'success': UCarToast.success(message); break;
+                case 'error': UCarToast.error(message); break;
+                case 'warning': UCarToast.warning(message); break;
+                case 'info': UCarToast.info(message); break;
+                default: UCarToast.info(message);
+            }
+        }
+        window.showToast = showToast;
+    </script>
+
+    <!-- Page specific scripts -->
     @await RenderSectionAsync("Scripts", required: false)
 </body>
+
 </html>

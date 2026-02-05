@@ -1,0 +1,182 @@
+@model UCar.ViewModels.Payment.PaymentProcessViewModel
+@{
+    ViewData["Title"] = "Thanh toán - " + Model.ContractCode;
+}
+
+<div class="container" style="margin-top: 2rem; margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div>
+            <a href="@Url.Action("ReturnDocument", "Handover", new { contractId = Model.ContractId })" class="btn-flat">
+                <i class="material-icons left">arrow_back</i>Quay lại biên bản
+            </a>
+            <h4 style="font-weight: 700; margin-top: 0.5rem;">
+                <i class="material-icons green-text" style="vertical-align: middle;">payment</i>
+                Thanh toán - @Model.ContractCode
+            </h4>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Thông tin thanh toán -->
+        <div class="col s12 m6">
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title"><i class="material-icons left">receipt</i>Chi tiết thanh toán</span>
+                    
+                    <table class="striped">
+                        <tbody>
+                            <tr>
+                                <td>Khách hàng</td>
+                                <td class="right-align"><strong>@Model.CustomerName</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Số điện thoại</td>
+                                <td class="right-align">@Model.CustomerPhone</td>
+                            </tr>
+                            <tr>
+                                <td>Biển số xe</td>
+                                <td class="right-align">@Model.PlateNo</td>
+                            </tr>
+                            <tr>
+                                <td>Loại xe</td>
+                                <td class="right-align">@Model.VehicleName</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <hr/>
+
+                    <table>
+                        <tbody>
+                            <tr>
+                                <td>Phí thuê xe</td>
+                                <td class="right-align">@Model.RentalAmount.ToString("N0") đ</td>
+                            </tr>
+                            @if (Model.ExtraCharges > 0)
+                            {
+                                <tr>
+                                    <td>Phụ phí</td>
+                                    <td class="right-align">@Model.ExtraCharges.ToString("N0") đ</td>
+                                </tr>
+                            }
+                            <tr style="border-top: 1px solid #ccc;">
+                                <td><strong>Tổng cộng</strong></td>
+                                <td class="right-align"><strong>@Model.GrandTotal.ToString("N0") đ</strong></td>
+                            </tr>
+                            <tr>
+                                <td>Đã đặt cọc</td>
+                                <td class="right-align green-text">-@Model.DepositAmount.ToString("N0") đ</td>
+                            </tr>
+                            <tr style="background-color: #fff3e0;">
+                                <td><strong>Cần thanh toán</strong></td>
+                                <td class="right-align"><strong>@Model.AmountDue.ToString("N0") đ</strong></td>
+                            </tr>
+                            @if (Model.AmountPaid > 0)
+                            {
+                                <tr>
+                                    <td>Đã thanh toán</td>
+                                    <td class="right-align green-text">-@Model.AmountPaid.ToString("N0") đ</td>
+                                </tr>
+                                <tr style="background-color: #e3f2fd;">
+                                    <td><strong style="font-size: 1.1rem;">Còn lại</strong></td>
+                                    <td class="right-align"><strong style="font-size: 1.1rem;" class="red-text">@Model.RemainingAmount.ToString("N0") đ</strong></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form thanh toán -->
+        <div class="col s12 m6">
+            <div class="card">
+                <div class="card-content">
+                    <span class="card-title"><i class="material-icons left">credit_card</i>Nhập thông tin thanh toán</span>
+                    
+                    <form asp-action="ProcessPayment" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="ContractId" />
+                        
+                        <div class="input-field">
+                            <i class="material-icons prefix">attach_money</i>
+                            <input type="number" asp-for="PaymentAmount" id="PaymentAmount" class="validate" min="1" step="1000" />
+                            <label for="PaymentAmount">Số tiền thanh toán (đ)</label>
+                            <span asp-validation-for="PaymentAmount" class="helper-text red-text"></span>
+                        </div>
+
+                        <div class="input-field">
+                            <i class="material-icons prefix">account_balance_wallet</i>
+                            <select asp-for="PaymentMethod" id="PaymentMethod">
+                                <option value="@UCar.Models.Enums.PaymentMethod.Cash">Tiền mặt</option>
+                                <option value="@UCar.Models.Enums.PaymentMethod.Transfer">Chuyển khoản</option>
+                                <option value="@UCar.Models.Enums.PaymentMethod.Card">Thẻ</option>
+                            </select>
+                            <label for="PaymentMethod">Phương thức thanh toán</label>
+                        </div>
+
+                        <div class="input-field" id="bankRefField" style="display: none;">
+                            <i class="material-icons prefix">confirmation_number</i>
+                            <input type="text" asp-for="BankRefCode" id="BankRefCode" />
+                            <label for="BankRefCode">Mã giao dịch ngân hàng</label>
+                        </div>
+
+                        <div class="input-field">
+                            <i class="material-icons prefix">note</i>
+                            <textarea asp-for="Note" id="Note" class="materialize-textarea"></textarea>
+                            <label for="Note">Ghi chú</label>
+                        </div>
+
+                        <div class="center-align" style="margin-top: 2rem;">
+                            <button type="submit" class="btn-large waves-effect waves-light green">
+                                <i class="material-icons left">check</i>Xác nhận thanh toán
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize select
+            var selects = document.querySelectorAll('select');
+            M.FormSelect.init(selects);
+
+            // Show/hide bank ref field based on payment method
+            var paymentMethodSelect = document.getElementById('PaymentMethod');
+            var bankRefField = document.getElementById('bankRefField');
+            
+            function toggleBankRefField() {
+                var method = paymentMethodSelect.value;
+                if (method === '@((int)UCar.Models.Enums.PaymentMethod.Transfer)' || 
+                    method === '@((int)UCar.Models.Enums.PaymentMethod.Card)') {
+                    bankRefField.style.display = 'block';
+                } else {
+                    bankRefField.style.display = 'none';
+                }
+            }
+            
+            paymentMethodSelect.addEventListener('change', toggleBankRefField);
+            toggleBankRefField();
+
+            // Format number input
+            var amountInput = document.getElementById('PaymentAmount');
+            amountInput.addEventListener('blur', function() {
+                var value = parseFloat(this.value);
+                if (!isNaN(value)) {
+                    // Round to nearest 1000
+                    this.value = Math.round(value / 1000) * 1000;
+                }
+            });
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>UCarToast.error('@TempData["ErrorMessage"]');</text>
+            }
+        });
+    </script>
+}

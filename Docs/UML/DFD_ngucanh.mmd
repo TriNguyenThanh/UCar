@@ -1,0 +1,43 @@
+flowchart LR
+  classDef ext fill:#fff,stroke:#111,stroke-width:1px;
+  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px;
+
+  KH[Khách hàng]:::ext
+  NH[Ngân hàng / Cổng thanh toán]:::ext
+  VETC[Hệ thống thu phí tự động VETC/ePass]:::ext
+  CA[Cơ quan công an / CSGT]:::ext
+
+  P0((0. Hệ thống quản lý cho thuê xe)):::proc
+
+  KH -->|Thông tin đăng ký| P0
+  KH -->|Giấy tờ định danh| P0
+  KH -->|Thông tin yêu cầu đặt xe| P0
+  KH -->|Thông tin điều chỉnh đặt xe| P0
+  KH -->|Thông tin thay đổi hợp đồng| P0
+  KH -->|Thông tin nhận xe| P0
+  KH -->|Thông tin trả xe| P0
+  KH -->|Thông báo sự cố| P0
+  KH -->|Thông tin thanh toán| P0
+
+  P0 -->|Thông tin xác nhận khách hàng| KH
+  P0 -->|Thông tin báo giá thuê xe| KH
+  P0 -->|Thông tin xác nhận đặt xe| KH
+  P0 -->|Hợp đồng thuê xe| KH
+  P0 -->|Biên bản giao nhận| KH
+  P0 -->|Hóa đơn biên nhận| KH
+
+  P0 -->| Thông tin yêu cầu giao dịch| NH
+  NH -->|Kết quả giao dịch| P0
+
+  P0 -->|Thông tin yêu cầu tra soát phí cầu đường| VETC
+  VETC -->|Dữ liệu phí cầu đường| P0
+
+  CA -->|Yêu cầu thông tin người điều khiển| P0
+  CA -->|Biên bản tạm giữ phương tiện| P0
+  CA -->|Thông tin vụ việc| P0
+  CA -->|Quyết định xử phạt| P0
+
+  P0 -->|Thông tin người điều khiển| CA
+  P0 -->|Hợp đồng thuê xe| CA
+  P0 -->|Biên bản giao nhận| CA
+  P0 -->|Thông tin nộp phạt| CA

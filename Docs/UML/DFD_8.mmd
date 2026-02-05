@@ -1,0 +1,27 @@
+flowchart LR
+  classDef ext fill:#DEFFF8,stroke:#46EDC8,stroke-width:1px,color:#0b5b4a;
+  classDef proc fill:#f7f7ff,stroke:#2b2b8a,stroke-width:1.5px,color:#1f1f6b;
+  classDef store fill:#FFF3BF,stroke:#F2C94C,stroke-width:1.2px,color:#6b5200;
+
+  QLVH[Quản lý vận hành]:::ext
+
+
+  D9[(Dữ liệu vận hành và nhân sự)]:::store
+
+  P81((8.1 Quản lý chi nhánh và điểm giao nhận)):::proc
+  P82((8.2 Phân công nhân viên)):::proc
+  P83((8.3 Quản lý ca làm và hiệu suất)):::proc
+
+
+  P81 <--> D9
+  P82 <--> D9
+  P83 <--> D9
+
+  QLVH -->|Thông tin yêu cầu cập nhật chi nhánh và điểm giao nhận| P81
+  P81 -->|Kết quả cập nhật chi nhánh và điểm giao nhận| QLVH
+
+  QLVH -->|Thông tin yêu cầu phân công nhân viên| P82
+  P82 -->|Kết quả phân công nhân viên| QLVH
+
+  QLVH -->|Thông tin yêu cầu quản lý ca làm và hiệu suất| P83
+  P83 -->|Kết quả quản lý ca làm và hiệu suất| QLVH

@@ -1,0 +1,137 @@
+---
+config:
+  layout: elk
+  theme: base
+  themeVariables:
+    fontFamily: Arial
+    fontSize: 30px
+  themeCSS: >
+    svg { font-size: 40px !important; }
+
+    .node rect, .node polygon, .node path { rx: 14px; ry: 14px; }
+
+    .tientrinh rect, .tientrinh polygon, .tientrinh path { stroke-width: 2.6px
+    !important; }
+
+    .tientrinh .label { font-size: 40px !important; font-weight: 700 !important;
+    }
+
+    .tacnhan .label { font-size: 40px !important; font-weight: 600 !important; }
+
+    .kho .label { font-size: 40px !important; font-weight: 600 !important; }
+
+    .label { line-height: 1.25rem !important; }
+---
+flowchart RL
+    KH["Khách hàng"] -- Thông tin đăng ký và giấy tờ --> P1(("1.0 Quản lý khách hàng"))
+    P1 -- Thông báo xác nhận tài khoản --> KH
+    KH -- Yêu cầu đặt xe --> P4(("4.0 Quản lý đặt xe"))
+    KH -- Yêu cầu điều chỉnh đặt xe --> P4
+    KH -- Yêu cầu hủy đặt xe --> P4
+    P4 -- Thông báo xác nhận đặt xe --> KH
+    KH -- Yêu cầu ký hợp đồng --> P5(("5.0 Quản lý hợp đồng thuê"))
+    KH -- Yêu cầu thay đổi hợp đồng --> P5
+    P5 -- Hợp đồng thuê xe --> KH
+    KH -- Yêu cầu nhận xe --> P6(("6.0 Quản lý giao nhận xe"))
+    KH -- Yêu cầu trả xe --> P6
+    P6 -- Biên bản giao nhận --> KH
+    KH -- Thông tin thanh toán --> P7(("7.0 Quản lý thanh toán và hóa đơn"))
+    P7 -- Hóa đơn --> KH
+    P7 -- Biên nhận --> KH
+    P7 -- Yêu cầu giao dịch --> NH["Ngân hàng / Cổng thanh toán"]
+    NH -- Kết quả giao dịch --> P7
+    P7 -- Yêu cầu tra soát phí đường bộ --> VETC["Hệ thống thu phí tự động VETC/ePass"]
+    VETC -- Thông tin phí đường bộ --> P7
+    CA["Cơ quan công an / CSGT"] -- Yêu cầu thông tin người điều khiển --> P1
+    P1 -- Thông tin người điều khiển --> CA
+    CA -- Biên bản và thông tin vụ việc --> P5
+    CA -- Quyết định xử phạt --> P7
+    CA -- Biên bản tạm giữ phương tiện --> P6
+    NVVH["Nhân viên VH"] -- Yêu cầu cập nhật danh mục xe --> P2(("2.0 Quản lý xe"))
+    NVVH -- Yêu cầu cập nhật thông tin xe --> P2
+    NVVH -- Yêu cầu cập nhật tình trạng xe --> P2
+    P2 -- Thông báo kết quả cập nhật xe --> NVVH
+    QTCS["Quản trị viên giá và chính sách"] -- Yêu cầu cập nhật giá và chính sách --> P3(("3.0 Quản lý giá và chính sách"))
+    P3 -- Thông báo kết quả cập nhật giá và chính sách --> QTCS
+    QLVH["Quản lý vận hành"] -- Yêu cầu cập nhật vận hành và nhân sự --> P8(("8.0 Quản lý vận hành và nhân sự"))
+    P8 -- Thông báo kết quả cập nhật vận hành và nhân sự --> QLVH
+    BQT["Ban quản trị"] -- Yêu cầu báo cáo --> P9(("9.0 Lập báo cáo"))
+    P9 -- Báo cáo quản trị --> BQT
+    QTV["Quản trị viên hệ thống"] -- Yêu cầu quản trị hệ thống --> P10(("10.0 Quản trị và tuân thủ"))
+    P10 -- Thông báo kết quả quản trị hệ thống --> QTV
+    P1 -- Thông tin khách hàng hợp lệ --> P4
+    P4 -- Yêu cầu tra cứu xe khả dụng --> P2
+    P3 -- Thông tin giá và chính sách --> P4
+    P4 -- Thông tin đặt xe --> P5
+    P3 -- Điều khoản áp dụng --> P5
+    P5 -- Thông tin hợp đồng --> P6
+    P5 -- Thông tin thanh toán --> P7
+    P6 -- Thông tin phát sinh sau thuê --> P7
+    P8 -- Thông tin phân công giao nhận --> P6
+    P9 -- Báo cáo tổng hợp --> P10
+    P10 -- Mẫu hợp đồng --> P5
+    P10 -- Yêu cầu cập nhật chính sách --> P3
+    P10 -- Quy định tuân thủ --> P1
+    P1 --> DS_KH_A[("Hồ sơ khách hàng")]
+    DS_KH_A --> P1
+    DS_KH_B[("Hồ sơ khách hàng")] --> P4
+    P2 --> DS_XE[("Danh mục xe")] & DS_TTXE[("Tình trạng xe")]
+    DS_XE --> P2
+    DS_TTXE --> P2
+    P3 --> DS_GIA[("Bảng giá và chính sách")]
+    DS_GIA --> P3
+    P4 --> DS_DAT[("Hồ sơ đặt xe")]
+    DS_DAT --> P4
+    P5 --> DS_HD[("Hồ sơ hợp đồng thuê")]
+    DS_HD --> P5
+    P6 --> DS_BBGN[("Biên bản giao nhận")] & DS_SC_A[("Sự cố và vi phạm")]
+    DS_BBGN --> P6
+    P7 --> DS_TT[("Giao dịch thanh toán")] & DS_SC_B[("Sự cố và vi phạm")]
+    DS_TT --> P7
+    P8 --> DS_VHNS[("Vận hành và nhân sự")]
+    DS_VHNS --> P8
+    P9 --> DS_BC[("Dữ liệu báo cáo")]
+    DS_BC --> P9
+    P10 --> DS_PQ[("Người dùng và phân quyền")] & DS_MAU[("Mẫu biểu và điều khoản")]
+    DS_PQ --> P10
+    DS_MAU --> P10
+    DS_SC_A --> P6
+    DS_SC_B --> P7
+
+     KH:::tacnhan
+     P1:::tientrinh
+     P4:::tientrinh
+     P5:::tientrinh
+     P6:::tientrinh
+     P7:::tientrinh
+     NH:::tacnhan
+     VETC:::tacnhan
+     CA:::tacnhan
+     NVVH:::tacnhan
+     P2:::tientrinh
+     QTCS:::tacnhan
+     P3:::tientrinh
+     QLVH:::tacnhan
+     P8:::tientrinh
+     BQT:::tacnhan
+     P9:::tientrinh
+     QTV:::tacnhan
+     P10:::tientrinh
+     DS_KH_A:::kho
+     DS_KH_B:::kho
+     DS_XE:::kho
+     DS_TTXE:::kho
+     DS_GIA:::kho
+     DS_DAT:::kho
+     DS_HD:::kho
+     DS_BBGN:::kho
+     DS_SC_A:::kho
+     DS_TT:::kho
+     DS_SC_B:::kho
+     DS_VHNS:::kho
+     DS_BC:::kho
+     DS_PQ:::kho
+     DS_MAU:::kho
+    classDef tacnhan fill:#DEFFF8,stroke:#46EDC8,color:#0b5b4a,stroke-width:1px
+    classDef kho fill:#FFF3BF,stroke:#F2C94C,color:#6b5200,stroke-width:1.2px
+    classDef tientrinh fill:#f7f7ff,stroke:#2b2b8a,color:#1f1f6b,stroke-width:1.5px
